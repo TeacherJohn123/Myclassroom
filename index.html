@@ -33,11 +33,11 @@
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
-        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📊 今日概況</button>
+        <button onclick="switchTab('attendance')" id="btn-attendance" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">⏱️ 請假遲到</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.0</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.2</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -48,7 +48,6 @@
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📖 每日聯絡簿系統</h2>
       
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <!-- 日期選擇 -->
         <div class="flex flex-wrap gap-4 items-center mb-6">
           <label class="font-bold text-gray-700 text-lg">日期選擇：</label>
           <input type="date" id="cbDate" onchange="onDateChange()" class="border rounded-lg p-2.5 text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
@@ -57,9 +56,7 @@
           </button>
         </div>
 
-        <!-- 提醒事項與當日值日生並排區塊 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          
           <div id="todayEventsBox" class="md:col-span-2 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden">
             <div class="font-bold flex items-center gap-2 mb-2 text-xl">
               <span>📌 當日行事曆事件：</span>
@@ -76,10 +73,8 @@
               <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
             </div>
           </div>
-
         </div>
 
-        <!-- 聯絡事項輸入框 -->
         <div class="mb-6">
           <label class="block font-bold text-gray-800 text-xl mb-2">聯絡事項與回家作業：</label>
           <textarea id="cbContent" oninput="autoExpandTextarea(this)" class="auto-expand w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-4 focus:ring-blue-400 outline-none text-5xl-custom font-bold text-gray-900" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
@@ -157,13 +152,12 @@
       </div>
     </section>
 
-    <!-- ⭐ 分頁 4：榮譽點數與兌獎系統 (改為加1,2,3分) -->
+    <!-- 分頁 4：榮譽點數 -->
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- 左側：加分紀錄登錄區 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 加分紀錄</h3>
           
@@ -186,7 +180,6 @@
             </div>
           </div>
 
-          <!-- ⭐ 快捷加分按鈕 (+1, +2, +3 分) -->
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-2">快捷加分操作：</label>
             <div class="flex gap-3">
@@ -197,7 +190,6 @@
           </div>
         </div>
 
-        <!-- 右側：兌獎設定區 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🎁 兌獎設定</h3>
           
@@ -217,7 +209,6 @@
 
       </div>
 
-      <!-- 下方：個人加分紀錄與兌獎紀錄區 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
@@ -254,12 +245,115 @@
       </div>
     </section>
 
-    <!-- 分頁 5：今日概況 -->
-    <section id="tab-dashboard" class="tab-content space-y-6">
-      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📊 今日概況</h2>
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <p class="text-gray-600">這裡可以查看今天的班務重點與待辦事項概況。</p>
+    <!-- 分頁 5：請假遲到與統計管理 (升級統計功能) -->
+    <section id="tab-attendance" class="tab-content space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">⏱️ 請假遲到管理與統計</h2>
+
+      <!-- 上半部：登記與當日總覽 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📝 登記出缺勤 / 遲到</h3>
+          
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">日期：</label>
+            <input type="date" id="attDate" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 font-bold" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">選擇學生：</label>
+            <select id="attStudentSelect" class="w-full border rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+              <option value="">-- 請選擇學生 --</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">類別：</label>
+            <select id="attCategorySelect" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-amber-50/50 text-amber-900 border-amber-200">
+              <option value="病假">🤒 病假</option>
+              <option value="事假">🏠 事假</option>
+              <option value="公假">🏆 公假</option>
+              <option value="喪假">🕯️ 喪假</option>
+              <option value="上學遲到">⏰ 上學遲到</option>
+              <option value="上課遲到">🔔 上課遲到</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">備註說明：</label>
+            <input type="text" id="attNote" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：看牙醫、感冒發燒、公假代表..." />
+          </div>
+
+          <button onclick="saveAttendanceRecord()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg text-sm shadow transition">
+            💾 儲存出缺勤紀錄
+          </button>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 當日紀錄總覽</h3>
+            <button onclick="renderAttendanceList()" class="text-xs text-blue-600 hover:underline">重新整理</button>
+          </div>
+
+          <div id="attendanceList" class="divide-y divide-gray-100 max-h-[380px] overflow-y-auto pr-1">
+            <p class="text-gray-400 text-sm py-2">該日期無出缺勤紀錄。</p>
+          </div>
+        </div>
+
       </div>
+
+      <!-- ⭐ 下半部 1：全班學生請假狀況統計大表 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📊 全班請假狀況統計大表</h3>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-gray-600 border-collapse">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
+              <tr>
+                <th class="p-3">座號 / 姓名</th>
+                <th class="p-3 text-center text-rose-700">🤒 病假</th>
+                <th class="p-3 text-center text-amber-700">🏠 事假</th>
+                <th class="p-3 text-center text-blue-700">🏆 公假</th>
+                <th class="p-3 text-center text-gray-700">🕯️ 喪假</th>
+                <th class="p-3 text-center text-purple-700">⏰ 上學遲到</th>
+                <th class="p-3 text-center text-orange-700">🔔 上課遲到</th>
+                <th class="p-3 text-center font-bold text-slate-900">總累計</th>
+              </tr>
+            </thead>
+            <tbody id="classAttendanceStatsTable" class="divide-y divide-gray-100 font-medium">
+              <tr>
+                <td colspan="8" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ⭐ 下半部 2：個別學生請假統計與歷程查詢 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🔍 個別學生請假統計與歷程查詢</h3>
+        
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">選擇要查詢的學生：</label>
+          <select id="filterAttStudentSelect" onchange="renderIndividualAttendanceStats()" class="w-full border rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+            <option value="">-- 請選擇學生 --</option>
+          </select>
+        </div>
+
+        <div id="individualAttStatsContainer" class="hidden space-y-4">
+          <!-- 分類統計數字卡片 -->
+          <div id="individualCategoryCards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2"></div>
+
+          <!-- 詳細歷程 -->
+          <div class="border rounded-xl p-4 bg-gray-50">
+            <h4 class="font-bold text-sm text-gray-700 mb-2">📜 詳細請假遲到歷程：</h4>
+            <div id="individualAttHistoryList" class="divide-y divide-gray-200 max-h-52 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <p id="individualAttPlaceholder" class="text-gray-400 text-sm py-2">請從上方選取學生查詢個別請假狀況。</p>
+      </div>
+
     </section>
 
     <!-- 分頁 6：座位表 -->
@@ -302,6 +396,8 @@
       renderRewardList();
       renderPointRoster();
       renderRewardHistory();
+
+      initAttendanceModule();
     };
 
     function switchTab(tabId) {
@@ -385,7 +481,6 @@
       }
     }
 
-    // ----------------- 當日值日生安排邏輯 -----------------
     function loadDutyStudents() {
       const currentDate = document.getElementById('cbDate').value;
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
@@ -645,6 +740,8 @@
       renderStudentGrid();
       renderPointStudentOptions();
       renderPointRoster();
+      renderAttendanceStudentOptions();
+      renderClassAttendanceStats();
     }
 
     function renderStudentGrid() {
@@ -679,6 +776,8 @@
       renderStudentGrid();
       renderPointStudentOptions();
       renderPointRoster();
+      renderAttendanceStudentOptions();
+      renderClassAttendanceStats();
     }
 
     function clearStudents() {
@@ -689,9 +788,11 @@
       renderStudentGrid();
       renderPointStudentOptions();
       renderPointRoster();
+      renderAttendanceStudentOptions();
+      renderClassAttendanceStats();
     }
 
-    // ----------------- ⭐ 榮譽點數邏輯 (純加分模式) -----------------
+    // ----------------- 榮譽點數邏輯 -----------------
     function renderPointStudentOptions() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
@@ -716,7 +817,6 @@
       document.getElementById('pointReason').value = text;
     }
 
-    // 加分操作 (+1, +2, +3)
     function applyPointChange(amount) {
       const select = document.getElementById('pointStudentSelect');
       const studentId = select.value;
@@ -929,6 +1029,192 @@
           <span class="font-bold text-rose-600">${l.change} 點</span>
         </div>
       `).join('');
+    }
+
+    // ----------------- 請假遲到與統計邏輯 -----------------
+    function initAttendanceModule() {
+      document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
+      renderAttendanceStudentOptions();
+      renderAttendanceList();
+      renderClassAttendanceStats();
+      
+      document.getElementById('attDate').addEventListener('change', renderAttendanceList);
+    }
+
+    function renderAttendanceStudentOptions() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const students = state.students || [];
+      const select = document.getElementById('attStudentSelect');
+      const filterSelect = document.getElementById('filterAttStudentSelect');
+
+      if (students.length === 0) {
+        select.innerHTML = '<option value="">-- 請先新增/匯入學生 --</option>';
+        filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>';
+        return;
+      }
+
+      const optionsHTML = students.map(s => 
+        `<option value="${s.id}">${s.seatNo} ${s.name}</option>`
+      ).join('');
+
+      select.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
+      filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
+    }
+
+    function saveAttendanceRecord() {
+      const date = document.getElementById('attDate').value;
+      const studentId = document.getElementById('attStudentSelect').value;
+      const category = document.getElementById('attCategorySelect').value;
+      const note = document.getElementById('attNote').value.trim();
+
+      if (!date || !studentId) {
+        alert('請選取有效的日期與學生！');
+        return;
+      }
+
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const student = (state.students || []).find(s => s.id === studentId);
+      if (!student) return;
+
+      if (!state.attendanceLogs) state.attendanceLogs = [];
+
+      state.attendanceLogs.unshift({
+        id: 'att_' + Date.now(),
+        date: date,
+        studentId: student.id,
+        studentName: `${student.seatNo} ${student.name}`,
+        category: category,
+        note: note
+      });
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      document.getElementById('attNote').value = '';
+      alert(`✅ 已儲存 ${student.name} 的「${category}」紀錄！`);
+      renderAttendanceList();
+      renderClassAttendanceStats();
+      renderIndividualAttendanceStats();
+    }
+
+    function renderAttendanceList() {
+      const currentDate = document.getElementById('attDate').value;
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const logs = (state.attendanceLogs || []).filter(l => l.date === currentDate);
+      const listContainer = document.getElementById('attendanceList');
+
+      if (logs.length === 0) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-3">當天無請假/遲到紀錄。</p>';
+        return;
+      }
+
+      listContainer.innerHTML = logs.map(l => `
+        <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
+          <div>
+            <div class="flex items-center gap-2 mb-0.5">
+              <span class="font-bold text-gray-800 text-sm">${l.studentName}</span>
+              <span class="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">${l.category}</span>
+            </div>
+            ${l.note ? `<p class="text-xs text-gray-500">備註：${l.note}</p>` : '<p class="text-xs text-gray-300">無備註</p>'}
+          </div>
+          <button onclick="deleteAttendanceRecord('${l.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function deleteAttendanceRecord(id) {
+      if (!confirm('確定要刪除這筆紀錄嗎？')) return;
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      state.attendanceLogs = (state.attendanceLogs || []).filter(l => l.id !== id);
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      renderAttendanceList();
+      renderClassAttendanceStats();
+      renderIndividualAttendanceStats();
+    }
+
+    // ⭐ 全班統計大表渲染邏輯
+    function renderClassAttendanceStats() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const students = state.students || [];
+      const logs = state.attendanceLogs || [];
+      const tbody = document.getElementById('classAttendanceStatsTable');
+
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = students.map(s => {
+        const studentLogs = logs.filter(l => l.studentId === s.id);
+        const counts = {
+          病假: studentLogs.filter(l => l.category === '病假').length,
+          事假: studentLogs.filter(l => l.category === '事假').length,
+          公假: studentLogs.filter(l => l.category === '公假').length,
+          喪假: studentLogs.filter(l => l.category === '喪假').length,
+          上學遲到: studentLogs.filter(l => l.category === '上學遲到').length,
+          上課遲到: studentLogs.filter(l => l.category === '上課遲到').length,
+        };
+        const total = studentLogs.length;
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td>
+            <td class="p-3 text-center ${counts.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${counts.病假}</td>
+            <td class="p-3 text-center ${counts.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${counts.事假}</td>
+            <td class="p-3 text-center ${counts.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${counts.公假}</td>
+            <td class="p-3 text-center ${counts.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${counts.喪假}</td>
+            <td class="p-3 text-center ${counts.上學遲到 > 0 ? 'font-bold text-purple-600' : 'text-gray-300'}">${counts.上學遲到}</td>
+            <td class="p-3 text-center ${counts.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${counts.上課遲到}</td>
+            <td class="p-3 text-center font-extrabold ${total > 0 ? 'text-slate-900 bg-slate-100/60 rounded' : 'text-gray-300'}">${total} 次</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ⭐ 個別學生請假統計與歷程渲染邏輯
+    function renderIndividualAttendanceStats() {
+      const studentId = document.getElementById('filterAttStudentSelect').value;
+      const container = document.getElementById('individualAttStatsContainer');
+      const placeholder = document.getElementById('individualAttPlaceholder');
+
+      if (!studentId) {
+        container.classList.add('hidden');
+        placeholder.classList.remove('hidden');
+        return;
+      }
+
+      container.classList.remove('hidden');
+      placeholder.classList.add('hidden');
+
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const studentLogs = (state.attendanceLogs || []).filter(l => l.studentId === studentId);
+
+      const categories = ['病假', '事假', '公假', '喪假', '上學遲到', '上課遲到'];
+      const cardsContainer = document.getElementById('individualCategoryCards');
+
+      cardsContainer.innerHTML = categories.map(cat => {
+        const count = studentLogs.filter(l => l.category === cat).length;
+        return `
+          <div class="p-3 rounded-lg border text-center ${count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100 opacity-60'}">
+            <span class="text-xs text-gray-500 font-bold block">${cat}</span>
+            <span class="text-xl font-extrabold ${count > 0 ? 'text-amber-800' : 'text-gray-400'}">${count} <span class="text-xs font-normal">次</span></span>
+          </div>
+        `;
+      }).join('');
+
+      const historyContainer = document.getElementById('individualAttHistoryList');
+      if (studentLogs.length === 0) {
+        historyContainer.innerHTML = '<p class="text-gray-400 text-xs py-3">該生尚無任何請假與遲到紀錄。</p>';
+      } else {
+        historyContainer.innerHTML = studentLogs.map(l => `
+          <div class="py-2 flex justify-between items-center text-xs">
+            <div>
+              <span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span>
+              <span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}</span>
+              ${l.note ? `<span class="text-gray-600">${l.note}</span>` : '<span class="text-gray-300">無備註</span>'}
+            </div>
+            <button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500">✕</button>
+          </div>
+        `).join('');
+      }
     }
   </script>
 </body>

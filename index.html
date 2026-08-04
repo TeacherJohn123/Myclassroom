@@ -38,7 +38,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.9</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.0</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -65,7 +65,6 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
-          <!-- ⭐ 當日值日生區塊（整合生活省思登記） -->
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
@@ -77,7 +76,6 @@
               </div>
             </div>
 
-            <!-- ⭐ 新增：登記日常生活省思按鈕 -->
             <button onclick="openBehaviorModal()" class="w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-1.5 px-2 rounded-lg transition shadow-sm flex items-center justify-center gap-1">
               🚨 登記不當行為 (指定值日生)
             </button>
@@ -467,9 +465,9 @@
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
       
-      <!-- 補值日生清單 -->
-      <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-        <span class="font-bold text-amber-900 text-sm flex items-center gap-1">⚠️ 需補當值日生學生清單：</span>
+      <!-- ⭐ 補值日生清單 (遲到以橘色呈現，行為不當以紅色呈現) -->
+      <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+        <span class="font-bold text-slate-800 text-sm flex items-center gap-1">⚠️ 需補當值日生學生清單：</span>
         <div id="penaltyDutyList" class="flex flex-wrap gap-1.5">
           <span class="text-gray-400 text-xs">尚無需要補值日生的學生</span>
         </div>
@@ -488,7 +486,7 @@
     </div>
   </div>
 
-  <!-- ⭐ 新增：日常生活省思 (指定值日生) 彈窗 Modal -->
+  <!-- 日常生活省思彈窗 Modal -->
   <div id="behaviorModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2">🚨 登記日常生活省思事件</h3>
@@ -645,7 +643,6 @@
       }
     }
 
-    // ⭐ 開啟日常生活省思彈窗
     function openBehaviorModal() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
@@ -684,7 +681,6 @@
       let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       if (!state.behaviorDutyMap) state.behaviorDutyMap = {};
 
-      // 增加該學生被指定的補值日生天數
       state.behaviorDutyMap[studentId] = (state.behaviorDutyMap[studentId] || 0) + days;
 
       localStorage.setItem('classroom_app_data', JSON.stringify(state));
@@ -692,7 +688,7 @@
       closeBehaviorModal();
     }
 
-    // ⭐ 遲到 + 行為省思補值日生清單連動
+    // ⭐ 遲到（橘色）與 行為不當（紅色）顏色區分邏輯
     function openDutyPicker() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
@@ -702,38 +698,52 @@
       const currentDate = document.getElementById('cbDate').value;
       const currentAssigned = (state.dutyRoster || {})[currentDate] || [];
 
-      const penaltyStudents = [];
+      const penaltyButtonsHTML = [];
+
       students.forEach(s => {
-        // 1. 遲到滿 5 次天數
+        // 1. 遲到補值天數 (滿5次算1天)
         const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
-        const lateDays = Math.floor(lateCount / 5);
+        const totalLateDays = Math.floor(lateCount / 5);
 
-        // 2. 不當行為被指定天數
-        const behDays = behaviorDutyMap[s.id] || 0;
+        // 2. 行為不當補值天數
+        const totalBehDays = behaviorDutyMap[s.id] || 0;
 
-        // 3. 總應補天數 - 已抵銷天數
+        // 已抵銷總天數
         const clearedCount = dutyClearedMap[s.id] || 0;
-        const pendingCount = (lateDays + behDays) - clearedCount;
 
-        if (pendingCount > 0) {
-          penaltyStudents.push({
-            id: s.id,
-            fullName: `${s.seatNo} ${s.name}`,
-            pendingCount: pendingCount
-          });
+        // 計算剩餘天數 (優先扣抵遲到，再扣抵行為)
+        let pendingLateDays = Math.max(0, totalLateDays - clearedCount);
+        let remainingCleared = Math.max(0, clearedCount - totalLateDays);
+        let pendingBehDays = Math.max(0, totalBehDays - remainingCleared);
+
+        const fullName = `${s.seatNo} ${s.name}`;
+
+        // ⏰ 遲到：呈現橘色 (Orange)
+        if (pendingLateDays > 0) {
+          penaltyButtonsHTML.push(`
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-100 hover:bg-orange-200 text-orange-950 border border-orange-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+              <span>⏰ ${fullName}</span>
+              <span class="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">遲到欠 ${pendingLateDays} 天</span>
+            </button>
+          `);
+        }
+
+        // 🚨 行為不當：呈現紅色 (Red)
+        if (pendingBehDays > 0) {
+          penaltyButtonsHTML.push(`
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-950 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+              <span>🚨 ${fullName}</span>
+              <span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">行為欠 ${pendingBehDays} 天</span>
+            </button>
+          `);
         }
       });
 
       const penaltyContainer = document.getElementById('penaltyDutyList');
-      if (penaltyStudents.length === 0) {
+      if (penaltyButtonsHTML.length === 0) {
         penaltyContainer.innerHTML = '<span class="text-gray-400 text-xs">目前沒有需補當值日生的學生 🎉</span>';
       } else {
-        penaltyContainer.innerHTML = penaltyStudents.map(p => `
-          <button onclick="quickSelectPenaltyStudent('${p.fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
-            <span>🚨 ${p.fullName}</span>
-            <span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${p.pendingCount} 次</span>
-          </button>
-        `).join('');
+        penaltyContainer.innerHTML = penaltyButtonsHTML.join('');
       }
 
       const listContainer = document.getElementById('dutyStudentList');

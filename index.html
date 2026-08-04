@@ -37,7 +37,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.2</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.4</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -64,10 +64,11 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
+          <!-- ⭐ 當日值日生（整合遲到補值日生） -->
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950">
             <div class="flex items-center justify-between mb-2">
               <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
-              <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition">⚙️ 安排</button>
+              <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition">⚙️ 安排值日生</button>
             </div>
             <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900">
               <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
@@ -245,11 +246,10 @@
       </div>
     </section>
 
-    <!-- 分頁 5：請假遲到與統計管理 (升級統計功能) -->
+    <!-- 分頁 5：請假遲到與統計管理 -->
     <section id="tab-attendance" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">⏱️ 請假遲到管理與統計</h2>
 
-      <!-- 上半部：登記與當日總覽 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
@@ -302,7 +302,7 @@
 
       </div>
 
-      <!-- ⭐ 下半部 1：全班學生請假狀況統計大表 -->
+      <!-- 全班學生請假狀況統計大表 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📊 全班請假狀況統計大表</h3>
         
@@ -317,19 +317,17 @@
                 <th class="p-3 text-center text-gray-700">🕯️ 喪假</th>
                 <th class="p-3 text-center text-purple-700">⏰ 上學遲到</th>
                 <th class="p-3 text-center text-orange-700">🔔 上課遲到</th>
-                <th class="p-3 text-center font-bold text-slate-900">總累計</th>
               </tr>
             </thead>
             <tbody id="classAttendanceStatsTable" class="divide-y divide-gray-100 font-medium">
               <tr>
-                <td colspan="8" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td>
+                <td colspan="7" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- ⭐ 下半部 2：個別學生請假統計與歷程查詢 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🔍 個別學生請假統計與歷程查詢</h3>
         
@@ -341,10 +339,8 @@
         </div>
 
         <div id="individualAttStatsContainer" class="hidden space-y-4">
-          <!-- 分類統計數字卡片 -->
           <div id="individualCategoryCards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2"></div>
 
-          <!-- 詳細歷程 -->
           <div class="border rounded-xl p-4 bg-gray-50">
             <h4 class="font-bold text-sm text-gray-700 mb-2">📜 詳細請假遲到歷程：</h4>
             <div id="individualAttHistoryList" class="divide-y divide-gray-200 max-h-52 overflow-y-auto"></div>
@@ -366,17 +362,26 @@
 
   </main>
 
-  <!-- 值日生選擇彈出視窗 Modal -->
+  <!-- ⭐ 值日生與遲到補做安排彈出視窗 Modal -->
   <div id="dutyModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
-    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
-      <p class="text-xs text-gray-500">勾選 1~2 位學生作為該日值日生：</p>
+      
+      <!-- 遲到需補值日生提醒清單 -->
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+        <span class="font-bold text-amber-900 text-sm flex items-center gap-1">⚠️ 遲到滿 5 次需補值日生清單：</span>
+        <div id="penaltyDutyList" class="flex flex-wrap gap-1.5">
+          <span class="text-gray-400 text-xs">尚無需要補值日生的學生</span>
+        </div>
+      </div>
 
-      <div id="dutyStudentList" class="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1 border rounded-lg">
+      <p class="text-xs text-gray-500 font-bold">勾選學生作為今日值日生：</p>
+
+      <div id="dutyStudentList" class="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto p-1 border rounded-lg">
         <p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>
       </div>
 
-      <div class="flex justify-end gap-2 pt-2">
+      <div class="flex justify-end gap-2 pt-2 border-t">
         <button onclick="closeDutyPicker()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold">取消</button>
         <button onclick="saveDutySelection()" class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold">儲存安排</button>
       </div>
@@ -495,12 +500,46 @@
       }
     }
 
+    // ⭐ 遲到 5 次與值日生彈窗對接
     function openDutyPicker() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
+      const attLogs = state.attendanceLogs || [];
+      const dutyClearedMap = state.dutyClearedMap || {}; // 記錄已抵銷的遲到次數
       const currentDate = document.getElementById('cbDate').value;
       const currentAssigned = (state.dutyRoster || {})[currentDate] || [];
 
+      // 1. 計算每位學生積欠的補值日生次數
+      const penaltyStudents = [];
+      students.forEach(s => {
+        const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+        const clearedCount = dutyClearedMap[s.id] || 0;
+        const pendingCount = Math.floor(lateCount / 5) - clearedCount;
+
+        if (pendingCount > 0) {
+          penaltyStudents.push({
+            id: s.id,
+            fullName: `${s.seatNo} ${s.name}`,
+            pendingCount: pendingCount,
+            totalLate: lateCount
+          });
+        }
+      });
+
+      // 2. 渲染遲到需補值日生清單
+      const penaltyContainer = document.getElementById('penaltyDutyList');
+      if (penaltyStudents.length === 0) {
+        penaltyContainer.innerHTML = '<span class="text-gray-400 text-xs">目前沒有因遲到需補當值日生的學生 🎉</span>';
+      } else {
+        penaltyContainer.innerHTML = penaltyStudents.map(p => `
+          <button onclick="quickSelectPenaltyStudent('${p.fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <span>🚨 ${p.fullName}</span>
+            <span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${p.pendingCount} 次</span>
+          </button>
+        `).join('');
+      }
+
+      // 3. 渲染一般勾選清單
       const listContainer = document.getElementById('dutyStudentList');
       if (students.length === 0) {
         listContainer.innerHTML = '<p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>';
@@ -510,7 +549,7 @@
           const isChecked = currentAssigned.includes(fullName) ? 'checked' : '';
           return `
             <label class="p-2 border rounded flex items-center gap-2 hover:bg-gray-50 cursor-pointer text-xs font-bold text-gray-700">
-              <input type="checkbox" name="dutyStudent" value="${fullName}" ${isChecked} class="w-4 h-4 text-sky-600 rounded">
+              <input type="checkbox" name="dutyStudent" id="duty_cb_${fullName.replace(/\s+/g, '_')}" value="${fullName}" ${isChecked} class="w-4 h-4 text-sky-600 rounded">
               <span>${fullName}</span>
             </label>
           `;
@@ -518,6 +557,13 @@
       }
 
       document.getElementById('dutyModal').classList.remove('hidden');
+    }
+
+    function quickSelectPenaltyStudent(fullName) {
+      const cb = document.getElementById(`duty_cb_${fullName.replace(/\s+/g, '_')}`);
+      if (cb) {
+        cb.checked = true;
+      }
     }
 
     function closeDutyPicker() {
@@ -536,6 +582,28 @@
 
       let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       if (!state.dutyRoster) state.dutyRoster = {};
+      if (!state.dutyClearedMap) state.dutyClearedMap = {};
+
+      const previousAssigned = state.dutyRoster[currentDate] || [];
+
+      // 檢查是否有「新增」的遲到補值日生，有的話扣減其欠次
+      const attLogs = state.attendanceLogs || [];
+      const students = state.students || [];
+
+      selectedNames.forEach(fullName => {
+        if (!previousAssigned.includes(fullName)) {
+          const student = students.find(s => `${s.seatNo} ${s.name}` === fullName);
+          if (student) {
+            const lateCount = attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+            const clearedCount = state.dutyClearedMap[student.id] || 0;
+            
+            // 如果該生確實有積欠，完成安排時清除 1 次欠次
+            if (Math.floor(lateCount / 5) > clearedCount) {
+              state.dutyClearedMap[student.id] = clearedCount + 1;
+            }
+          }
+        }
+      });
 
       state.dutyRoster[currentDate] = selectedNames;
       localStorage.setItem('classroom_app_data', JSON.stringify(state));
@@ -1130,7 +1198,6 @@
       renderIndividualAttendanceStats();
     }
 
-    // ⭐ 全班統計大表渲染邏輯
     function renderClassAttendanceStats() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
@@ -1138,7 +1205,7 @@
       const tbody = document.getElementById('classAttendanceStatsTable');
 
       if (students.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>';
         return;
       }
 
@@ -1152,7 +1219,6 @@
           上學遲到: studentLogs.filter(l => l.category === '上學遲到').length,
           上課遲到: studentLogs.filter(l => l.category === '上課遲到').length,
         };
-        const total = studentLogs.length;
 
         return `
           <tr class="hover:bg-slate-50 transition">
@@ -1163,13 +1229,11 @@
             <td class="p-3 text-center ${counts.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${counts.喪假}</td>
             <td class="p-3 text-center ${counts.上學遲到 > 0 ? 'font-bold text-purple-600' : 'text-gray-300'}">${counts.上學遲到}</td>
             <td class="p-3 text-center ${counts.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${counts.上課遲到}</td>
-            <td class="p-3 text-center font-extrabold ${total > 0 ? 'text-slate-900 bg-slate-100/60 rounded' : 'text-gray-300'}">${total} 次</td>
           </tr>
         `;
       }).join('');
     }
 
-    // ⭐ 個別學生請假統計與歷程渲染邏輯
     function renderIndividualAttendanceStats() {
       const studentId = document.getElementById('filterAttStudentSelect').value;
       const container = document.getElementById('individualAttStatsContainer');

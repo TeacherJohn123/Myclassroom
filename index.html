@@ -38,7 +38,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.8</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.9</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -65,14 +65,22 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
-          <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950">
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
-              <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition">⚙️ 安排值日生</button>
+          <!-- ⭐ 當日值日生區塊（整合生活省思登記） -->
+          <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
+                <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition">⚙️ 安排值日生</button>
+              </div>
+              <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900 mb-3">
+                <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
+              </div>
             </div>
-            <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900">
-              <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
-            </div>
+
+            <!-- ⭐ 新增：登記日常生活省思按鈕 -->
+            <button onclick="openBehaviorModal()" class="w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-1.5 px-2 rounded-lg transition shadow-sm flex items-center justify-center gap-1">
+              🚨 登記不當行為 (指定值日生)
+            </button>
           </div>
         </div>
 
@@ -99,13 +107,12 @@
       </div>
     </section>
 
-    <!-- ⭐ 分頁 2：未完成工作清單模組 -->
+    <!-- 分頁 2：未完成工作清單模組 -->
     <section id="tab-todo" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📝 未完成工作清單追蹤</h2>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <!-- 左側：發起新項目與登記未交學生 -->
         <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 發起未完成作業/回條</h3>
           
@@ -150,10 +157,8 @@
           </button>
         </div>
 
-        <!-- 右側：追蹤卡片與個人統計查詢 -->
         <div class="lg:col-span-2 space-y-6">
           
-          <!-- ⭐ 新增：個別學生未完成與逾期天數查詢區 -->
           <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
             <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🔍 個別學生未完成與逾期天數統計</h3>
             
@@ -164,7 +169,6 @@
               </select>
             </div>
 
-            <!-- 個別統計內容展示區 -->
             <div id="individualTodoStatsContainer" class="hidden space-y-4">
               <div class="p-4 bg-indigo-50/60 border border-indigo-100 rounded-xl flex items-center justify-between">
                 <div>
@@ -183,7 +187,6 @@
             <p id="individualTodoPlaceholder" class="text-gray-400 text-sm py-2">請從上方選取學生查詢各項未繳項目與逾期天數。</p>
           </div>
 
-          <!-- 全班所有未完成追蹤項目 -->
           <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
             <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 全班追蹤中未完成項目</h3>
 
@@ -464,8 +467,9 @@
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
       
+      <!-- 補值日生清單 -->
       <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-        <span class="font-bold text-amber-900 text-sm flex items-center gap-1">⚠️ 遲到滿 5 次需補值日生清單：</span>
+        <span class="font-bold text-amber-900 text-sm flex items-center gap-1">⚠️ 需補當值日生學生清單：</span>
         <div id="penaltyDutyList" class="flex flex-wrap gap-1.5">
           <span class="text-gray-400 text-xs">尚無需要補值日生的學生</span>
         </div>
@@ -480,6 +484,50 @@
       <div class="flex justify-end gap-2 pt-2 border-t">
         <button onclick="closeDutyPicker()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold">取消</button>
         <button onclick="saveDutySelection()" class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold">儲存安排</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ⭐ 新增：日常生活省思 (指定值日生) 彈窗 Modal -->
+  <div id="behaviorModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+      <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2">🚨 登記日常生活省思事件</h3>
+      <p class="text-xs text-gray-500">登記影響日常規範之行為，並指定值日生天數：</p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">選擇學生：</label>
+          <select id="behStudentSelect" class="w-full border rounded-lg p-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+            <option value="">-- 請選擇學生 --</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">行為事由快捷標籤：</label>
+          <div class="flex flex-wrap gap-1.5 text-xs mb-2">
+            <button onclick="setBehReason('上課講話')" class="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-2 py-0.5 rounded">上課講話</button>
+            <button onclick="setBehReason('影響秩序')" class="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-2 py-0.5 rounded">影響秩序</button>
+            <button onclick="setBehReason('破壞公物')" class="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-2 py-0.5 rounded">破壞公物</button>
+            <button onclick="setBehReason('常規欠佳')" class="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-2 py-0.5 rounded">常規欠佳</button>
+          </div>
+          <input type="text" id="behReason" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：上課擅自離座、影響同學..." />
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-600 mb-1">指定補當值日生天數：</label>
+          <select id="behDaysSelect" class="w-full border rounded-lg p-2 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-amber-50 text-amber-900 border-amber-200">
+            <option value="1">1 天</option>
+            <option value="2">2 天</option>
+            <option value="3">3 天</option>
+            <option value="4">4 天</option>
+            <option value="5">5 天</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button onclick="closeBehaviorModal()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold">取消</button>
+        <button onclick="saveBehaviorRecord()" class="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold">儲存登記</button>
       </div>
     </div>
   </div>
@@ -597,33 +645,88 @@
       }
     }
 
+    // ⭐ 開啟日常生活省思彈窗
+    function openBehaviorModal() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const students = state.students || [];
+      const select = document.getElementById('behStudentSelect');
+
+      if (students.length === 0) {
+        select.innerHTML = '<option value="">-- 請先匯入學生名單 --</option>';
+      } else {
+        select.innerHTML = '<option value="">-- 請選擇學生 --</option>' + students.map(s => 
+          `<option value="${s.id}">${s.seatNo} ${s.name}</option>`
+        ).join('');
+      }
+
+      document.getElementById('behReason').value = '';
+      document.getElementById('behaviorModal').classList.remove('hidden');
+    }
+
+    function setBehReason(text) {
+      document.getElementById('behReason').value = text;
+    }
+
+    function closeBehaviorModal() {
+      document.getElementById('behaviorModal').classList.add('hidden');
+    }
+
+    function saveBehaviorRecord() {
+      const studentId = document.getElementById('behStudentSelect').value;
+      const reason = document.getElementById('behReason').value.trim() || '日常常規待改進';
+      const days = parseInt(document.getElementById('behDaysSelect').value) || 1;
+
+      if (!studentId) {
+        alert('請先選擇學生！');
+        return;
+      }
+
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      if (!state.behaviorDutyMap) state.behaviorDutyMap = {};
+
+      // 增加該學生被指定的補值日生天數
+      state.behaviorDutyMap[studentId] = (state.behaviorDutyMap[studentId] || 0) + days;
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      alert(`✅ 已成功登記！指定該生補當值日生 ${days} 天。`);
+      closeBehaviorModal();
+    }
+
+    // ⭐ 遲到 + 行為省思補值日生清單連動
     function openDutyPicker() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
       const attLogs = state.attendanceLogs || [];
       const dutyClearedMap = state.dutyClearedMap || {};
+      const behaviorDutyMap = state.behaviorDutyMap || {};
       const currentDate = document.getElementById('cbDate').value;
       const currentAssigned = (state.dutyRoster || {})[currentDate] || [];
 
       const penaltyStudents = [];
       students.forEach(s => {
+        // 1. 遲到滿 5 次天數
         const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+        const lateDays = Math.floor(lateCount / 5);
+
+        // 2. 不當行為被指定天數
+        const behDays = behaviorDutyMap[s.id] || 0;
+
+        // 3. 總應補天數 - 已抵銷天數
         const clearedCount = dutyClearedMap[s.id] || 0;
-        const pendingCount = Math.floor(lateCount / 5) - clearedCount;
+        const pendingCount = (lateDays + behDays) - clearedCount;
 
         if (pendingCount > 0) {
           penaltyStudents.push({
             id: s.id,
             fullName: `${s.seatNo} ${s.name}`,
-            pendingCount: pendingCount,
-            totalLate: lateCount
+            pendingCount: pendingCount
           });
         }
       });
 
       const penaltyContainer = document.getElementById('penaltyDutyList');
       if (penaltyStudents.length === 0) {
-        penaltyContainer.innerHTML = '<span class="text-gray-400 text-xs">目前沒有因遲到需補當值日生的學生 🎉</span>';
+        penaltyContainer.innerHTML = '<span class="text-gray-400 text-xs">目前沒有需補當值日生的學生 🎉</span>';
       } else {
         penaltyContainer.innerHTML = penaltyStudents.map(p => `
           <button onclick="quickSelectPenaltyStudent('${p.fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-900 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
@@ -679,16 +782,18 @@
 
       const previousAssigned = state.dutyRoster[currentDate] || [];
       const attLogs = state.attendanceLogs || [];
+      const behaviorDutyMap = state.behaviorDutyMap || {};
       const students = state.students || [];
 
       selectedNames.forEach(fullName => {
         if (!previousAssigned.includes(fullName)) {
           const student = students.find(s => `${s.seatNo} ${s.name}` === fullName);
           if (student) {
-            const lateCount = attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+            const lateDays = Math.floor(attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length / 5);
+            const behDays = behaviorDutyMap[student.id] || 0;
             const clearedCount = state.dutyClearedMap[student.id] || 0;
             
-            if (Math.floor(lateCount / 5) > clearedCount) {
+            if ((lateDays + behDays) > clearedCount) {
               state.dutyClearedMap[student.id] = clearedCount + 1;
             }
           }
@@ -852,11 +957,10 @@
       document.getElementById('todoNote').value = '';
       renderTodoStudentCheckboxes();
       renderTodoTaskList();
-      renderIndividualTodoStats(); // 更新個人查詢
+      renderIndividualTodoStats();
       alert('✨ 已成功新增未完成追蹤項目！');
     }
 
-    // 計算逾期天數（扣除請假當日與週末）
     function calculateOverdueDays(studentId, dueDateStr) {
       const today = new Date();
       today.setHours(0,0,0,0);
@@ -893,7 +997,6 @@
       return overdueDays;
     }
 
-    // ⭐ 個別學生未完成與逾期天數渲染
     function renderIndividualTodoStats() {
       const studentId = document.getElementById('filterTodoStudentSelect').value;
       const container = document.getElementById('individualTodoStatsContainer');
@@ -916,7 +1019,6 @@
 
       document.getElementById('indTodoStudentName').innerText = `${student.seatNo} ${student.name}`;
 
-      // 篩選該學生尚未銷案的項目
       const studentTasks = tasks.filter(t => t.pendingStudentIds.includes(studentId));
       let totalOverdueDays = 0;
 
@@ -926,7 +1028,7 @@
         listContainer.innerHTML = '<p class="text-emerald-600 text-xs font-bold py-3 text-center">讚！該位學生無任何未完成項目 🎉</p>';
         document.getElementById('indTodoTotalOverdue').innerText = '0 天';
       } else {
-        listContainer.innerHTML = studentStudentsHtml = studentTasks.map(t => {
+        listContainer.innerHTML = studentTasks.map(t => {
           const overdue = calculateOverdueDays(studentId, t.dueDate);
           totalOverdueDays += overdue;
 
@@ -1011,7 +1113,7 @@
         task.pendingStudentIds = task.pendingStudentIds.filter(id => id !== studentId);
         localStorage.setItem('classroom_app_data', JSON.stringify(state));
         renderTodoTaskList();
-        renderIndividualTodoStats(); // 同步更新個人查詢
+        renderIndividualTodoStats();
       }
     }
 

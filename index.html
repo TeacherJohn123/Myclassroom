@@ -37,7 +37,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.4</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.5</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -64,7 +64,7 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
-          <!-- ⭐ 當日值日生（整合遲到補值日生） -->
+          <!-- ⭐ 當日值日生區塊 -->
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950">
             <div class="flex items-center justify-between mb-2">
               <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
@@ -367,7 +367,7 @@
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
       
-      <!-- 遲到需補值日生提醒清單 -->
+      <!-- ⭐ 遲到滿 5 次需補值日生清單 -->
       <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
         <span class="font-bold text-amber-900 text-sm flex items-center gap-1">⚠️ 遲到滿 5 次需補值日生清單：</span>
         <div id="penaltyDutyList" class="flex flex-wrap gap-1.5">

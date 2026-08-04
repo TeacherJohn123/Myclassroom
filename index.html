@@ -20,13 +20,14 @@
       <h1 class="text-xl font-bold mb-6 flex items-center gap-2">🏫 班級工作台</h1>
       <nav class="space-y-2" id="sidebar-nav">
         <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
+        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
         <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📊 今日概況</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v1.1</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v1.5</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -40,15 +41,23 @@
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div class="flex flex-wrap gap-4 items-center mb-4">
           <label class="font-bold text-gray-700">日期選擇：</label>
-          <input type="date" id="cbDate" class="border rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
+          <input type="date" id="cbDate" onchange="onDateChange()" class="border rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
           <button onclick="setTodayDate()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition">
             📅 套用今天日期
           </button>
         </div>
 
+        <!-- ⭐ 新增：呈現當天行事曆事件的提醒區塊 -->
+        <div id="todayEventsBox" class="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-sm hidden">
+          <div class="font-bold flex items-center gap-1.5 mb-1">
+            <span>📌 當日行事曆事件：</span>
+          </div>
+          <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-800 font-medium"></ul>
+        </div>
+
         <div class="mb-4">
           <label class="block font-bold text-gray-700 mb-2">聯絡事項與回家作業：</label>
-          <textarea id="cbContent" rows="8" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base leading-relaxed" placeholder="1. 數學習作 P.12-14&#10;2. 帶植物幼苗來觀察&#10;3. 發回健康檢查通知單"></textarea>
+          <textarea id="cbContent" rows="8" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base leading-relaxed" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
         </div>
 
         <div class="flex justify-between items-center">
@@ -70,14 +79,46 @@
       </div>
     </section>
 
-    <!-- 分頁 2：學生名單管理（全新升級功能） -->
+    <!-- 分頁 2：班級行事曆管理（新增功能） -->
+    <section id="tab-calendar" class="tab-content space-y-6">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-2xl font-bold text-slate-800">📅 班級行事曆管理</h2>
+        <span id="eventCount" class="text-sm bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full">共 0 筆事件</span>
+      </div>
+
+      <!-- 匯入與新增行程 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📥 批次匯入 / 新增行事曆</h3>
+        <p class="text-xs text-gray-500">提示：請輸入「日期 行事內容」，每行一筆（例如：`2026-08-04 班會課與健檢` 或 `2026-08-10 校外教學`）。</p>
+        
+        <textarea id="batchCalendarInput" rows="5" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="2026-08-04 開學大掃除&#10;2026-08-05 第一單元小考&#10;2026-08-15 班親會"></textarea>
+        
+        <div class="flex justify-between items-center">
+          <button onclick="clearCalendar()" class="text-xs text-red-600 hover:underline">
+            🗑️ 清空所有行事曆
+          </button>
+          <button onclick="importBatchCalendar()" class="bg-amber-600 hover:bg-amber-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow transition">
+            ✨ 匯入行程事件
+          </button>
+        </div>
+      </div>
+
+      <!-- 已匯入行事曆清單 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單</h3>
+        <div id="calendarList" class="divide-y divide-gray-100">
+          <p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 分頁 3：學生名單管理 -->
     <section id="tab-students" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">👨‍🎓 學生名單管理</h2>
         <span id="studentCount" class="text-sm bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full">共 0 位學生</span>
       </div>
 
-      <!-- 匯入工具卡片 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📥 快速批次匯入名單</h3>
         <p class="text-xs text-gray-500">提示：可直接從 Excel/備忘錄複製貼上，每行一位學生（例如：`01 張小明` 或 `李小華`）。</p>
@@ -94,7 +135,6 @@
         </div>
       </div>
 
-      <!-- 學生卡片名冊 display 區 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 class="font-bold text-lg mb-4 text-gray-800">📋 目前班級名冊</h3>
         <div id="studentGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -103,7 +143,7 @@
       </div>
     </section>
 
-    <!-- 分頁 3：今日概況 -->
+    <!-- 分頁 4：今日概況 -->
     <section id="tab-dashboard" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📊 今日概況</h2>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -111,7 +151,7 @@
       </div>
     </section>
 
-    <!-- 分頁 4：座位表 -->
+    <!-- 分頁 5：座位表 -->
     <section id="tab-seating" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🪑 座位表</h2>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -119,7 +159,7 @@
       </div>
     </section>
 
-    <!-- 分頁 5：榮譽點數 -->
+    <!-- 分頁 6：榮譽點數 -->
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數</h2>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -135,9 +175,10 @@
       setTodayDate();
       renderHistoryList();
       renderStudentGrid();
+      renderCalendarList();
+      checkTodayEvents(); // 初始化載入當天行程
     };
 
-    // 多分頁無縫切換邏輯
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
       document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -154,24 +195,68 @@
       }
     }
 
-    // ----------------- 聯絡簿邏輯 -----------------
+    // ----------------- 聯絡簿與行程比對邏輯 -----------------
     function setTodayDate() {
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0];
       document.getElementById('cbDate').value = dateStr;
       
-      const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
-      const dayName = weekDays[today.getDay()];
-      const header = `【${today.getMonth()+1}月${today.getDate()}日 (${dayName}) 聯絡事項】\n`;
-      
       const textarea = document.getElementById('cbContent');
-      if (!textarea.value.includes('聯絡事項】')) {
-        textarea.value = header + textarea.value;
+      if (!textarea.value.trim()) {
+        updateHeaderDate();
+      }
+      checkTodayEvents();
+    }
+
+    function onDateChange() {
+      updateHeaderDate();
+      checkTodayEvents();
+    }
+
+    function updateHeaderDate() {
+      const dateVal = document.getElementById('cbDate').value;
+      if (!dateVal) return;
+
+      const [year, month, day] = dateVal.split('-').map(Number);
+      const selectedDate = new Date(year, month - 1, day);
+      
+      const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+      const dayName = weekDays[selectedDate.getDay()];
+      const newHeader = `【${month}月${day}日 (${dayName}) 聯絡事項】`;
+
+      const textarea = document.getElementById('cbContent');
+      const lines = textarea.value.split('\n');
+
+      if (lines.length > 0 && lines[0].startsWith('【') && lines[0].includes('聯絡事項】')) {
+        lines[0] = newHeader;
+        textarea.value = lines.join('\n');
+      } else {
+        textarea.value = newHeader + '\n' + textarea.value;
+      }
+    }
+
+    // ⭐ 比對並呈現「選擇當天」的行事曆行程
+    function checkTodayEvents() {
+      const currentDate = document.getElementById('cbDate').value;
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const events = state.calendarEvents || [];
+
+      // 篩選出日期相同的行程
+      const matchedEvents = events.filter(e => e.date === currentDate);
+      
+      const eventsBox = document.getElementById('todayEventsBox');
+      const eventsList = document.getElementById('todayEventsList');
+
+      if (matchedEvents.length > 0) {
+        eventsList.innerHTML = matchedEvents.map(e => `<li>${e.title}</li>`).join('');
+        eventsBox.classList.remove('hidden');
+      } else {
+        eventsBox.classList.add('hidden');
       }
     }
 
     function insertTemplate() {
-      const template = "1. 完成國語隨堂測驗本\n2. 帶彩色筆與剪刀\n3. 簽名聯絡簿與發回通知單";
+      const template = "1. 國\n2. 數";
       const textarea = document.getElementById('cbContent');
       textarea.value += "\n" + template;
     }
@@ -218,7 +303,7 @@
             <span class="font-bold text-blue-600 text-sm">${item.date}</span>
             <p class="text-xs text-gray-500 truncate max-w-md mt-0.5">${item.content.replace(/\n/g, ' ')}</p>
           </div>
-          <button onclick="loadRecord('${item.date}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded transition">
+          <button onclick="loadRecord('${item.date}')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition">
             🔍 查看/編輯
           </button>
         </div>
@@ -231,7 +316,96 @@
       if (record) {
         document.getElementById('cbDate').value = record.date;
         document.getElementById('cbContent').value = record.content;
+        checkTodayEvents(); // 重新比對當天行事曆
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+    }
+
+    // ----------------- 班級行事曆邏輯 -----------------
+    function importBatchCalendar() {
+      const rawText = document.getElementById('batchCalendarInput').value.trim();
+      if (!rawText) {
+        alert('請填寫行事曆內容！');
+        return;
+      }
+
+      const lines = rawText.split('\n');
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      if (!state.calendarEvents) state.calendarEvents = [];
+
+      let count = 0;
+      lines.forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed) {
+          const parts = trimmed.split(/\s+/);
+          if (parts.length >= 2) {
+            const date = parts[0];
+            const title = parts.slice(1).join(' ');
+            
+            // 避免重複新增同日同名事件
+            const exists = state.calendarEvents.some(e => e.date === date && e.title === title);
+            if (!exists) {
+              state.calendarEvents.push({
+                id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                date: date,
+                title: title
+              });
+              count++;
+            }
+          }
+        }
+      });
+
+      // 依日期排序
+      state.calendarEvents.sort((a, b) => a.date.localeCompare(b.date));
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      document.getElementById('batchCalendarInput').value = '';
+      alert(`🎉 成功新增/匯入 ${count} 筆行程事件！`);
+      renderCalendarList();
+      checkTodayEvents(); // 更新當天行程顯示
+    }
+
+    function renderCalendarList() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const events = state.calendarEvents || [];
+      const listContainer = document.getElementById('calendarList');
+      const countLabel = document.getElementById('eventCount');
+
+      countLabel.innerText = `共 ${events.length} 筆事件`;
+
+      if (events.length === 0) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>';
+        return;
+      }
+
+      listContainer.innerHTML = events.map(evt => `
+        <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
+            <span class="font-bold text-gray-800 text-sm">${evt.title}</span>
+          </div>
+          <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function deleteCalendarEvent(id) {
+      if (!confirm('確定要刪除這筆行程嗎？')) return;
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      state.calendarEvents = (state.calendarEvents || []).filter(e => e.id !== id);
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      renderCalendarList();
+      checkTodayEvents();
+    }
+
+    function clearCalendar() {
+      if (!confirm('確定要清空所有行事曆事件嗎？')) return;
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      state.calendarEvents = [];
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      renderCalendarList();
+      checkTodayEvents();
     }
 
     // ----------------- 學生名單邏輯 -----------------
@@ -247,10 +421,9 @@
       if (!state.students) state.students = [];
 
       let count = 0;
-      lines.forEach((line, index) => {
+      lines.forEach((line) => {
         const trimmed = line.trim();
         if (trimmed) {
-          // 自動解析座號與姓名（例如 "01 張小明" 拆解）
           const parts = trimmed.split(/\s+/);
           let seatNo = (state.students.length + 1).toString().padStart(2, '0');
           let name = trimmed;

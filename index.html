@@ -38,7 +38,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.6</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.7</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -99,7 +99,7 @@
       </div>
     </section>
 
-    <!-- ⭐ 分頁 2：未完成工作清單模組 (全新打造) -->
+    <!-- ⭐ 分頁 2：未完成工作清單模組 -->
     <section id="tab-todo" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📝 未完成工作清單追蹤</h2>
 
@@ -109,7 +109,7 @@
         <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 發起未完成作業/回條</h3>
           
-          <!-- 快捷標籤選擇 -->
+          <!-- 8 個快捷標籤 -->
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">預設標籤快捷點選：</label>
             <div class="flex flex-wrap gap-1.5 text-xs">
@@ -131,7 +131,7 @@
 
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">備註說明：</label>
-            <input type="text" id="todoNote" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：第 5 頁、需簽名..." />
+            <input type="text" id="todoNote" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：第 3 頁、需家長簽名..." />
           </div>
 
           <div>
@@ -151,7 +151,7 @@
           </button>
         </div>
 
-        <!-- 右側：追蹤項目卡片與補繳銷案管理 -->
+        <!-- 右側：追蹤卡片與補繳銷案 -->
         <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 追蹤中未完成項目</h3>
 
@@ -425,7 +425,7 @@
 
   </main>
 
-  <!-- 值日生與遲到補做安排彈出視窗 Modal -->
+  <!-- 值日生彈窗 Modal -->
   <div id="dutyModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
@@ -805,7 +805,7 @@
       alert('✨ 已成功新增未完成追蹤項目！');
     }
 
-    // 計算扣除請假後的逾期天數
+    // ⭐ 計算逾期天數（扣除請假當日、國定例假日）
     function calculateOverdueDays(studentId, dueDateStr) {
       const today = new Date();
       today.setHours(0,0,0,0);
@@ -823,15 +823,18 @@
       curr.setDate(curr.getDate() + 1); // 從截止日隔天開始算
 
       while (curr <= today) {
+        const dayOfWeek = curr.getDay(); // 0 是週日，6 是週六
+        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+
         const dateStr = curr.toISOString().split('T')[0];
-        // 檢查該學生當天是否有請假（病假、事假、公假、喪假）
         const isAbsent = attLogs.some(l => 
           l.studentId === studentId && 
           l.date === dateStr && 
           ['病假', '事假', '公假', '喪假'].includes(l.category)
         );
 
-        if (!isAbsent) {
+        // 非週末 且 非請假，才算入正式逾期天數
+        if (!isWeekend && !isAbsent) {
           overdueDays++;
         }
         curr.setDate(curr.getDate() + 1);
@@ -876,7 +879,7 @@
                       <div class="p-2 bg-white border rounded-lg flex items-center justify-between text-xs">
                         <div>
                           <span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>
-                          ${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天 (已扣除請假)</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}
+                          ${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天 (已扣假日/請假)</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}
                         </div>
                         <button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px]">
                           ✅ 銷案

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>班級經營工具包</title>
+  <!-- 導入 Tailwind CSS 樣式庫 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen text-gray-800 flex">
+
+  <!-- 左側導覽列 -->
+  <aside class="w-64 bg-slate-800 text-white min-h-screen p-4 flex flex-col justify-between">
+    <div>
+      <h1 class="text-xl font-bold mb-6 flex items-center gap-2">🏫 班級工作台</h1>
+      <nav class="space-y-2">
+        <button onclick="switchTab('dashboard')" class="w-full text-left p-2 rounded hover:bg-slate-700">📊 今日概況</button>
+        <button onclick="switchTab('contactbook')" class="w-full text-left p-2 rounded bg-slate-700 font-bold">📖 每日聯絡簿</button>
+        <button onclick="switchTab('students')" class="w-full text-left p-2 rounded hover:bg-slate-700">👨‍🎓 學生名單</button>
+        <button onclick="switchTab('seating')" class="w-full text-left p-2 rounded hover:bg-slate-700">🪑 座位表</button>
+        <button onclick="switchTab('points')" class="w-full text-left p-2 rounded hover:bg-slate-700">🏆 榮譽點數</button>
+      </nav>
+    </div>
+    <div class="text-xs text-slate-400">專屬 iPad 營運模組</div>
+  </aside>
+
+  <!-- 主內容區 -->
+  <main class="flex-1 p-6 overflow-y-auto">
+    
+    <!-- 模組：每日聯絡簿 -->
+    <section id="contactbook-tab" class="space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2">📖 每日聯絡簿系統</h2>
+      
+      <!-- 編輯器卡片 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="flex flex-wrap gap-4 items-center mb-4">
+          <label class="font-bold text-gray-700">日期選擇：</label>
+          <input type="date" id="cbDate" class="border rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
+          <button onclick="setTodayDate()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
+            📅 套用今天日期
+          </button>
+        </div>
+
+        <div class="mb-4">
+          <label class="block font-bold text-gray-700 mb-2">聯絡事項與回家作業：</label>
+          <textarea id="cbContent" rows="8" class="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none text-base leading-relaxed" placeholder="1. 數學習作 P.12-14&#10;2. 帶植物幼苗來觀察&#10;3. 發回健康檢查通知單"></textarea>
+        </div>
+
+        <div class="flex justify-between items-center">
+          <button onclick="insertTemplate()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">
+            📋 帶入預設範本
+          </button>
+          <button onclick="saveContactBook()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow">
+            💾 儲存今日聯絡簿
+          </button>
+        </div>
+      </div>
+
+      <!-- 歷史紀錄列表 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">🗂️ 歷程紀錄選單</h3>
+        <div id="cbHistoryList" class="divide-y divide-gray-100">
+          <p class="text-gray-400 text-sm">尚無歷史紀錄</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 邏輯腳本 -->
+  <script>
+    // 初始化頁面
+    window.onload = function() {
+      setTodayDate();
+      renderHistoryList();
+    };
+
+    // 套用今天日期
+    function setTodayDate() {
+      const today = new Date();
+      const dateStr = today.toISOString().split('T')[0];
+      document.getElementById('cbDate').value = dateStr;
+      
+      const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+      const dayName = weekDays[today.getDay()];
+      const header = `【${today.getMonth()+1}月${today.getDate()}日 (${dayName}) 聯絡事項】\n`;
+      
+      const textarea = document.getElementById('cbContent');
+      if (!textarea.value.includes('聯絡事項】')) {
+        textarea.value = header + textarea.value;
+      }
+    }
+
+    // 帶入預設範本
+    function insertTemplate() {
+      const template = "1. 完成國語隨堂測驗本\n2. 帶彩色筆與剪刀\n3. 簽名聯絡簿與發回通知單";
+      const textarea = document.getElementById('cbContent');
+      textarea.value += "\n" + template;
+    }
+
+    // 儲存至 localStorage
+    function saveContactBook() {
+      const date = document.getElementById('cbDate').value;
+      const content = document.getElementById('cbContent').value;
+
+      if (!date || !content) {
+        alert('請填寫日期與聯絡事項！');
+        return;
+      }
+
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      if (!state.contactBooks) state.contactBooks = [];
+
+      const existingIndex = state.contactBooks.findIndex(item => item.date === date);
+      const newEntry = { date, content, updatedAt: new Date().toISOString() };
+
+      if (existingIndex >= 0) {
+        state.contactBooks[existingIndex] = newEntry;
+      } else {
+        state.contactBooks.unshift(newEntry);
+      }
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      alert(`✅ ${date} 聯絡簿已成功儲存！`);
+      renderHistoryList();
+    }
+
+    // 渲染歷史清單
+    function renderHistoryList() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const listContainer = document.getElementById('cbHistoryList');
+      const records = state.contactBooks || [];
+
+      if (records.length === 0) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">目前沒有歷史紀錄</p>';
+        return;
+      }
+
+      listContainer.innerHTML = records.map(item => `
+        <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
+          <div>
+            <span class="font-bold text-blue-600 text-sm">${item.date}</span>
+            <p class="text-xs text-gray-500 truncate max-w-md mt-0.5">${item.content.replace(/\n/g, ' ')}</p>
+          </div>
+          <button onclick="loadRecord('${item.date}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded">
+            🔍 查看/編輯
+          </button>
+        </div>
+      `).join('');
+    }
+
+    // 載入歷史紀錄
+    function loadRecord(date) {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const record = (state.contactBooks || []).find(r => r.date === date);
+      if (record) {
+        document.getElementById('cbDate').value = record.date;
+        document.getElementById('cbContent').value = record.content;
+      }
+    }
+
+    // 切換分頁（預留選單切換效果）
+    function switchTab(tabName) {
+      alert('目前已選取：' + tabName + ' 模組');
+    }
+  </script>
+</body>
+</html>

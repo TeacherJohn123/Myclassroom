@@ -38,7 +38,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.0</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.1</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -65,13 +65,14 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
+          <!-- 當日值日生顯示區塊 (支援橘色/紅色顏色標籤) -->
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
                 <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
                 <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition">⚙️ 安排值日生</button>
               </div>
-              <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900 mb-3">
+              <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900 mb-3 flex flex-wrap gap-2">
                 <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
               </div>
             </div>
@@ -465,7 +466,6 @@
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
       
-      <!-- ⭐ 補值日生清單 (遲到以橘色呈現，行為不當以紅色呈現) -->
       <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
         <span class="font-bold text-slate-800 text-sm flex items-center gap-1">⚠️ 需補當值日生學生清單：</span>
         <div id="penaltyDutyList" class="flex flex-wrap gap-1.5">
@@ -629,15 +629,30 @@
       }
     }
 
+    // ⭐ 當日值日生主畫面渲染（支援橘色/紅色顏色呈現）
     function loadDutyStudents() {
       const currentDate = document.getElementById('cbDate').value;
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const dutyMap = state.dutyRoster || {};
+      const dutyTypeMap = state.dutyTypeRoster || {}; // 紀錄當天該生的值日生屬性 (late / beh / normal)
       const assignedNames = dutyMap[currentDate] || [];
 
       const displayEl = document.getElementById('dutyStudentsDisplay');
+
       if (assignedNames.length > 0) {
-        displayEl.innerHTML = assignedNames.map(name => `<span class="inline-block bg-sky-200 text-sky-900 px-3 py-1 rounded-lg mr-2 mb-1">${name}</span>`).join('');
+        const dateTypes = dutyTypeMap[currentDate] || {};
+
+        displayEl.innerHTML = assignedNames.map(name => {
+          const type = dateTypes[name] || 'normal';
+          
+          if (type === 'late') { // ⏰ 遲到補做：橘色
+            return `<span class="inline-block bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-lg text-xl font-bold">⏰ ${name}</span>`;
+          } else if (type === 'beh') { // 🚨 行為不當：紅色
+            return `<span class="inline-block bg-rose-100 text-rose-950 border border-rose-300 px-3 py-1 rounded-lg text-xl font-bold">🚨 ${name}</span>`;
+          } else { // 🧹 一般值日生：天藍色
+            return `<span class="inline-block bg-sky-200 text-sky-950 px-3 py-1 rounded-lg text-xl font-bold">${name}</span>`;
+          }
+        }).join('');
       } else {
         displayEl.innerHTML = '<span class="text-gray-400 text-sm font-normal">未安排值日生</span>';
       }
@@ -688,7 +703,6 @@
       closeBehaviorModal();
     }
 
-    // ⭐ 遲到（橘色）與 行為不當（紅色）顏色區分邏輯
     function openDutyPicker() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
@@ -701,24 +715,18 @@
       const penaltyButtonsHTML = [];
 
       students.forEach(s => {
-        // 1. 遲到補值天數 (滿5次算1天)
         const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
-
-        // 2. 行為不當補值天數
         const totalBehDays = behaviorDutyMap[s.id] || 0;
 
-        // 已抵銷總天數
         const clearedCount = dutyClearedMap[s.id] || 0;
 
-        // 計算剩餘天數 (優先扣抵遲到，再扣抵行為)
         let pendingLateDays = Math.max(0, totalLateDays - clearedCount);
         let remainingCleared = Math.max(0, clearedCount - totalLateDays);
         let pendingBehDays = Math.max(0, totalBehDays - remainingCleared);
 
         const fullName = `${s.seatNo} ${s.name}`;
 
-        // ⏰ 遲到：呈現橘色 (Orange)
         if (pendingLateDays > 0) {
           penaltyButtonsHTML.push(`
             <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-100 hover:bg-orange-200 text-orange-950 border border-orange-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
@@ -728,7 +736,6 @@
           `);
         }
 
-        // 🚨 行為不當：呈現紅色 (Red)
         if (pendingBehDays > 0) {
           penaltyButtonsHTML.push(`
             <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-950 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
@@ -776,6 +783,7 @@
       document.getElementById('dutyModal').classList.add('hidden');
     }
 
+    // ⭐ 儲存值日生時判斷並上記顏色屬性 (late / beh / normal)
     function saveDutySelection() {
       const checkboxes = document.querySelectorAll('input[name="dutyStudent"]:checked');
       if (checkboxes.length > 2) {
@@ -788,6 +796,7 @@
 
       let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       if (!state.dutyRoster) state.dutyRoster = {};
+      if (!state.dutyTypeRoster) state.dutyTypeRoster = {};
       if (!state.dutyClearedMap) state.dutyClearedMap = {};
 
       const previousAssigned = state.dutyRoster[currentDate] || [];
@@ -795,14 +804,30 @@
       const behaviorDutyMap = state.behaviorDutyMap || {};
       const students = state.students || [];
 
+      const currentDayTypes = {};
+
       selectedNames.forEach(fullName => {
-        if (!previousAssigned.includes(fullName)) {
-          const student = students.find(s => `${s.seatNo} ${s.name}` === fullName);
-          if (student) {
-            const lateDays = Math.floor(attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length / 5);
-            const behDays = behaviorDutyMap[student.id] || 0;
-            const clearedCount = state.dutyClearedMap[student.id] || 0;
-            
+        const student = students.find(s => `${s.seatNo} ${s.name}` === fullName);
+        if (student) {
+          const lateDays = Math.floor(attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length / 5);
+          const behDays = behaviorDutyMap[student.id] || 0;
+          const clearedCount = state.dutyClearedMap[student.id] || 0;
+
+          let pendingLateDays = Math.max(0, lateDays - clearedCount);
+          let remainingCleared = Math.max(0, clearedCount - lateDays);
+          let pendingBehDays = Math.max(0, behDays - remainingCleared);
+
+          // 判斷該生的值日生屬性 (供首頁標籤配色)
+          if (pendingLateDays > 0) {
+            currentDayTypes[fullName] = 'late'; // 遲到補做（橘色）
+          } else if (pendingBehDays > 0) {
+            currentDayTypes[fullName] = 'beh'; // 行為不當（紅色）
+          } else {
+            currentDayTypes[fullName] = 'normal'; // 一般值日生（藍色）
+          }
+
+          // 抵銷邏輯（若為新指派）
+          if (!previousAssigned.includes(fullName)) {
             if ((lateDays + behDays) > clearedCount) {
               state.dutyClearedMap[student.id] = clearedCount + 1;
             }
@@ -811,6 +836,7 @@
       });
 
       state.dutyRoster[currentDate] = selectedNames;
+      state.dutyTypeRoster[currentDate] = currentDayTypes;
       localStorage.setItem('classroom_app_data', JSON.stringify(state));
 
       closeDutyPicker();

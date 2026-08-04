@@ -13,11 +13,11 @@
 
     /* ⭐ 超大字體與自動長高輸入框 */
     .text-5xl-custom {
-      font-size: 2.5rem !important; /* 超大字體 */
+      font-size: 2.5rem !important;
       line-height: 1.4 !important;
     }
     textarea.auto-expand {
-      min-height: 120px; /* 預設留約 1/3 空間 */
+      min-height: 120px;
       resize: vertical;
     }
   </style>
@@ -37,7 +37,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v1.9</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.0</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -57,10 +57,9 @@
           </button>
         </div>
 
-        <!-- ⭐ 提醒事項與當日值日生並排區塊 -->
+        <!-- 提醒事項與當日值日生並排區塊 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           
-          <!-- 當日行事曆事件 -->
           <div id="todayEventsBox" class="md:col-span-2 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden">
             <div class="font-bold flex items-center gap-2 mb-2 text-xl">
               <span>📌 當日行事曆事件：</span>
@@ -68,7 +67,6 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
-          <!-- ⭐ 新增：當日值日生安排欄位 -->
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950">
             <div class="flex items-center justify-between mb-2">
               <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
@@ -81,7 +79,7 @@
 
         </div>
 
-        <!-- ⭐ 聯絡事項輸入框（三分之一空間＋動態自適應長高） -->
+        <!-- 聯絡事項輸入框 -->
         <div class="mb-6">
           <label class="block font-bold text-gray-800 text-xl mb-2">聯絡事項與回家作業：</label>
           <textarea id="cbContent" oninput="autoExpandTextarea(this)" class="auto-expand w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-4 focus:ring-blue-400 outline-none text-5xl-custom font-bold text-gray-900" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
@@ -159,14 +157,15 @@
       </div>
     </section>
 
-    <!-- 分頁 4：榮譽點數與兌獎系統 -->
+    <!-- ⭐ 分頁 4：榮譽點數與兌獎系統 (改為加1,2,3分) -->
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
+        <!-- 左側：加分紀錄登錄區 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 加減分紀錄</h3>
+          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 加分紀錄</h3>
           
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">選擇學生：</label>
@@ -181,24 +180,24 @@
             
             <div class="flex flex-wrap gap-1.5 text-xs">
               <span class="text-gray-400 font-medium py-1">常用標籤：</span>
-              <button onclick="setPointReason('主動幫忙')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-1 rounded">主動幫忙</button>
-              <button onclick="setPointReason('作業優良')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-1 rounded">作業優良</button>
-              <button onclick="setPointReason('上課專心')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-1 rounded">上課專心</button>
-              <button onclick="setPointReason('未交作業')" class="bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 px-2 py-1 rounded">未交作業</button>
+              <button onclick="setPointReason('主動幫忙')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded">主動幫忙</button>
+              <button onclick="setPointReason('作業優良')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded">作業優良</button>
+              <button onclick="setPointReason('上課專心')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded">上課專心</button>
             </div>
           </div>
 
+          <!-- ⭐ 快捷加分按鈕 (+1, +2, +3 分) -->
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-2">快捷分數操作：</label>
-            <div class="flex flex-wrap gap-2">
-              <button onclick="applyPointChange(1)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition">+1 點</button>
-              <button onclick="applyPointChange(5)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition">+5 點</button>
-              <button onclick="applyPointChange(-1)" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition">-1 點</button>
-              <button onclick="applyPointChange(-5)" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm transition">-5 點</button>
+            <label class="block text-xs font-bold text-gray-600 mb-2">快捷加分操作：</label>
+            <div class="flex gap-3">
+              <button onclick="applyPointChange(1)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-base transition shadow">+1 分</button>
+              <button onclick="applyPointChange(2)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-base transition shadow">+2 分</button>
+              <button onclick="applyPointChange(3)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-base transition shadow">+3 分</button>
             </div>
           </div>
         </div>
 
+        <!-- 右側：兌獎設定區 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🎁 兌獎設定</h3>
           
@@ -218,6 +217,7 @@
 
       </div>
 
+      <!-- 下方：個人加分紀錄與兌獎紀錄區 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
@@ -272,7 +272,7 @@
 
   </main>
 
-  <!-- ⭐ 值日生選擇彈出視窗 Modal -->
+  <!-- 值日生選擇彈出視窗 Modal -->
   <div id="dutyModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
@@ -320,7 +320,6 @@
       }
     }
 
-    // ⭐ 聯絡簿輸入框自適應自動長高
     function autoExpandTextarea(el) {
       el.style.height = 'auto';
       el.style.height = (el.scrollHeight) + 'px';
@@ -386,7 +385,7 @@
       }
     }
 
-    // ----------------- ⭐ 當日值日生安排邏輯 -----------------
+    // ----------------- 當日值日生安排邏輯 -----------------
     function loadDutyStudents() {
       const currentDate = document.getElementById('cbDate').value;
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
@@ -692,7 +691,7 @@
       renderPointRoster();
     }
 
-    // ----------------- 榮譽點數邏輯 -----------------
+    // ----------------- ⭐ 榮譽點數邏輯 (純加分模式) -----------------
     function renderPointStudentOptions() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
@@ -717,10 +716,11 @@
       document.getElementById('pointReason').value = text;
     }
 
+    // 加分操作 (+1, +2, +3)
     function applyPointChange(amount) {
       const select = document.getElementById('pointStudentSelect');
       const studentId = select.value;
-      const reason = document.getElementById('pointReason').value.trim() || '日常表現';
+      const reason = document.getElementById('pointReason').value.trim() || '日常表現優良';
 
       if (!studentId) {
         alert('請先選擇學生！');
@@ -739,7 +739,7 @@
           studentId: student.id,
           date: new Date().toISOString().split('T')[0],
           studentName: `${student.seatNo} ${student.name}`,
-          change: amount > 0 ? `+${amount}` : `${amount}`,
+          change: `+${amount}`,
           reason: reason,
           type: 'change'
         });
@@ -768,7 +768,7 @@
       const logs = (state.pointLogs || []).filter(l => l.studentId === studentId && l.type === 'change');
 
       if (logs.length === 0) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">該位學生目前尚無加扣分紀錄。</p>';
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">該位學生目前尚無加分紀錄。</p>';
         return;
       }
 
@@ -778,7 +778,7 @@
             <span class="text-gray-400 mr-2 font-mono">${l.date}</span>
             <span class="text-gray-800 font-medium">${l.reason}</span>
           </div>
-          <span class="font-bold ${l.change.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}">${l.change} 點</span>
+          <span class="font-bold text-emerald-600">${l.change} 分</span>
         </div>
       `).join('');
     }
@@ -904,7 +904,7 @@
       grid.innerHTML = students.map(s => `
         <div class="p-2 bg-gray-50 border rounded flex justify-between items-center text-xs">
           <span class="font-medium text-gray-700">${s.seatNo} ${s.name}</span>
-          <span class="font-bold ${s.points >= 0 ? 'text-emerald-600' : 'text-rose-600'}">${s.points || 0} 點</span>
+          <span class="font-bold text-emerald-600">${s.points || 0} 點</span>
         </div>
       `).join('');
     }

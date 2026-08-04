@@ -6,37 +6,42 @@
   <title>班級經營工具包</title>
   <!-- 導入 Tailwind CSS 樣式庫 -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* 隱藏未選取的分頁 */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 flex">
 
   <!-- 左側導覽列 -->
-  <aside class="w-64 bg-slate-800 text-white min-h-screen p-4 flex flex-col justify-between">
+  <aside class="w-64 bg-slate-800 text-white min-h-screen p-4 flex flex-col justify-between shrink-0">
     <div>
       <h1 class="text-xl font-bold mb-6 flex items-center gap-2">🏫 班級工作台</h1>
-      <nav class="space-y-2">
-        <button onclick="switchTab('dashboard')" class="w-full text-left p-2 rounded hover:bg-slate-700">📊 今日概況</button>
-        <button onclick="switchTab('contactbook')" class="w-full text-left p-2 rounded bg-slate-700 font-bold">📖 每日聯絡簿</button>
-        <button onclick="switchTab('students')" class="w-full text-left p-2 rounded hover:bg-slate-700">👨‍🎓 學生名單</button>
-        <button onclick="switchTab('seating')" class="w-full text-left p-2 rounded hover:bg-slate-700">🪑 座位表</button>
-        <button onclick="switchTab('points')" class="w-full text-left p-2 rounded hover:bg-slate-700">🏆 榮譽點數</button>
+      <nav class="space-y-2" id="sidebar-nav">
+        <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
+        <button onclick="switchTab('students')" id="btn-students" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
+        <button onclick="switchTab('dashboard')" id="btn-dashboard" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📊 今日概況</button>
+        <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
+        <button onclick="switchTab('points')" id="btn-points" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400">專屬 iPad 營運模組</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v1.1</div>
   </aside>
 
   <!-- 主內容區 -->
   <main class="flex-1 p-6 overflow-y-auto">
     
-    <!-- 模組：每日聯絡簿 -->
-    <section id="contactbook-tab" class="space-y-6">
-      <h2 class="text-2xl font-bold border-b pb-2">📖 每日聯絡簿系統</h2>
+    <!-- 分頁 1：每日聯絡簿 -->
+    <section id="tab-contactbook" class="tab-content active space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📖 每日聯絡簿系統</h2>
       
       <!-- 編輯器卡片 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div class="flex flex-wrap gap-4 items-center mb-4">
           <label class="font-bold text-gray-700">日期選擇：</label>
-          <input type="date" id="cbDate" class="border rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" />
-          <button onclick="setTodayDate()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium">
+          <input type="date" id="cbDate" class="border rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
+          <button onclick="setTodayDate()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition">
             📅 套用今天日期
           </button>
         </div>
@@ -47,10 +52,10 @@
         </div>
 
         <div class="flex justify-between items-center">
-          <button onclick="insertTemplate()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">
+          <button onclick="insertTemplate()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition">
             📋 帶入預設範本
           </button>
-          <button onclick="saveContactBook()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow">
+          <button onclick="saveContactBook()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-bold shadow transition">
             💾 儲存今日聯絡簿
           </button>
         </div>
@@ -60,22 +65,96 @@
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">🗂️ 歷程紀錄選單</h3>
         <div id="cbHistoryList" class="divide-y divide-gray-100">
-          <p class="text-gray-400 text-sm">尚無歷史紀錄</p>
+          <p class="text-gray-400 text-sm">目前沒有歷史紀錄</p>
         </div>
+      </div>
+    </section>
+
+    <!-- 分頁 2：學生名單管理（全新升級功能） -->
+    <section id="tab-students" class="tab-content space-y-6">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-2xl font-bold text-slate-800">👨‍🎓 學生名單管理</h2>
+        <span id="studentCount" class="text-sm bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full">共 0 位學生</span>
+      </div>
+
+      <!-- 匯入工具卡片 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📥 快速批次匯入名單</h3>
+        <p class="text-xs text-gray-500">提示：可直接從 Excel/備忘錄複製貼上，每行一位學生（例如：`01 張小明` 或 `李小華`）。</p>
+        
+        <textarea id="batchStudentInput" rows="5" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="01 王小明&#10;02 李小華&#10;03 陳大天"></textarea>
+        
+        <div class="flex justify-between items-center">
+          <button onclick="clearStudents()" class="text-xs text-red-600 hover:underline">
+            🗑️ 清空所有學生
+          </button>
+          <button onclick="importBatchStudents()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow transition">
+            ✨ 解析並匯入名單
+          </button>
+        </div>
+      </div>
+
+      <!-- 學生卡片名冊 display 區 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 目前班級名冊</h3>
+        <div id="studentGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+          <p class="text-gray-400 text-sm col-span-full">尚未匯入學生資料，請在上方貼入名單並點擊匯入。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 分頁 3：今日概況 -->
+    <section id="tab-dashboard" class="tab-content space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📊 今日概況</h2>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <p class="text-gray-600">這裡可以查看今天的班務重點與待辦事項概況。</p>
+      </div>
+    </section>
+
+    <!-- 分頁 4：座位表 -->
+    <section id="tab-seating" class="tab-content space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🪑 座位表</h2>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <p class="text-gray-600">拖拉座位表模組建置中...</p>
+      </div>
+    </section>
+
+    <!-- 分頁 5：榮譽點數 -->
+    <section id="tab-points" class="tab-content space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數</h2>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <p class="text-gray-600">學生點數與兌獎模組建置中...</p>
       </div>
     </section>
 
   </main>
 
-  <!-- 邏輯腳本 -->
+  <!-- 核心 JS 邏輯 -->
   <script>
-    // 初始化頁面
     window.onload = function() {
       setTodayDate();
       renderHistoryList();
+      renderStudentGrid();
     };
 
-    // 套用今天日期
+    // 多分頁無縫切換邏輯
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-slate-700', 'font-bold');
+        btn.classList.add('hover:bg-slate-700');
+      });
+
+      const targetTab = document.getElementById('tab-' + tabId);
+      if (targetTab) targetTab.classList.add('active');
+
+      const targetBtn = document.getElementById('btn-' + tabId);
+      if (targetBtn) {
+        targetBtn.classList.add('bg-slate-700', 'font-bold');
+      }
+    }
+
+    // ----------------- 聯絡簿邏輯 -----------------
     function setTodayDate() {
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0];
@@ -91,14 +170,12 @@
       }
     }
 
-    // 帶入預設範本
     function insertTemplate() {
       const template = "1. 完成國語隨堂測驗本\n2. 帶彩色筆與剪刀\n3. 簽名聯絡簿與發回通知單";
       const textarea = document.getElementById('cbContent');
       textarea.value += "\n" + template;
     }
 
-    // 儲存至 localStorage
     function saveContactBook() {
       const date = document.getElementById('cbDate').value;
       const content = document.getElementById('cbContent').value;
@@ -125,7 +202,6 @@
       renderHistoryList();
     }
 
-    // 渲染歷史清單
     function renderHistoryList() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const listContainer = document.getElementById('cbHistoryList');
@@ -142,14 +218,13 @@
             <span class="font-bold text-blue-600 text-sm">${item.date}</span>
             <p class="text-xs text-gray-500 truncate max-w-md mt-0.5">${item.content.replace(/\n/g, ' ')}</p>
           </div>
-          <button onclick="loadRecord('${item.date}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded">
+          <button onclick="loadRecord('${item.date}')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded transition">
             🔍 查看/編輯
           </button>
         </div>
       `).join('');
     }
 
-    // 載入歷史紀錄
     function loadRecord(date) {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const record = (state.contactBooks || []).find(r => r.date === date);
@@ -159,9 +234,86 @@
       }
     }
 
-    // 切換分頁（預留選單切換效果）
-    function switchTab(tabName) {
-      alert('目前已選取：' + tabName + ' 模組');
+    // ----------------- 學生名單邏輯 -----------------
+    function importBatchStudents() {
+      const rawText = document.getElementById('batchStudentInput').value.trim();
+      if (!rawText) {
+        alert('請先在輸入框貼上學生名單！');
+        return;
+      }
+
+      const lines = rawText.split('\n');
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      if (!state.students) state.students = [];
+
+      let count = 0;
+      lines.forEach((line, index) => {
+        const trimmed = line.trim();
+        if (trimmed) {
+          // 自動解析座號與姓名（例如 "01 張小明" 拆解）
+          const parts = trimmed.split(/\s+/);
+          let seatNo = (state.students.length + 1).toString().padStart(2, '0');
+          let name = trimmed;
+
+          if (parts.length >= 2 && !isNaN(parts[0])) {
+            seatNo = parts[0].padStart(2, '0');
+            name = parts.slice(1).join(' ');
+          }
+
+          state.students.push({
+            id: 'stu_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            seatNo: seatNo,
+            name: name,
+            points: 0
+          });
+          count++;
+        }
+      });
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      document.getElementById('batchStudentInput').value = '';
+      alert(`🎉 成功匯入 ${count} 位學生！`);
+      renderStudentGrid();
+    }
+
+    function renderStudentGrid() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const students = state.students || [];
+      const grid = document.getElementById('studentGrid');
+      const countLabel = document.getElementById('studentCount');
+
+      countLabel.innerText = `共 ${students.length} 位學生`;
+
+      if (students.length === 0) {
+        grid.innerHTML = '<p class="text-gray-400 text-sm col-span-full">尚未匯入學生資料，請在上方貼入名單並點擊匯入。</p>';
+        return;
+      }
+
+      grid.innerHTML = students.map(stu => `
+        <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm hover:shadow transition">
+          <div>
+            <span class="text-xs font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded mr-1.5">${stu.seatNo}</span>
+            <span class="font-bold text-gray-800 text-sm">${stu.name}</span>
+          </div>
+          <button onclick="deleteStudent('${stu.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function deleteStudent(id) {
+      if (!confirm('確定要刪除這位學生嗎？')) return;
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      state.students = (state.students || []).filter(s => s.id !== id);
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      renderStudentGrid();
+    }
+
+    function clearStudents() {
+      if (!confirm('確定要清空所有學生資料嗎？（此動作無法復原）')) return;
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      state.students = [];
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      renderStudentGrid();
     }
   </script>
 </body>

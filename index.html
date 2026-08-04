@@ -30,6 +30,7 @@
       <h1 class="text-xl font-bold mb-6 flex items-center gap-2">🏫 班級工作台</h1>
       <nav class="space-y-2" id="sidebar-nav">
         <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
+        <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
@@ -37,7 +38,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.5</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v2.6</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -64,7 +65,6 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
-          <!-- ⭐ 當日值日生區塊 -->
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950">
             <div class="flex items-center justify-between mb-2">
               <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
@@ -99,7 +99,71 @@
       </div>
     </section>
 
-    <!-- 分頁 2：班級行事曆管理 -->
+    <!-- ⭐ 分頁 2：未完成工作清單模組 (全新打造) -->
+    <section id="tab-todo" class="tab-content space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📝 未完成工作清單追蹤</h2>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- 左側：發起新項目與登記未交學生 -->
+        <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 發起未完成作業/回條</h3>
+          
+          <!-- 快捷標籤選擇 -->
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">預設標籤快捷點選：</label>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <button onclick="setTodoTitle('視力檢查回條')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">視力檢查回條</button>
+              <button onclick="setTodoTitle('國作業')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">國作業</button>
+              <button onclick="setTodoTitle('數作業')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">數作業</button>
+              <button onclick="setTodoTitle('英作業')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">英作業</button>
+              <button onclick="setTodoTitle('社作業')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">社作業</button>
+              <button onclick="setTodoTitle('自作業')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">自作業</button>
+              <button onclick="setTodoTitle('音作業')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">音作業</button>
+              <button onclick="setTodoTitle('回條')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">回條</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">項目名稱：</label>
+            <input type="text" id="todoTitle" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold" placeholder="例如：數作業" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">備註說明：</label>
+            <input type="text" id="todoNote" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：第 5 頁、需簽名..." />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">繳交截止日期：</label>
+            <input type="date" id="todoDueDate" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 font-bold" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">勾選尚未繳交的學生：</label>
+            <div id="todoStudentCheckboxes" class="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto p-2 border rounded-lg bg-gray-50">
+              <p class="text-gray-400 text-xs col-span-full">請先至學生名單匯入學生。</p>
+            </div>
+          </div>
+
+          <button onclick="createTodoTask()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">
+            ✨ 建立未完成追蹤項目
+          </button>
+        </div>
+
+        <!-- 右側：追蹤項目卡片與補繳銷案管理 -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 追蹤中未完成項目</h3>
+
+          <div id="todoTasksContainer" class="space-y-4 max-h-[650px] overflow-y-auto pr-1">
+            <p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 分頁 3：班級行事曆管理 -->
     <section id="tab-calendar" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">📅 班級行事曆管理</h2>
@@ -126,7 +190,7 @@
       </div>
     </section>
 
-    <!-- 分頁 3：學生名單管理 -->
+    <!-- 分頁 4：學生名單管理 -->
     <section id="tab-students" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">👨‍🎓 學生名單管理</h2>
@@ -153,7 +217,7 @@
       </div>
     </section>
 
-    <!-- 分頁 4：榮譽點數 -->
+    <!-- 分頁 5：榮譽點數 -->
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
 
@@ -246,7 +310,7 @@
       </div>
     </section>
 
-    <!-- 分頁 5：請假遲到與統計管理 -->
+    <!-- 分頁 6：請假遲到與統計管理 -->
     <section id="tab-attendance" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">⏱️ 請假遲到管理與統計</h2>
 
@@ -302,7 +366,6 @@
 
       </div>
 
-      <!-- 全班學生請假狀況統計大表 -->
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📊 全班請假狀況統計大表</h3>
         
@@ -352,7 +415,7 @@
 
     </section>
 
-    <!-- 分頁 6：座位表 -->
+    <!-- 分頁 7：座位表 -->
     <section id="tab-seating" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🪑 座位表</h2>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
@@ -362,12 +425,11 @@
 
   </main>
 
-  <!-- ⭐ 值日生與遲到補做安排彈出視窗 Modal -->
+  <!-- 值日生與遲到補做安排彈出視窗 Modal -->
   <div id="dutyModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
       
-      <!-- ⭐ 遲到滿 5 次需補值日生清單 -->
       <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
         <span class="font-bold text-amber-900 text-sm flex items-center gap-1">⚠️ 遲到滿 5 次需補值日生清單：</span>
         <div id="penaltyDutyList" class="flex flex-wrap gap-1.5">
@@ -403,6 +465,7 @@
       renderRewardHistory();
 
       initAttendanceModule();
+      initTodoModule();
     };
 
     function switchTab(tabId) {
@@ -500,16 +563,14 @@
       }
     }
 
-    // ⭐ 遲到 5 次與值日生彈窗對接
     function openDutyPicker() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
       const attLogs = state.attendanceLogs || [];
-      const dutyClearedMap = state.dutyClearedMap || {}; // 記錄已抵銷的遲到次數
+      const dutyClearedMap = state.dutyClearedMap || {};
       const currentDate = document.getElementById('cbDate').value;
       const currentAssigned = (state.dutyRoster || {})[currentDate] || [];
 
-      // 1. 計算每位學生積欠的補值日生次數
       const penaltyStudents = [];
       students.forEach(s => {
         const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
@@ -526,7 +587,6 @@
         }
       });
 
-      // 2. 渲染遲到需補值日生清單
       const penaltyContainer = document.getElementById('penaltyDutyList');
       if (penaltyStudents.length === 0) {
         penaltyContainer.innerHTML = '<span class="text-gray-400 text-xs">目前沒有因遲到需補當值日生的學生 🎉</span>';
@@ -539,7 +599,6 @@
         `).join('');
       }
 
-      // 3. 渲染一般勾選清單
       const listContainer = document.getElementById('dutyStudentList');
       if (students.length === 0) {
         listContainer.innerHTML = '<p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>';
@@ -585,8 +644,6 @@
       if (!state.dutyClearedMap) state.dutyClearedMap = {};
 
       const previousAssigned = state.dutyRoster[currentDate] || [];
-
-      // 檢查是否有「新增」的遲到補值日生，有的話扣減其欠次
       const attLogs = state.attendanceLogs || [];
       const students = state.students || [];
 
@@ -597,7 +654,6 @@
             const lateCount = attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
             const clearedCount = state.dutyClearedMap[student.id] || 0;
             
-            // 如果該生確實有積欠，完成安排時清除 1 次欠次
             if (Math.floor(lateCount / 5) > clearedCount) {
               state.dutyClearedMap[student.id] = clearedCount + 1;
             }
@@ -680,6 +736,179 @@
         autoExpandTextarea(textarea);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
+    }
+
+    // ----------------- ⭐ 未完成工作清單邏輯 -----------------
+    function initTodoModule() {
+      document.getElementById('todoDueDate').value = new Date().toISOString().split('T')[0];
+      renderTodoStudentCheckboxes();
+      renderTodoTaskList();
+    }
+
+    function setTodoTitle(title) {
+      document.getElementById('todoTitle').value = title;
+    }
+
+    function renderTodoStudentCheckboxes() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const students = state.students || [];
+      const container = document.getElementById('todoStudentCheckboxes');
+
+      if (students.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-xs col-span-full">請先至「學生名單」匯入學生資料。</p>';
+        return;
+      }
+
+      container.innerHTML = students.map(s => `
+        <label class="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer hover:bg-white p-1 rounded">
+          <input type="checkbox" name="todoPendingStudent" value="${s.id}" class="w-3.5 h-3.5 text-indigo-600 rounded">
+          <span>${s.seatNo} ${s.name}</span>
+        </label>
+      `).join('');
+    }
+
+    function createTodoTask() {
+      const title = document.getElementById('todoTitle').value.trim();
+      const note = document.getElementById('todoNote').value.trim();
+      const dueDate = document.getElementById('todoDueDate').value;
+      const checkboxes = document.querySelectorAll('input[name="todoPendingStudent"]:checked');
+
+      if (!title || !dueDate) {
+        alert('請填寫項目名稱與截止日期！');
+        return;
+      }
+
+      if (checkboxes.length === 0) {
+        alert('請至少勾選一位尚未繳交的學生！');
+        return;
+      }
+
+      const pendingStudentIds = Array.from(checkboxes).map(cb => cb.value);
+
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      if (!state.todoTasks) state.todoTasks = [];
+
+      state.todoTasks.unshift({
+        id: 'todo_' + Date.now(),
+        title: title,
+        note: note,
+        dueDate: dueDate,
+        pendingStudentIds: pendingStudentIds,
+        createdAt: new Date().toISOString()
+      });
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      document.getElementById('todoTitle').value = '';
+      document.getElementById('todoNote').value = '';
+      renderTodoStudentCheckboxes();
+      renderTodoTaskList();
+      alert('✨ 已成功新增未完成追蹤項目！');
+    }
+
+    // 計算扣除請假後的逾期天數
+    function calculateOverdueDays(studentId, dueDateStr) {
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      
+      const due = new Date(dueDateStr);
+      due.setHours(0,0,0,0);
+
+      if (today <= due) return 0; // 尚未逾期
+
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const attLogs = state.attendanceLogs || [];
+
+      let overdueDays = 0;
+      let curr = new Date(due);
+      curr.setDate(curr.getDate() + 1); // 從截止日隔天開始算
+
+      while (curr <= today) {
+        const dateStr = curr.toISOString().split('T')[0];
+        // 檢查該學生當天是否有請假（病假、事假、公假、喪假）
+        const isAbsent = attLogs.some(l => 
+          l.studentId === studentId && 
+          l.date === dateStr && 
+          ['病假', '事假', '公假', '喪假'].includes(l.category)
+        );
+
+        if (!isAbsent) {
+          overdueDays++;
+        }
+        curr.setDate(curr.getDate() + 1);
+      }
+
+      return overdueDays;
+    }
+
+    function renderTodoTaskList() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const tasks = state.todoTasks || [];
+      const students = state.students || [];
+      const container = document.getElementById('todoTasksContainer');
+
+      if (tasks.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>';
+        return;
+      }
+
+      container.innerHTML = tasks.map(t => {
+        const pendingStudents = students.filter(s => t.pendingStudentIds.includes(s.id));
+
+        return `
+          <div class="p-4 bg-gray-50 border rounded-xl space-y-3 shadow-sm">
+            <div class="flex justify-between items-start border-b pb-2">
+              <div>
+                <span class="font-extrabold text-base text-indigo-900">${t.title}</span>
+                ${t.note ? `<span class="text-xs text-gray-500 ml-2 bg-gray-200 px-2 py-0.5 rounded">${t.note}</span>` : ''}
+                <div class="text-xs text-gray-400 font-mono mt-0.5">截止日期：${t.dueDate}</div>
+              </div>
+              <button onclick="deleteTodoTask('${t.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">刪除項目 ✕</button>
+            </div>
+
+            <div>
+              <span class="text-xs font-bold text-gray-600 mb-2 block">未繳交學生名單 (${pendingStudents.length} 人)：</span>
+              
+              ${pendingStudents.length === 0 ? '<p class="text-xs text-emerald-600 font-bold">全班已全數繳交完成！🎉</p>' : `
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  ${pendingStudents.map(s => {
+                    const overdueDays = calculateOverdueDays(s.id, t.dueDate);
+                    return `
+                      <div class="p-2 bg-white border rounded-lg flex items-center justify-between text-xs">
+                        <div>
+                          <span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>
+                          ${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天 (已扣除請假)</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}
+                        </div>
+                        <button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px]">
+                          ✅ 銷案
+                        </button>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function markStudentSubmitted(taskId, studentId) {
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const task = (state.todoTasks || []).find(t => t.id === taskId);
+
+      if (task) {
+        task.pendingStudentIds = task.pendingStudentIds.filter(id => id !== studentId);
+        localStorage.setItem('classroom_app_data', JSON.stringify(state));
+        renderTodoTaskList();
+      }
+    }
+
+    function deleteTodoTask(taskId) {
+      if (!confirm('確定要刪除這項未完成追蹤項目嗎？')) return;
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      state.todoTasks = (state.todoTasks || []).filter(t => t.id !== taskId);
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      renderTodoTaskList();
     }
 
     // ----------------- 班級行事曆邏輯 -----------------
@@ -810,6 +1039,7 @@
       renderPointRoster();
       renderAttendanceStudentOptions();
       renderClassAttendanceStats();
+      renderTodoStudentCheckboxes();
     }
 
     function renderStudentGrid() {
@@ -846,6 +1076,7 @@
       renderPointRoster();
       renderAttendanceStudentOptions();
       renderClassAttendanceStats();
+      renderTodoStudentCheckboxes();
     }
 
     function clearStudents() {
@@ -858,6 +1089,7 @@
       renderPointRoster();
       renderAttendanceStudentOptions();
       renderClassAttendanceStats();
+      renderTodoStudentCheckboxes();
     }
 
     // ----------------- 榮譽點數邏輯 -----------------
@@ -1161,6 +1393,7 @@
       renderAttendanceList();
       renderClassAttendanceStats();
       renderIndividualAttendanceStats();
+      if (typeof renderTodoTaskList === 'function') renderTodoTaskList();
     }
 
     function renderAttendanceList() {
@@ -1196,6 +1429,7 @@
       renderAttendanceList();
       renderClassAttendanceStats();
       renderIndividualAttendanceStats();
+      if (typeof renderTodoTaskList === 'function') renderTodoTaskList();
     }
 
     function renderClassAttendanceStats() {

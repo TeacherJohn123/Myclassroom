@@ -11,10 +11,14 @@
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
-    /* ⭐ 強制放大 5 倍字體樣式 */
+    /* ⭐ 超大字體與自動長高輸入框 */
     .text-5xl-custom {
-      font-size: 3rem !important; /* 約原本標準字體的 5 倍大 (48px) */
-      line-height: 1.4 !important; /* 確保換行不會卡住 */
+      font-size: 2.5rem !important; /* 超大字體 */
+      line-height: 1.4 !important;
+    }
+    textarea.auto-expand {
+      min-height: 120px; /* 預設留約 1/3 空間 */
+      resize: vertical;
     }
   </style>
 </head>
@@ -33,7 +37,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v1.8</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v1.9</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -44,6 +48,7 @@
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📖 每日聯絡簿系統</h2>
       
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <!-- 日期選擇 -->
         <div class="flex flex-wrap gap-4 items-center mb-6">
           <label class="font-bold text-gray-700 text-lg">日期選擇：</label>
           <input type="date" id="cbDate" onchange="onDateChange()" class="border rounded-lg p-2.5 text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
@@ -52,20 +57,34 @@
           </button>
         </div>
 
-        <!-- ⭐ 當日行事曆事件（字體放大 5 倍） -->
-        <div id="todayEventsBox" class="mb-6 p-6 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden">
-          <div class="font-bold flex items-center gap-2 mb-3 text-3xl">
-            <span>📌 當日行事曆事件：</span>
+        <!-- ⭐ 提醒事項與當日值日生並排區塊 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          
+          <!-- 當日行事曆事件 -->
+          <div id="todayEventsBox" class="md:col-span-2 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden">
+            <div class="font-bold flex items-center gap-2 mb-2 text-xl">
+              <span>📌 當日行事曆事件：</span>
+            </div>
+            <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
-          <!-- 加上超大字體 class -->
-          <ul id="todayEventsList" class="list-disc list-inside space-y-2 text-amber-900 font-extrabold text-5xl-custom"></ul>
+
+          <!-- ⭐ 新增：當日值日生安排欄位 -->
+          <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950">
+            <div class="flex items-center justify-between mb-2">
+              <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
+              <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition">⚙️ 安排</button>
+            </div>
+            <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900">
+              <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
+            </div>
+          </div>
+
         </div>
 
-        <!-- ⭐ 聯絡事項輸入框（字體放大 5 倍） -->
+        <!-- ⭐ 聯絡事項輸入框（三分之一空間＋動態自適應長高） -->
         <div class="mb-6">
-          <label class="block font-bold text-gray-800 text-xl mb-3">聯絡事項與回家作業：</label>
-          <!-- 加上 text-5xl-custom 樣式 -->
-          <textarea id="cbContent" rows="8" class="w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-4 focus:ring-blue-400 outline-none text-5xl-custom font-bold text-gray-900" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
+          <label class="block font-bold text-gray-800 text-xl mb-2">聯絡事項與回家作業：</label>
+          <textarea id="cbContent" oninput="autoExpandTextarea(this)" class="auto-expand w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-4 focus:ring-blue-400 outline-none text-5xl-custom font-bold text-gray-900" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
         </div>
 
         <div class="flex justify-between items-center pt-2">
@@ -146,7 +165,6 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- 左側：加減分紀錄登錄區 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 加減分紀錄</h3>
           
@@ -181,7 +199,6 @@
           </div>
         </div>
 
-        <!-- 右側：兌獎設定區 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🎁 兌獎設定</h3>
           
@@ -201,7 +218,6 @@
 
       </div>
 
-      <!-- 下方：查詢個人加分紀錄與兌獎紀錄區 -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
@@ -256,6 +272,23 @@
 
   </main>
 
+  <!-- ⭐ 值日生選擇彈出視窗 Modal -->
+  <div id="dutyModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
+      <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
+      <p class="text-xs text-gray-500">勾選 1~2 位學生作為該日值日生：</p>
+
+      <div id="dutyStudentList" class="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto p-1 border rounded-lg">
+        <p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeDutyPicker()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold">取消</button>
+        <button onclick="saveDutySelection()" class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold">儲存安排</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 核心 JS 邏輯 -->
   <script>
     window.onload = function() {
@@ -287,6 +320,12 @@
       }
     }
 
+    // ⭐ 聯絡簿輸入框自適應自動長高
+    function autoExpandTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = (el.scrollHeight) + 'px';
+    }
+
     // ----------------- 聯絡簿邏輯 -----------------
     function setTodayDate() {
       const today = new Date();
@@ -298,11 +337,13 @@
         updateHeaderDate();
       }
       checkTodayEvents();
+      loadDutyStudents();
     }
 
     function onDateChange() {
       updateHeaderDate();
       checkTodayEvents();
+      loadDutyStudents();
     }
 
     function updateHeaderDate() {
@@ -325,6 +366,7 @@
       } else {
         textarea.value = newHeader + '\n' + textarea.value;
       }
+      autoExpandTextarea(textarea);
     }
 
     function checkTodayEvents() {
@@ -344,10 +386,75 @@
       }
     }
 
+    // ----------------- ⭐ 當日值日生安排邏輯 -----------------
+    function loadDutyStudents() {
+      const currentDate = document.getElementById('cbDate').value;
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const dutyMap = state.dutyRoster || {};
+      const assignedNames = dutyMap[currentDate] || [];
+
+      const displayEl = document.getElementById('dutyStudentsDisplay');
+      if (assignedNames.length > 0) {
+        displayEl.innerHTML = assignedNames.map(name => `<span class="inline-block bg-sky-200 text-sky-900 px-3 py-1 rounded-lg mr-2 mb-1">${name}</span>`).join('');
+      } else {
+        displayEl.innerHTML = '<span class="text-gray-400 text-sm font-normal">未安排值日生</span>';
+      }
+    }
+
+    function openDutyPicker() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const students = state.students || [];
+      const currentDate = document.getElementById('cbDate').value;
+      const currentAssigned = (state.dutyRoster || {})[currentDate] || [];
+
+      const listContainer = document.getElementById('dutyStudentList');
+      if (students.length === 0) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>';
+      } else {
+        listContainer.innerHTML = students.map(s => {
+          const fullName = `${s.seatNo} ${s.name}`;
+          const isChecked = currentAssigned.includes(fullName) ? 'checked' : '';
+          return `
+            <label class="p-2 border rounded flex items-center gap-2 hover:bg-gray-50 cursor-pointer text-xs font-bold text-gray-700">
+              <input type="checkbox" name="dutyStudent" value="${fullName}" ${isChecked} class="w-4 h-4 text-sky-600 rounded">
+              <span>${fullName}</span>
+            </label>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('dutyModal').classList.remove('hidden');
+    }
+
+    function closeDutyPicker() {
+      document.getElementById('dutyModal').classList.add('hidden');
+    }
+
+    function saveDutySelection() {
+      const checkboxes = document.querySelectorAll('input[name="dutyStudent"]:checked');
+      if (checkboxes.length > 2) {
+        alert('最多只能選擇 2 位值日生！');
+        return;
+      }
+
+      const selectedNames = Array.from(checkboxes).map(cb => cb.value);
+      const currentDate = document.getElementById('cbDate').value;
+
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      if (!state.dutyRoster) state.dutyRoster = {};
+
+      state.dutyRoster[currentDate] = selectedNames;
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+
+      closeDutyPicker();
+      loadDutyStudents();
+    }
+
     function insertTemplate() {
       const template = "1. 國\n2. 數";
       const textarea = document.getElementById('cbContent');
       textarea.value += "\n" + template;
+      autoExpandTextarea(textarea);
     }
 
     function saveContactBook() {
@@ -404,8 +511,11 @@
       const record = (state.contactBooks || []).find(r => r.date === date);
       if (record) {
         document.getElementById('cbDate').value = record.date;
-        document.getElementById('cbContent').value = record.content;
+        const textarea = document.getElementById('cbContent');
+        textarea.value = record.content;
         checkTodayEvents();
+        loadDutyStudents();
+        autoExpandTextarea(textarea);
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }

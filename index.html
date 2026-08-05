@@ -51,7 +51,6 @@
       <nav class="space-y-2" id="sidebar-nav">
         <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
-        
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
@@ -59,7 +58,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.0</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.1</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -220,7 +219,7 @@
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單</h3>
+        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單（可各別修改或刪除）</h3>
         <div id="calendarList" class="divide-y divide-gray-100">
           <p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>
         </div>
@@ -253,6 +252,23 @@
     <!-- 分頁 5：榮譽點數 -->
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
+      
+      <!-- 🎫 點數兌換免罰當值日生專區 -->
+      <div class="bg-sky-50 border-2 border-sky-200 p-6 rounded-2xl shadow-sm space-y-3 interactive-control">
+        <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換免罰當值日生</h3>
+        <p class="text-xs text-sky-700">因遲到或行為不當被罰當值日生的學生，可使用累積點數（預設 15 點）兌換免罰一次！</p>
+        <div class="flex flex-wrap gap-3 items-center">
+          <select id="redeemStudentSelect" class="border rounded-lg p-2 text-sm bg-white font-medium outline-none flex-1 min-w-[200px]">
+            <option value="">-- 請選擇學生 --</option>
+          </select>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-gray-700">扣除點數：</span>
+            <input type="number" id="redeemCost" value="15" min="1" class="border rounded-lg p-2 text-sm bg-white font-bold w-20 text-center outline-none" />
+          </div>
+          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換免罰值日生</button>
+        </div>
+      </div>
+
       <div class="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 text-white p-6 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
         <div>
           <span class="text-xs font-bold text-indigo-200 tracking-wider uppercase">Class Honor Points</span>
@@ -557,7 +573,6 @@
 
   <!-- 核心 JS 邏輯 (已結合 Firebase 雲端同步) -->
   <script>
-    // ⭐ 你的 Firebase 雲端資料庫設定
     const firebaseConfig = {
       apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
       authDomain: "class-tools-49588.firebaseapp.com",
@@ -572,7 +587,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 記憶體中的全班資料狀態
     let appState = {};
     const isNoticeMode = new URLSearchParams(window.location.search).get('mode') === 'notice';
 
@@ -587,11 +601,9 @@
         }
       }
 
-      // 從 Firebase 即時載入雲端資料
       db.ref('classroom_data').on('value', (snapshot) => {
         appState = snapshot.val() || {};
         
-        // 資料更新後重新渲染畫面
         setTodayDate();
         renderHistoryList();
         renderStudentGrid();
@@ -607,7 +619,6 @@
       });
     };
 
-    // 儲存資料至 Firebase 雲端
     function saveStateToCloud() {
       db.ref('classroom_data').set(appState);
     }
@@ -1041,7 +1052,7 @@
       saveStateToCloud();
     }
 
-    // ----------------- 行事曆邏輯 -----------------
+    // ----------------- 行事曆邏輯 (支援各別修改與刪除) -----------------
     function importBatchCalendar() {
       const rawText = document.getElementById('batchCalendarInput').value.trim();
       if (!rawText) { alert('請填寫行事曆內容！'); return; }
@@ -1080,10 +1091,38 @@
 
       listContainer.innerHTML = events.map(evt => `
         <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
-          <div class="flex items-center gap-3"><span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span><span class="font-bold text-gray-800 text-sm">${evt.title}</span></div>
-          <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
+          <div class="flex items-center gap-3">
+            <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
+            <span class="font-bold text-gray-800 text-sm">${evt.title}</span>
+          </div>
+          <div class="flex items-center gap-2 interactive-control">
+            <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-2.5 py-1 rounded transition">✏️ 編輯</button>
+            <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+          </div>
         </div>
       `).join('');
+    }
+
+    function editCalendarEvent(id) {
+      const events = appState.calendarEvents || [];
+      const evt = events.find(e => e.id === id);
+      if (!evt) return;
+
+      const newDate = prompt("請修改事件日期 (YYYY-MM-DD)：", evt.date);
+      if (newDate === null) return;
+      const newTitle = prompt("請修改事件標題：", evt.title);
+      if (newTitle === null) return;
+
+      if (!newDate.trim() || !newTitle.trim()) {
+        alert('日期與標題不可空白！');
+        return;
+      }
+
+      evt.date = newDate.trim();
+      evt.title = newTitle.trim();
+      appState.calendarEvents.sort((a, b) => a.date.localeCompare(b.date));
+      saveStateToCloud();
+      alert('✅ 行程修改成功！');
     }
 
     function deleteCalendarEvent(id) {
@@ -1160,9 +1199,45 @@
       const students = appState.students || [];
       const select = document.getElementById('pointStudentSelect');
       const filterSelect = document.getElementById('filterStudentSelect');
+      const redeemSelect = document.getElementById('redeemStudentSelect');
+      
       const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : students.map(s => `<option value="${s.id}">${s.seatNo} / ${s.name} ｜ 當前：${s.points || 0} 點</option>`).join('');
+      
       select.innerHTML = optionsHTML;
       filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
+      if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
+    }
+
+    // 🎫 點數兌換免罰當值日生邏輯
+    function redeemDutyExemption() {
+      const studentId = document.getElementById('redeemStudentSelect').value;
+      const cost = parseInt(document.getElementById('redeemCost').value) || 15;
+      if (!studentId) { alert('請選擇要兌換的學生！'); return; }
+
+      const student = (appState.students || []).find(s => s.id === studentId);
+      if (!student) return;
+
+      const currentPoints = student.points || 0;
+      if (currentPoints < cost) {
+        alert(`❌ 該學生目前只有 ${currentPoints} 點，點數不足（需 ${cost} 點）！`);
+        return;
+      }
+
+      if (confirm(`確定要幫 ${student.name} 扣除 ${cost} 點，兌換免罰一次當值日生嗎？`)) {
+        student.points -= cost;
+        if (!appState.pointLogs) appState.pointLogs = [];
+        appState.pointLogs.unshift({
+          id: 'log_' + Date.now(),
+          studentId: student.id,
+          date: new Date().toISOString().split('T')[0],
+          studentName: `${student.seatNo} ${student.name}`,
+          change: `-${cost}`,
+          reason: '點數兌換免罰當值日生',
+          type: 'reward'
+        });
+        saveStateToCloud();
+        alert(`🎉 兌換成功！${student.name} 已成功免罰一次當值日生，目前剩餘點數：${student.points} 點。`);
+      }
     }
 
     function setPointReason(text) { document.getElementById('pointReason').value = text; }

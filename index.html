@@ -38,7 +38,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.2</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.3</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -252,7 +252,7 @@
       </div>
     </section>
 
-    <!-- ⭐ 分頁 5：榮譽點數 (全新升級全班總分與全班獎勵) -->
+    <!-- 分頁 5：榮譽點數 (全班總分獨立加減分) -->
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
 
@@ -307,13 +307,13 @@
             </div>
           </div>
 
-          <!-- 全班加減分 -->
+          <!-- ⭐ 全班加減分（僅調整全班總分，不影響學生個人分數） -->
           <div class="space-y-3">
-            <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">👨‍👩‍👧‍👦 全班共同加減分</h3>
+            <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">👨‍👩‍👧‍👦 全班快捷加/減分 (僅調整全班總分)</h3>
             
             <div>
               <label class="block text-xs font-bold text-gray-600 mb-1">全班加減分事由：</label>
-              <input type="text" id="classPointReason" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-1.5" placeholder="例如：整潔評比第一名、秩序佳..." />
+              <input type="text" id="classPointReason" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-1.5" placeholder="例如：整潔評比第一名、秩序待改進..." />
               
               <div class="flex flex-wrap gap-1.5 text-xs">
                 <span class="text-gray-400 font-medium py-1">常用：</span>
@@ -324,17 +324,17 @@
             </div>
 
             <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">全班快捷操作 (同步調整每位學生)：</label>
+              <label class="block text-xs font-bold text-gray-600 mb-1">全班快捷操作：</label>
               <div class="grid grid-cols-2 gap-2">
                 <div class="flex gap-1">
-                  <button onclick="applyClassPointChange(1)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">+1 分</button>
-                  <button onclick="applyClassPointChange(2)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">+2 分</button>
-                  <button onclick="applyClassPointChange(3)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">+3 分</button>
+                  <button onclick="applyClassPointChange(1)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">全班 +1 分</button>
+                  <button onclick="applyClassPointChange(2)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">全班 +2 分</button>
+                  <button onclick="applyClassPointChange(3)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">全班 +3 分</button>
                 </div>
                 <div class="flex gap-1">
-                  <button onclick="applyClassPointChange(-1)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">-1 分</button>
-                  <button onclick="applyClassPointChange(-2)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">-2 分</button>
-                  <button onclick="applyClassPointChange(-3)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">-3 分</button>
+                  <button onclick="applyClassPointChange(-1)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">全班 -1 分</button>
+                  <button onclick="applyClassPointChange(-2)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">全班 -2 分</button>
+                  <button onclick="applyClassPointChange(-3)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">全班 -3 分</button>
                 </div>
               </div>
             </div>
@@ -624,6 +624,7 @@
       renderRewardList();
       renderPointRoster();
       renderClassPointsDisplay();
+      renderClassPointHistory();
 
       initAttendanceModule();
       initTodoModule();
@@ -1423,7 +1424,7 @@
       renderTodoFilterStudentOptions();
     }
 
-    // ----------------- ⭐ 榮譽點數邏輯 (包含全班總分與全班加減分) -----------------
+    // ----------------- 榮譽點數邏輯 -----------------
     function renderClassPointsDisplay() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const total = state.classTotalPoints || 0;
@@ -1495,26 +1496,15 @@
       }
     }
 
-    // ⭐ 全班加減分邏輯
+    // ⭐ 全班加減分邏輯（僅調整全班累積分數，不扣學生個人分數）
     function applyClassPointChange(amount) {
       const reason = document.getElementById('classPointReason').value.trim() || (amount > 0 ? '全班表現優良' : '全班常規待加強');
       let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
-
-      if (students.length === 0) {
-        alert('請先至「學生名單」匯入學生！');
-        return;
-      }
 
       // 1. 調整全班累積分數
       state.classTotalPoints = (state.classTotalPoints || 0) + amount;
 
-      // 2. 同步調整每位學生的個人分數
-      students.forEach(s => {
-        s.points = Math.max(0, (s.points || 0) + amount);
-      });
-
-      // 3. 寫入全班歷程
+      // 2. 寫入全班歷程
       if (!state.classPointLogs) state.classPointLogs = [];
       state.classPointLogs.unshift({
         id: 'clog_' + Date.now(),
@@ -1528,10 +1518,8 @@
 
       document.getElementById('classPointReason').value = '';
       renderClassPointsDisplay();
-      renderPointStudentOptions();
-      renderPointRoster();
       renderClassPointHistory();
-      alert(`✅ 已成功調整全班分數 (${amount > 0 ? '+' : ''}${amount} 分)！`);
+      alert(`✅ 已成功調整全班總分 (${amount > 0 ? '+' : ''}${amount} 分)！`);
     }
 
     function switchRewardTab(type) {
@@ -1604,7 +1592,6 @@
     function renderRewardList() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       
-      // 1. 個人獎品渲染
       const indRewards = state.rewards || [];
       const indContainer = document.getElementById('rewardListIndividual');
 
@@ -1625,7 +1612,6 @@
         `).join('');
       }
 
-      // 2. 全班獎品渲染
       const classRewards = state.classRewards || [];
       const classContainer = document.getElementById('rewardListClass');
 
@@ -1695,7 +1681,6 @@
       renderPointRoster();
     }
 
-    // ⭐ 全班獎勵兌補與扣分邏輯
     function claimClassReward(rewardId) {
       let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const reward = (state.classRewards || []).find(r => r.id === rewardId);

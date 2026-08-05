@@ -38,7 +38,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.1</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.2</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -65,7 +65,6 @@
             <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
-          <!-- 當日值日生顯示區塊 (支援橘色/紅色顏色標籤) -->
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
@@ -253,68 +252,149 @@
       </div>
     </section>
 
-    <!-- 分頁 5：榮譽點數 -->
+    <!-- ⭐ 分頁 5：榮譽點數 (全新升級全班總分與全班獎勵) -->
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 加分紀錄</h3>
-          
-          <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1">選擇學生：</label>
-            <select id="pointStudentSelect" class="w-full border rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
-              <option value="">-- 請先新增/匯入學生 --</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1">事由 / 原因：</label>
-            <input type="text" id="pointReason" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-2" placeholder="例如：主動幫忙、作業完成佳..." />
-            
-            <div class="flex flex-wrap gap-1.5 text-xs">
-              <span class="text-gray-400 font-medium py-1">常用標籤：</span>
-              <button onclick="setPointReason('主動幫忙')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded">主動幫忙</button>
-              <button onclick="setPointReason('作業優良')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded">作業優良</button>
-              <button onclick="setPointReason('上課專心')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded">上課專心</button>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-xs font-bold text-gray-600 mb-2">快捷加分操作：</label>
-            <div class="flex gap-3">
-              <button onclick="applyPointChange(1)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-base transition shadow">+1 分</button>
-              <button onclick="applyPointChange(2)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-base transition shadow">+2 分</button>
-              <button onclick="applyPointChange(3)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-base transition shadow">+3 分</button>
-            </div>
-          </div>
+      <!-- 頂部：全班累積分數展示大卡片 -->
+      <div class="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 text-white p-6 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <span class="text-xs font-bold text-indigo-200 tracking-wider uppercase">Class Honor Points</span>
+          <h3 class="text-2xl font-extrabold flex items-center gap-2 mt-0.5">🌟 全班榮譽累積分數</h3>
+          <p class="text-xs text-indigo-300 mt-1">累積全班努力表現，可解鎖全班專屬獎勵！</p>
         </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🎁 兌獎設定</h3>
-          
-          <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
-            <div class="grid grid-cols-3 gap-2">
-              <input type="text" id="rewardName" class="border rounded p-1.5 text-xs outline-none col-span-1" placeholder="獎品名稱" />
-              <input type="number" id="rewardCost" class="border rounded p-1.5 text-xs outline-none col-span-1" placeholder="需要點數" />
-              <input type="number" id="rewardStock" class="border rounded p-1.5 text-xs outline-none col-span-1" placeholder="庫存數量" />
-            </div>
-            <button onclick="addRewardItem()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 rounded transition">➕ 新增獎品品項</button>
-          </div>
-
-          <div id="rewardList" class="space-y-2">
-            <p class="text-gray-400 text-sm">尚無獎品品項。</p>
-          </div>
+        <div class="bg-white/10 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20 text-center shrink-0">
+          <span class="text-xs text-indigo-200 font-bold block">當前全班總分</span>
+          <span id="classTotalPointsDisplay" class="text-4xl font-black text-amber-300">0 <span class="text-sm font-bold text-white">分</span></span>
         </div>
-
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
+        <!-- 左側：個人加分與全班加減分 -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-5">
+          
+          <!-- 個人加分 -->
+          <div class="space-y-3 pb-4 border-b">
+            <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">👤 個人加分紀錄</h3>
+            
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">選擇學生：</label>
+              <select id="pointStudentSelect" class="w-full border rounded-lg p-2 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50">
+                <option value="">-- 請先新增/匯入學生 --</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">事由 / 原因：</label>
+              <input type="text" id="pointReason" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-1.5" placeholder="例如：主動幫忙、作業完成佳..." />
+              
+              <div class="flex flex-wrap gap-1.5 text-xs">
+                <span class="text-gray-400 font-medium py-1">常用：</span>
+                <button onclick="setPointReason('主動幫忙')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">主動幫忙</button>
+                <button onclick="setPointReason('作業優良')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">作業優良</button>
+                <button onclick="setPointReason('上課專心')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">上課專心</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">個人加分操作：</label>
+              <div class="flex gap-2">
+                <button onclick="applyPointChange(1)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition shadow">+1 分</button>
+                <button onclick="applyPointChange(2)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition shadow">+2 分</button>
+                <button onclick="applyPointChange(3)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition shadow">+3 分</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 全班加減分 -->
+          <div class="space-y-3">
+            <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">👨‍👩‍👧‍👦 全班共同加減分</h3>
+            
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">全班加減分事由：</label>
+              <input type="text" id="classPointReason" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-1.5" placeholder="例如：整潔評比第一名、秩序佳..." />
+              
+              <div class="flex flex-wrap gap-1.5 text-xs">
+                <span class="text-gray-400 font-medium py-1">常用：</span>
+                <button onclick="setClassPointReason('整潔優良')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-0.5 rounded">整潔優良</button>
+                <button onclick="setClassPointReason('秩序優良')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-0.5 rounded">秩序優良</button>
+                <button onclick="setClassPointReason('團體競賽得獎')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-0.5 rounded">團體競賽得獎</button>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">全班快捷操作 (同步調整每位學生)：</label>
+              <div class="grid grid-cols-2 gap-2">
+                <div class="flex gap-1">
+                  <button onclick="applyClassPointChange(1)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">+1 分</button>
+                  <button onclick="applyClassPointChange(2)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">+2 分</button>
+                  <button onclick="applyClassPointChange(3)" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-xs transition">+3 分</button>
+                </div>
+                <div class="flex gap-1">
+                  <button onclick="applyClassPointChange(-1)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">-1 分</button>
+                  <button onclick="applyClassPointChange(-2)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">-2 分</button>
+                  <button onclick="applyClassPointChange(-3)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition">-3 分</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 右側：兌獎設定 (切換個人獎品 / 全班獎品) -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="font-bold text-lg text-gray-800">🎁 兌獎設定與兌換</h3>
+            <div class="flex gap-1 bg-gray-100 p-1 rounded-lg text-xs font-bold">
+              <button onclick="switchRewardTab('individual')" id="tabBtnRewInd" class="px-3 py-1 rounded-md bg-white shadow-sm text-indigo-600">個人獎品</button>
+              <button onclick="switchRewardTab('class')" id="tabBtnRewClass" class="px-3 py-1 rounded-md text-gray-500 hover:text-gray-800">全班獎品</button>
+            </div>
+          </div>
+
+          <!-- 個人獎品區 -->
+          <div id="rewardTabIndividual" class="space-y-4">
+            <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 space-y-2">
+              <span class="text-xs font-bold text-gray-700 block">➕ 新增個人獎品：</span>
+              <div class="grid grid-cols-3 gap-2">
+                <input type="text" id="rewardName" class="border rounded p-1.5 text-xs outline-none col-span-1" placeholder="獎品名稱" />
+                <input type="number" id="rewardCost" class="border rounded p-1.5 text-xs outline-none col-span-1" placeholder="需要點數" />
+                <input type="number" id="rewardStock" class="border rounded p-1.5 text-xs outline-none col-span-1" placeholder="庫存數量" />
+              </div>
+              <button onclick="addRewardItem('individual')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold py-1.5 rounded transition">➕ 新增個人品項</button>
+            </div>
+
+            <div id="rewardListIndividual" class="space-y-2 max-h-52 overflow-y-auto">
+              <p class="text-gray-400 text-sm">尚無個人獎品品項。</p>
+            </div>
+          </div>
+
+          <!-- 全班獎品區 -->
+          <div id="rewardTabClass" class="space-y-4 hidden">
+            <div class="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 space-y-2">
+              <span class="text-xs font-bold text-indigo-900 block">➕ 新增全班獎品（如：同樂會、看電影）：</span>
+              <div class="grid grid-cols-3 gap-2">
+                <input type="text" id="classRewardName" class="border rounded p-1.5 text-xs outline-none col-span-2" placeholder="全班獎勵名稱" />
+                <input type="number" id="classRewardCost" class="border rounded p-1.5 text-xs outline-none col-span-1" placeholder="需要總分" />
+              </div>
+              <button onclick="addRewardItem('class')" class="w-full bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold py-1.5 rounded transition">➕ 新增全班獎勵</button>
+            </div>
+
+            <div id="rewardListClass" class="space-y-2 max-h-52 overflow-y-auto">
+              <p class="text-gray-400 text-sm">尚無全班獎勵品項。</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- 下方：查詢歷程與名冊 -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
           <div class="flex items-center justify-between">
-            <h3 class="font-bold text-lg text-gray-800">🔍 加分紀錄查詢</h3>
+            <h3 class="font-bold text-lg text-gray-800">🔍 個人加分紀錄查詢</h3>
           </div>
           
           <div>
@@ -324,22 +404,23 @@
             </select>
           </div>
 
-          <div id="individualHistoryList" class="divide-y divide-gray-100 max-h-52 overflow-y-auto pr-1">
+          <div id="individualHistoryList" class="divide-y divide-gray-100 max-h-48 overflow-y-auto pr-1">
             <p class="text-gray-400 text-sm py-2">請從上方選取學生查詢加分紀錄。</p>
           </div>
         </div>
 
+        <!-- 全班加分與兌獎歷程 -->
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
-          <h3 class="font-bold text-lg text-gray-800">📜 兌獎紀錄</h3>
-          <div id="rewardClaimHistoryList" class="divide-y divide-gray-100 max-h-60 overflow-y-auto pr-1">
-            <p class="text-gray-400 text-sm py-2">目前沒有兌獎歷程。</p>
+          <h3 class="font-bold text-lg text-gray-800">📜 全班積分與兌獎歷程</h3>
+          <div id="classPointHistoryList" class="divide-y divide-gray-100 max-h-56 overflow-y-auto pr-1">
+            <p class="text-gray-400 text-sm py-2">目前尚無全班歷程。</p>
           </div>
         </div>
 
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 class="font-bold text-lg mb-4 text-gray-800">📊 學生目前累積點數</h3>
+        <h3 class="font-bold text-lg mb-4 text-gray-800">📊 學生目前個人累積點數</h3>
         <div id="pointRosterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
           <p class="text-gray-400 text-sm col-span-full">尚未建立學生資料。</p>
         </div>
@@ -542,7 +623,7 @@
       renderPointStudentOptions();
       renderRewardList();
       renderPointRoster();
-      renderRewardHistory();
+      renderClassPointsDisplay();
 
       initAttendanceModule();
       initTodoModule();
@@ -629,12 +710,11 @@
       }
     }
 
-    // ⭐ 當日值日生主畫面渲染（支援橘色/紅色顏色呈現）
     function loadDutyStudents() {
       const currentDate = document.getElementById('cbDate').value;
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const dutyMap = state.dutyRoster || {};
-      const dutyTypeMap = state.dutyTypeRoster || {}; // 紀錄當天該生的值日生屬性 (late / beh / normal)
+      const dutyTypeMap = state.dutyTypeRoster || {};
       const assignedNames = dutyMap[currentDate] || [];
 
       const displayEl = document.getElementById('dutyStudentsDisplay');
@@ -645,11 +725,11 @@
         displayEl.innerHTML = assignedNames.map(name => {
           const type = dateTypes[name] || 'normal';
           
-          if (type === 'late') { // ⏰ 遲到補做：橘色
+          if (type === 'late') {
             return `<span class="inline-block bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-lg text-xl font-bold">⏰ ${name}</span>`;
-          } else if (type === 'beh') { // 🚨 行為不當：紅色
+          } else if (type === 'beh') {
             return `<span class="inline-block bg-rose-100 text-rose-950 border border-rose-300 px-3 py-1 rounded-lg text-xl font-bold">🚨 ${name}</span>`;
-          } else { // 🧹 一般值日生：天藍色
+          } else {
             return `<span class="inline-block bg-sky-200 text-sky-950 px-3 py-1 rounded-lg text-xl font-bold">${name}</span>`;
           }
         }).join('');
@@ -783,7 +863,6 @@
       document.getElementById('dutyModal').classList.add('hidden');
     }
 
-    // ⭐ 儲存值日生時判斷並上記顏色屬性 (late / beh / normal)
     function saveDutySelection() {
       const checkboxes = document.querySelectorAll('input[name="dutyStudent"]:checked');
       if (checkboxes.length > 2) {
@@ -817,16 +896,14 @@
           let remainingCleared = Math.max(0, clearedCount - lateDays);
           let pendingBehDays = Math.max(0, behDays - remainingCleared);
 
-          // 判斷該生的值日生屬性 (供首頁標籤配色)
           if (pendingLateDays > 0) {
-            currentDayTypes[fullName] = 'late'; // 遲到補做（橘色）
+            currentDayTypes[fullName] = 'late';
           } else if (pendingBehDays > 0) {
-            currentDayTypes[fullName] = 'beh'; // 行為不當（紅色）
+            currentDayTypes[fullName] = 'beh';
           } else {
-            currentDayTypes[fullName] = 'normal'; // 一般值日生（藍色）
+            currentDayTypes[fullName] = 'normal';
           }
 
-          // 抵銷邏輯（若為新指派）
           if (!previousAssigned.includes(fullName)) {
             if ((lateDays + behDays) > clearedCount) {
               state.dutyClearedMap[student.id] = clearedCount + 1;
@@ -1346,7 +1423,13 @@
       renderTodoFilterStudentOptions();
     }
 
-    // ----------------- 榮譽點數邏輯 -----------------
+    // ----------------- ⭐ 榮譽點數邏輯 (包含全班總分與全班加減分) -----------------
+    function renderClassPointsDisplay() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const total = state.classTotalPoints || 0;
+      document.getElementById('classTotalPointsDisplay').innerHTML = `${total} <span class="text-sm font-bold text-white">分</span>`;
+    }
+
     function renderPointStudentOptions() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const students = state.students || [];
@@ -1369,6 +1452,10 @@
 
     function setPointReason(text) {
       document.getElementById('pointReason').value = text;
+    }
+
+    function setClassPointReason(text) {
+      document.getElementById('classPointReason').value = text;
     }
 
     function applyPointChange(amount) {
@@ -1408,84 +1495,156 @@
       }
     }
 
-    function renderIndividualPointHistory() {
-      const filterSelect = document.getElementById('filterStudentSelect');
-      const studentId = filterSelect.value;
-      const listContainer = document.getElementById('individualHistoryList');
-
-      if (!studentId) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">請從上方選取學生查詢加分紀錄。</p>';
-        return;
-      }
-
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const logs = (state.pointLogs || []).filter(l => l.studentId === studentId && l.type === 'change');
-
-      if (logs.length === 0) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">該位學生目前尚無加分紀錄。</p>';
-        return;
-      }
-
-      listContainer.innerHTML = logs.map(l => `
-        <div class="py-2 flex justify-between items-center text-xs">
-          <div>
-            <span class="text-gray-400 mr-2 font-mono">${l.date}</span>
-            <span class="text-gray-800 font-medium">${l.reason}</span>
-          </div>
-          <span class="font-bold text-emerald-600">${l.change} 分</span>
-        </div>
-      `).join('');
-    }
-
-    function addRewardItem() {
-      const name = document.getElementById('rewardName').value.trim();
-      const cost = parseInt(document.getElementById('rewardCost').value);
-      const stock = parseInt(document.getElementById('rewardStock').value);
-
-      if (!name || isNaN(cost) || cost <= 0) {
-        alert('請填寫有效的獎品名稱與需要點數！');
-        return;
-      }
-
+    // ⭐ 全班加減分邏輯
+    function applyClassPointChange(amount) {
+      const reason = document.getElementById('classPointReason').value.trim() || (amount > 0 ? '全班表現優良' : '全班常規待加強');
       let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      if (!state.rewards) state.rewards = [];
+      const students = state.students || [];
 
-      state.rewards.push({
-        id: 'rew_' + Date.now(),
-        name: name,
-        cost: cost,
-        stock: isNaN(stock) ? null : stock
+      if (students.length === 0) {
+        alert('請先至「學生名單」匯入學生！');
+        return;
+      }
+
+      // 1. 調整全班累積分數
+      state.classTotalPoints = (state.classTotalPoints || 0) + amount;
+
+      // 2. 同步調整每位學生的個人分數
+      students.forEach(s => {
+        s.points = Math.max(0, (s.points || 0) + amount);
+      });
+
+      // 3. 寫入全班歷程
+      if (!state.classPointLogs) state.classPointLogs = [];
+      state.classPointLogs.unshift({
+        id: 'clog_' + Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        change: amount > 0 ? `+${amount}` : `${amount}`,
+        reason: reason,
+        type: 'change'
       });
 
       localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      document.getElementById('rewardName').value = '';
-      document.getElementById('rewardCost').value = '';
-      document.getElementById('rewardStock').value = '';
+
+      document.getElementById('classPointReason').value = '';
+      renderClassPointsDisplay();
+      renderPointStudentOptions();
+      renderPointRoster();
+      renderClassPointHistory();
+      alert(`✅ 已成功調整全班分數 (${amount > 0 ? '+' : ''}${amount} 分)！`);
+    }
+
+    function switchRewardTab(type) {
+      const btnInd = document.getElementById('tabBtnRewInd');
+      const btnClass = document.getElementById('tabBtnRewClass');
+      const tabInd = document.getElementById('rewardTabIndividual');
+      const tabClass = document.getElementById('rewardTabClass');
+
+      if (type === 'individual') {
+        btnInd.className = "px-3 py-1 rounded-md bg-white shadow-sm text-indigo-600 font-bold";
+        btnClass.className = "px-3 py-1 rounded-md text-gray-500 hover:text-gray-800";
+        tabInd.classList.remove('hidden');
+        tabClass.classList.add('hidden');
+      } else {
+        btnClass.className = "px-3 py-1 rounded-md bg-white shadow-sm text-indigo-600 font-bold";
+        btnInd.className = "px-3 py-1 rounded-md text-gray-500 hover:text-gray-800";
+        tabClass.classList.remove('hidden');
+        tabInd.classList.add('hidden');
+      }
+    }
+
+    function addRewardItem(target) {
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+
+      if (target === 'individual') {
+        const name = document.getElementById('rewardName').value.trim();
+        const cost = parseInt(document.getElementById('rewardCost').value);
+        const stock = parseInt(document.getElementById('rewardStock').value);
+
+        if (!name || isNaN(cost) || cost <= 0) {
+          alert('請填寫有效的個人獎品名稱與需要點數！');
+          return;
+        }
+
+        if (!state.rewards) state.rewards = [];
+        state.rewards.push({
+          id: 'rew_' + Date.now(),
+          name: name,
+          cost: cost,
+          stock: isNaN(stock) ? null : stock
+        });
+
+        document.getElementById('rewardName').value = '';
+        document.getElementById('rewardCost').value = '';
+        document.getElementById('rewardStock').value = '';
+      } else {
+        const name = document.getElementById('classRewardName').value.trim();
+        const cost = parseInt(document.getElementById('classRewardCost').value);
+
+        if (!name || isNaN(cost) || cost <= 0) {
+          alert('請填寫有效的全班獎勵名稱與需要總分！');
+          return;
+        }
+
+        if (!state.classRewards) state.classRewards = [];
+        state.classRewards.push({
+          id: 'crew_' + Date.now(),
+          name: name,
+          cost: cost
+        });
+
+        document.getElementById('classRewardName').value = '';
+        document.getElementById('classRewardCost').value = '';
+      }
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
       renderRewardList();
     }
 
     function renderRewardList() {
       const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const rewards = state.rewards || [];
-      const list = document.getElementById('rewardList');
+      
+      // 1. 個人獎品渲染
+      const indRewards = state.rewards || [];
+      const indContainer = document.getElementById('rewardListIndividual');
 
-      if (rewards.length === 0) {
-        list.innerHTML = '<p class="text-gray-400 text-sm">尚無獎品品項，請在上區新增。</p>';
-        return;
+      if (indRewards.length === 0) {
+        indContainer.innerHTML = '<p class="text-gray-400 text-xs py-2">尚無個人獎品品項。</p>';
+      } else {
+        indContainer.innerHTML = indRewards.map(r => `
+          <div class="p-2.5 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-gray-800">${r.name}</span>
+              <div class="text-[11px] text-gray-500">需要：<span class="font-bold text-indigo-600">${r.cost}</span> 點 ｜ 庫存：${r.stock !== null ? r.stock : '無限'}</div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="claimReward('${r.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎁 兌獎</button>
+              <button onclick="deleteReward('${r.id}', 'individual')" class="text-gray-400 hover:text-red-500 p-1">✕</button>
+            </div>
+          </div>
+        `).join('');
       }
 
-      list.innerHTML = rewards.map(r => `
-        <div class="p-3 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-center justify-between">
-          <div>
-            <span class="font-bold text-gray-800 text-sm">${r.name}</span>
-            <div class="text-xs text-gray-500">需要：<span class="font-bold text-indigo-600">${r.cost}</span> 點 ｜ 庫存：${r.stock !== null ? r.stock : '無限'}</div>
+      // 2. 全班獎品渲染
+      const classRewards = state.classRewards || [];
+      const classContainer = document.getElementById('rewardListClass');
+
+      if (classRewards.length === 0) {
+        classContainer.innerHTML = '<p class="text-gray-400 text-xs py-2">尚無全班獎勵品項。</p>';
+      } else {
+        classContainer.innerHTML = classRewards.map(r => `
+          <div class="p-2.5 bg-amber-50/60 rounded-lg border border-amber-100 flex items-center justify-between text-xs">
+            <div>
+              <span class="font-bold text-gray-800">${r.name}</span>
+              <div class="text-[11px] text-gray-500">需要全班總分：<span class="font-bold text-amber-700">${r.cost}</span> 分</div>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="claimClassReward('${r.id}')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎉 兌換全班獎勵</button>
+              <button onclick="deleteReward('${r.id}', 'class')" class="text-gray-400 hover:text-red-500 p-1">✕</button>
+            </div>
           </div>
-          <div class="flex items-center gap-1.5">
-            <button onclick="claimReward('${r.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-3 py-1.5 rounded transition">🎁 兌獎</button>
-            <button onclick="deleteReward('${r.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
-          </div>
-        </div>
-      `).join('');
+        `).join('');
+      }
     }
 
     function claimReward(rewardId) {
@@ -1534,13 +1693,51 @@
       select.value = studentId;
       renderRewardList();
       renderPointRoster();
-      renderRewardHistory();
     }
 
-    function deleteReward(id) {
+    // ⭐ 全班獎勵兌補與扣分邏輯
+    function claimClassReward(rewardId) {
+      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const reward = (state.classRewards || []).find(r => r.id === rewardId);
+      const currentPoints = state.classTotalPoints || 0;
+
+      if (!reward) return;
+
+      if (currentPoints < reward.cost) {
+        alert(`❌ 全班累積分數不足！當前全班總分：${currentPoints} 分，兌換「${reward.name}」需要 ${reward.cost} 分。`);
+        return;
+      }
+
+      if (!confirm(`確定要消耗 ${reward.cost} 分全班積分為全班兌換「${reward.name}」嗎？`)) return;
+
+      state.classTotalPoints -= reward.cost;
+
+      if (!state.classPointLogs) state.classPointLogs = [];
+      state.classPointLogs.unshift({
+        id: 'clog_' + Date.now(),
+        date: new Date().toISOString().split('T')[0],
+        change: `-${reward.cost}`,
+        reason: `兌換全班獎勵：${reward.name}`,
+        type: 'reward'
+      });
+
+      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      alert(`🎉 恭喜全班成功兌換「${reward.name}」！已扣除 ${reward.cost} 分全班總分。`);
+
+      renderClassPointsDisplay();
+      renderClassPointHistory();
+    }
+
+    function deleteReward(id, target) {
       if (!confirm('確定要刪除這項獎品嗎？')) return;
       let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      state.rewards = (state.rewards || []).filter(r => r.id !== id);
+
+      if (target === 'individual') {
+        state.rewards = (state.rewards || []).filter(r => r.id !== id);
+      } else {
+        state.classRewards = (state.classRewards || []).filter(r => r.id !== id);
+      }
+
       localStorage.setItem('classroom_app_data', JSON.stringify(state));
       renderRewardList();
     }
@@ -1563,24 +1760,52 @@
       `).join('');
     }
 
-    function renderRewardHistory() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const rewardLogs = (state.pointLogs || []).filter(l => l.type === 'reward');
-      const list = document.getElementById('rewardClaimHistoryList');
+    function renderIndividualPointHistory() {
+      const filterSelect = document.getElementById('filterStudentSelect');
+      const studentId = filterSelect.value;
+      const listContainer = document.getElementById('individualHistoryList');
 
-      if (rewardLogs.length === 0) {
-        list.innerHTML = '<p class="text-gray-400 text-sm py-2">目前沒有兌獎歷程。</p>';
+      if (!studentId) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">請從上方選取學生查詢加分紀錄。</p>';
         return;
       }
 
-      list.innerHTML = rewardLogs.map(l => `
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const logs = (state.pointLogs || []).filter(l => l.studentId === studentId);
+
+      if (logs.length === 0) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">該位學生目前尚無紀錄。</p>';
+        return;
+      }
+
+      listContainer.innerHTML = logs.map(l => `
         <div class="py-2 flex justify-between items-center text-xs">
           <div>
             <span class="text-gray-400 mr-2 font-mono">${l.date}</span>
-            <span class="font-bold text-gray-800 mr-2">${l.studentName}</span>
-            <span class="text-indigo-600 font-medium">${l.reason}</span>
+            <span class="text-gray-800 font-medium">${l.reason}</span>
           </div>
-          <span class="font-bold text-rose-600">${l.change} 點</span>
+          <span class="font-bold ${l.change.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}">${l.change} 點</span>
+        </div>
+      `).join('');
+    }
+
+    function renderClassPointHistory() {
+      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
+      const logs = state.classPointLogs || [];
+      const list = document.getElementById('classPointHistoryList');
+
+      if (logs.length === 0) {
+        list.innerHTML = '<p class="text-gray-400 text-sm py-2">目前尚無全班歷程。</p>';
+        return;
+      }
+
+      list.innerHTML = logs.map(l => `
+        <div class="py-2 flex justify-between items-center text-xs">
+          <div>
+            <span class="text-gray-400 mr-2 font-mono">${l.date}</span>
+            <span class="font-bold ${l.type === 'reward' ? 'text-amber-700' : 'text-gray-800'}">${l.reason}</span>
+          </div>
+          <span class="font-bold ${l.change.startsWith('+') ? 'text-indigo-600' : 'text-rose-600'}">${l.change} 分</span>
         </div>
       `).join('');
     }

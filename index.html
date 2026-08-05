@@ -58,7 +58,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.1</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.4</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -219,7 +219,7 @@
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單（可各別修改或刪除）</h3>
+        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單（可各別修改日期或事件內容）</h3>
         <div id="calendarList" class="divide-y divide-gray-100">
           <p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>
         </div>
@@ -255,8 +255,8 @@
       
       <!-- 🎫 點數兌換免罰當值日生專區 -->
       <div class="bg-sky-50 border-2 border-sky-200 p-6 rounded-2xl shadow-sm space-y-3 interactive-control">
-        <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換免罰當值日生</h3>
-        <p class="text-xs text-sky-700">因遲到或行為不當被罰當值日生的學生，可使用累積點數（預設 15 點）兌換免罰一次！</p>
+        <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換抵銷當值日生</h3>
+        <p class="text-xs text-sky-700 font-bold">因遲到或行為不當被罰當值日生的學生，可使用累積點數（預設 15 點）抵銷因累積遲到、不當行為的值日生一次！</p>
         <div class="flex flex-wrap gap-3 items-center">
           <select id="redeemStudentSelect" class="border rounded-lg p-2 text-sm bg-white font-medium outline-none flex-1 min-w-[200px]">
             <option value="">-- 請選擇學生 --</option>
@@ -265,7 +265,7 @@
             <span class="text-xs font-bold text-gray-700">扣除點數：</span>
             <input type="number" id="redeemCost" value="15" min="1" class="border rounded-lg p-2 text-sm bg-white font-bold w-20 text-center outline-none" />
           </div>
-          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換免罰值日生</button>
+          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換抵銷值日生</button>
         </div>
       </div>
 
@@ -790,6 +790,7 @@
       const attLogs = appState.attendanceLogs || [];
       const dutyClearedMap = appState.dutyClearedMap || {};
       const behaviorDutyMap = appState.behaviorDutyMap || {};
+      const dutyExemptionCredits = appState.dutyExemptionCredits || {};
       const currentDate = document.getElementById('cbDate').value;
       const currentAssigned = (appState.dutyRoster || {})[currentDate] || [];
 
@@ -798,18 +799,17 @@
         const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
         const totalBehDays = behaviorDutyMap[s.id] || 0;
+        
+        const totalPenaltyDays = totalLateDays + totalBehDays;
         const clearedCount = dutyClearedMap[s.id] || 0;
+        const redeemedCount = dutyExemptionCredits[s.id] || 0;
+        const totalExempted = clearedCount + redeemedCount;
 
-        let pendingLateDays = Math.max(0, totalLateDays - clearedCount);
-        let remainingCleared = Math.max(0, clearedCount - totalLateDays);
-        let pendingBehDays = Math.max(0, totalBehDays - remainingCleared);
+        let pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);
         const fullName = `${s.seatNo} ${s.name}`;
 
-        if (pendingLateDays > 0) {
-          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-100 hover:bg-orange-200 text-orange-950 border border-orange-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>⏰ ${fullName}</span><span class="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">遲到欠 ${pendingLateDays} 天</span></button>`);
-        }
-        if (pendingBehDays > 0) {
-          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-950 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>🚨 ${fullName}</span><span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">行為欠 ${pendingBehDays} 天</span></button>`);
+        if (pendingPenaltyDays > 0) {
+          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-100 hover:bg-orange-200 text-orange-950 border border-orange-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>⏰ ${fullName}</span><span class="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">尚欠 ${pendingPenaltyDays} 天</span></button>`);
         }
       });
 
@@ -845,6 +845,7 @@
       const previousAssigned = appState.dutyRoster[currentDate] || [];
       const attLogs = appState.attendanceLogs || [];
       const behaviorDutyMap = appState.behaviorDutyMap || {};
+      const dutyExemptionCredits = appState.dutyExemptionCredits || {};
       const students = appState.students || [];
       const currentDayTypes = {};
 
@@ -853,15 +854,16 @@
         if (student) {
           const lateDays = Math.floor(attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length / 5);
           const behDays = behaviorDutyMap[student.id] || 0;
+          const totalPenaltyDays = lateDays + behDays;
           const clearedCount = appState.dutyClearedMap[student.id] || 0;
+          const redeemedCount = dutyExemptionCredits[student.id] || 0;
+          const totalExempted = clearedCount + redeemedCount;
 
-          let pendingLateDays = Math.max(0, lateDays - clearedCount);
-          let remainingCleared = Math.max(0, clearedCount - lateDays);
-          let pendingBehDays = Math.max(0, behDays - remainingCleared);
+          let pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);
 
-          currentDayTypes[fullName] = pendingLateDays > 0 ? 'late' : (pendingBehDays > 0 ? 'beh' : 'normal');
+          currentDayTypes[fullName] = pendingPenaltyDays > 0 ? 'late' : 'normal';
 
-          if (!previousAssigned.includes(fullName) && (lateDays + behDays) > clearedCount) {
+          if (!previousAssigned.includes(fullName) && totalPenaltyDays > totalExempted) {
             appState.dutyClearedMap[student.id] = clearedCount + 1;
           }
         }
@@ -1052,7 +1054,7 @@
       saveStateToCloud();
     }
 
-    // ----------------- 行事曆邏輯 (支援各別修改與刪除) -----------------
+    // ----------------- 行事曆邏輯 (支援各別修改日期與事件內容) -----------------
     function importBatchCalendar() {
       const rawText = document.getElementById('batchCalendarInput').value.trim();
       if (!rawText) { alert('請填寫行事曆內容！'); return; }
@@ -1122,7 +1124,7 @@
       evt.title = newTitle.trim();
       appState.calendarEvents.sort((a, b) => a.date.localeCompare(b.date));
       saveStateToCloud();
-      alert('✅ 行程修改成功！');
+      alert('✅ 行事曆修改成功！');
     }
 
     function deleteCalendarEvent(id) {
@@ -1208,7 +1210,7 @@
       if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
     }
 
-    // 🎫 點數兌換免罰當值日生邏輯
+    // 🎫 點數兌換抵銷值日生邏輯 (自動同步更新補罰次數，從待補清單連動扣除)
     function redeemDutyExemption() {
       const studentId = document.getElementById('redeemStudentSelect').value;
       const cost = parseInt(document.getElementById('redeemCost').value) || 15;
@@ -1223,8 +1225,13 @@
         return;
       }
 
-      if (confirm(`確定要幫 ${student.name} 扣除 ${cost} 點，兌換免罰一次當值日生嗎？`)) {
+      if (confirm(`確定要幫 ${student.name} 扣除 ${cost} 點，兌換抵銷一次當值日生嗎？`)) {
         student.points -= cost;
+        
+        // 增加該學生的點數兌換抵銷次數，讓聯絡簿值日生待補清單自動扣除
+        if (!appState.dutyExemptionCredits) appState.dutyExemptionCredits = {};
+        appState.dutyExemptionCredits[student.id] = (appState.dutyExemptionCredits[student.id] || 0) + 1;
+
         if (!appState.pointLogs) appState.pointLogs = [];
         appState.pointLogs.unshift({
           id: 'log_' + Date.now(),
@@ -1232,11 +1239,11 @@
           date: new Date().toISOString().split('T')[0],
           studentName: `${student.seatNo} ${student.name}`,
           change: `-${cost}`,
-          reason: '點數兌換免罰當值日生',
+          reason: '點數兌換抵銷值日生',
           type: 'reward'
         });
         saveStateToCloud();
-        alert(`🎉 兌換成功！${student.name} 已成功免罰一次當值日生，目前剩餘點數：${student.points} 點。`);
+        alert(`🎉 兌換成功！${student.name} 已成功抵銷一次當值日生，目前剩餘點數：${student.points} 點。`);
       }
     }
 

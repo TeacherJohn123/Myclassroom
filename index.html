@@ -58,7 +58,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.1</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.2</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -219,7 +219,7 @@
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單（可各別修改或刪除）</h3>
+        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單（可各別修改日期或事件內容）</h3>
         <div id="calendarList" class="divide-y divide-gray-100">
           <p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>
         </div>
@@ -255,8 +255,8 @@
       
       <!-- 🎫 點數兌換免罰當值日生專區 -->
       <div class="bg-sky-50 border-2 border-sky-200 p-6 rounded-2xl shadow-sm space-y-3 interactive-control">
-        <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換免罰當值日生</h3>
-        <p class="text-xs text-sky-700">因遲到或行為不當被罰當值日生的學生，可使用累積點數（預設 15 點）兌換免罰一次！</p>
+        <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換抵銷當值日生</h3>
+        <p class="text-xs text-sky-700 font-bold">因遲到或行為不當被罰當值日生的學生，可使用累積點數（預設 15 點）抵銷因累積遲到、不當行為的值日生一次！</p>
         <div class="flex flex-wrap gap-3 items-center">
           <select id="redeemStudentSelect" class="border rounded-lg p-2 text-sm bg-white font-medium outline-none flex-1 min-w-[200px]">
             <option value="">-- 請選擇學生 --</option>
@@ -265,7 +265,7 @@
             <span class="text-xs font-bold text-gray-700">扣除點數：</span>
             <input type="number" id="redeemCost" value="15" min="1" class="border rounded-lg p-2 text-sm bg-white font-bold w-20 text-center outline-none" />
           </div>
-          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換免罰值日生</button>
+          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換抵銷值日生</button>
         </div>
       </div>
 
@@ -1052,7 +1052,7 @@
       saveStateToCloud();
     }
 
-    // ----------------- 行事曆邏輯 (支援各別修改與刪除) -----------------
+    // ----------------- 行事曆邏輯 (支援各別修改日期與事件內容) -----------------
     function importBatchCalendar() {
       const rawText = document.getElementById('batchCalendarInput').value.trim();
       if (!rawText) { alert('請填寫行事曆內容！'); return; }
@@ -1122,7 +1122,7 @@
       evt.title = newTitle.trim();
       appState.calendarEvents.sort((a, b) => a.date.localeCompare(b.date));
       saveStateToCloud();
-      alert('✅ 行程修改成功！');
+      alert('✅ 行事曆修改成功！');
     }
 
     function deleteCalendarEvent(id) {
@@ -1208,7 +1208,7 @@
       if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
     }
 
-    // 🎫 點數兌換免罰當值日生邏輯
+    // 🎫 點數兌換抵銷值日生邏輯
     function redeemDutyExemption() {
       const studentId = document.getElementById('redeemStudentSelect').value;
       const cost = parseInt(document.getElementById('redeemCost').value) || 15;
@@ -1223,7 +1223,7 @@
         return;
       }
 
-      if (confirm(`確定要幫 ${student.name} 扣除 ${cost} 點，兌換免罰一次當值日生嗎？`)) {
+      if (confirm(`確定要幫 ${student.name} 扣除 ${cost} 點，兌換抵銷一次當值日生嗎？`)) {
         student.points -= cost;
         if (!appState.pointLogs) appState.pointLogs = [];
         appState.pointLogs.unshift({
@@ -1232,11 +1232,11 @@
           date: new Date().toISOString().split('T')[0],
           studentName: `${student.seatNo} ${student.name}`,
           change: `-${cost}`,
-          reason: '點數兌換免罰當值日生',
+          reason: '點數兌換抵銷值日生',
           type: 'reward'
         });
         saveStateToCloud();
-        alert(`🎉 兌換成功！${student.name} 已成功免罰一次當值日生，目前剩餘點數：${student.points} 點。`);
+        alert(`🎉 兌換成功！${student.name} 已成功抵銷一次當值日生，目前剩餘點數：${student.points} 點。`);
       }
     }
 

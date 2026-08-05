@@ -3,187 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>班級經營與雲端同步系統</title>
+  <title>班級公告專區 - 家長專用</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- 引入 Firebase 核心 SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
-    @media (min-width: 768px) { body { flex-direction: row; } }
-    
-    aside { width: 100%; background-color: #0f172a; color: white; padding: 20px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box; }
-    @media (min-width: 768px) { aside { width: 260px; min-height: 100vh; } }
-    
-    .nav-btn { width: 100%; text-align: left; padding: 12px 16px; border-radius: 12px; background: transparent; color: #cbd5e1; font-weight: bold; border: none; cursor: pointer; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; transition: 0.2s; }
-    .nav-btn:hover { background-color: #1e293b; color: white; }
-    .nav-btn.active { background-color: #0284c7; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-
-    main { flex: 1; padding: 20px; max-width: 900px; margin: 0 auto; width: 100%; box-sizing: border-box; overflow-y: auto; }
-    
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-
-    .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; margin-bottom: 20px; }
-    .btn { padding: 8px 14px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; transition: 0.2s; font-size: 0.875rem; }
-    .btn-green { background-color: #16a34a; color: white; }
-    .btn-green:hover { background-color: #15803d; }
-    .btn-blue { background-color: #0284c7; color: white; }
-    .btn-blue:hover { background-color: #0369a1; }
-    .btn-red { background-color: #dc2626; color: white; }
-    .btn-red:hover { background-color: #b91c1c; }
-    .btn-amber { background-color: #d97706; color: white; }
-    .btn-amber:hover { background-color: #b45309; }
-    
-    input, select, textarea { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-size: 1rem; margin-top: 6px; margin-bottom: 14px; outline: none; }
-    input:focus, select:focus, textarea:focus { border-color: #0284c7; ring: 2px solid #bae6fd; }
+    .text-5xl-custom {
+      font-size: 2.2rem !important;
+      line-height: 1.5 !important;
+    }
   </style>
 </head>
-<body>
+<body class="bg-slate-50 min-h-screen text-gray-800 flex flex-col md:flex-row">
 
-  <!-- 左側導覽列 -->
-  <aside>
+  <!-- 左側導覽列 (只留聯絡簿與行事曆) -->
+  <aside class="w-full md:w-64 bg-slate-900 text-white p-5 flex flex-col justify-between shrink-0 shadow-lg">
     <div>
-      <div style="margin-bottom: 24px;">
-        <h1 style="font-size: 1.25rem; font-weight: 800; margin: 0 0 8px 0;">🏫 班級經營系統</h1>
-        <span id="modeTag" style="display:inline-block; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #bae6fd; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; font-weight: bold;">
-          ⚡ 完整管理模式
+      <div class="mb-6">
+        <h1 class="text-xl font-extrabold flex items-center gap-2">🏫 班級公告欄</h1>
+        <span class="inline-block bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs px-2.5 py-1 rounded mt-2 font-bold">
+          📢 家長專用檢視模式
         </span>
       </div>
 
-      <nav>
-        <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn active">📖 每日聯絡簿</button>
-        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn">📅 班級行事曆</button>
-        <button onclick="switchTab('students')" id="btn-students" class="nav-btn">👤 學生名單</button>
-        <button onclick="switchTab('points')" id="btn-points" class="nav-btn">🏆 榮譽點數與福委</button>
+      <nav class="space-y-2">
+        <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-3 rounded-xl bg-sky-600 font-bold flex items-center gap-2.5 transition shadow">📖 每日聯絡簿</button>
+        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-3 rounded-xl hover:bg-slate-800 text-slate-300 font-bold flex items-center gap-2.5 transition">📅 班級行事曆</button>
       </nav>
     </div>
-    <div style="font-size: 0.75rem; color: #64748b; border-top: 1px solid #1e293b; padding-top: 16px; margin-top: 24px;">
-      雲端同步系統 v4.4
+    <div class="text-xs text-slate-500 border-t border-slate-800 pt-4 mt-6">
+      親師雲端同步系統 v4.0
     </div>
   </aside>
 
   <!-- 主內容區 -->
-  <main>
+  <main class="flex-1 p-4 md:p-8 overflow-y-auto max-w-4xl mx-auto w-full">
     
-    <!-- 1. 每日聯絡簿 -->
-    <section id="tab-contactbook" class="tab-content active">
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid #f1f5f9; padding-bottom: 12px;">
-          <h2 style="font-size: 1.5rem; font-weight: 900; margin: 0;">📖 每日聯絡事項與作業</h2>
-          <div>
-            <label style="font-size: 0.875rem; font-weight: bold; color: #475569;">日期：</label>
-            <input type="date" id="cbDate" onchange="onDateChange()" style="width: auto; display: inline-block; margin: 0;" />
-          </div>
+    <!-- 分頁 1：每日聯絡簿 (唯讀檢視) -->
+    <section id="tab-contactbook" class="tab-content active space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b pb-4 gap-3">
+        <h2 class="text-2xl font-black text-slate-800">📖 今日聯絡事項與作業</h2>
+        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border shadow-sm">
+          <label class="font-bold text-gray-600 text-sm">日期：</label>
+          <input type="date" id="cbDate" onchange="onDateChange()" class="border-0 font-bold text-blue-600 text-base outline-none bg-transparent cursor-pointer" />
         </div>
-        
-        <div id="todayEventsBox" style="background: #fef3c7; border: 2px solid #fde68a; padding: 12px 16px; border-radius: 12px; margin-bottom: 16px; display: none;">
-          <div style="font-weight: bold; color: #92400e; margin-bottom: 4px;">📌 今日重要日程提醒：</div>
-          <ul id="todayEventsList" style="margin: 0; padding-left: 20px; color: #78350f; font-weight: bold;"></ul>
+      </div>
+      
+      <div class="space-y-4">
+        <!-- 當日行事曆事件提醒 -->
+        <div id="todayEventsBox" class="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl text-amber-950 hidden shadow-sm">
+          <div class="font-bold flex items-center gap-2 mb-1 text-base text-amber-900">
+            <span>📌 今日重要日程提醒：</span>
+          </div>
+          <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-950 font-extrabold text-xl"></ul>
         </div>
 
-        <div class="admin-only">
-          <label style="font-weight: bold; color: #475569;">編輯今日聯絡事項內容：</label>
-          <textarea id="cbContentInput" rows="6" placeholder="請輸入今天各科作業、帶物或注意事項..."></textarea>
-          <button onclick="saveContactBook()" class="btn btn-blue" style="padding: 10px 16px;">💾 儲存今日聯絡簿</button>
-        </div>
-
-        <div style="margin-top: 24px;">
-          <h3 style="font-size: 1rem; font-weight: bold; color: #334155;">📋 目前內容預覽：</h3>
-          <div id="cbContentDisplay" style="background: #f8fafc; padding: 16px; border-radius: 10px; border: 1px solid #e2e8f0; white-space: pre-wrap; margin-top: 8px; font-weight: 500;">
-            載入中...
+        <!-- 聯絡簿內容顯示框 -->
+        <div class="bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200">
+          <div id="cbContentDisplay" class="text-5xl-custom font-bold text-gray-900 whitespace-pre-wrap leading-relaxed">
+            載入中或當日尚無聯絡事項...
           </div>
+        </div>
+      </div>
+
+      <!-- 歷史紀錄列表 (方便家長查看過去幾天) -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <h3 class="font-bold text-base mb-4 text-gray-800 flex items-center gap-2">🗂️ 歷史聯絡簿快速檢視</h3>
+        <div id="cbHistoryList" class="divide-y divide-gray-100 max-h-60 overflow-y-auto pr-1">
+          <p class="text-gray-400 text-sm py-2">目前沒有歷史紀錄</p>
         </div>
       </div>
     </section>
 
-    <!-- 2. 班級行事曆 -->
-    <section id="tab-calendar" class="tab-content">
-      <div class="card">
-        <h2 style="font-size: 1.5rem; font-weight: 900; margin-top: 0;">📅 班級行事曆總覽</h2>
-        
-        <div class="admin-only" style="background: #f1f5f9; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-          <h3 style="font-size: 1rem; font-weight: bold; margin-top: 0;">➕ 新增行事曆事件</h3>
-          <label style="font-size: 0.875rem; font-weight: bold;">事件日期：</label>
-          <input type="date" id="evtDate" />
-          <label style="font-size: 0.875rem; font-weight: bold;">事件標題：</label>
-          <input type="text" id="evtTitle" placeholder="例如：數學期中考、校外教學..." />
-          <button onclick="addCalendarEvent()" class="btn btn-green">➕ 新增事件</button>
-        </div>
-
-        <h3 style="font-size: 1rem; font-weight: bold; color: #334155; margin-bottom: 10px;">📋 現有行事曆清單（可各別修改或刪除）：</h3>
-        <div id="calendarList">
-          <p style="color: #94a3b8; text-align: center;">尚無行事曆事件。</p>
-        </div>
+    <!-- 分頁 2：班級行事曆 (唯讀檢視) -->
+    <section id="tab-calendar" class="tab-content space-y-6">
+      <div class="flex justify-between items-center border-b pb-4">
+        <h2 class="text-2xl font-black text-slate-800">📅 班級行事曆總覽</h2>
+        <span id="eventCount" class="text-xs bg-amber-100 text-amber-900 font-bold px-3 py-1.5 rounded-full">共 0 筆事件</span>
       </div>
-    </section>
 
-    <!-- 3. 學生名單 -->
-    <section id="tab-students" class="tab-content">
-      <div class="card">
-        <h2 style="font-size: 1.5rem; font-weight: 900; margin-top: 0;">👤 學生名單管理</h2>
-        
-        <div class="admin-only" style="margin-bottom: 20px;">
-          <label style="font-weight: bold; color: #475569;">批量匯入學生（每行一位，如：01 王小明）：</label>
-          <textarea id="studentsInput" rows="4" placeholder="01 王小明&#10;02 李小華"></textarea>
-          <button onclick="importStudents()" class="btn btn-blue" style="padding: 10px 16px;">✨ 解析並匯入名單</button>
-        </div>
-
-        <h3 style="font-size: 1rem; font-weight: bold; color: #334155;">目前班級學生清單：</h3>
-        <div id="studentsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px;">
-          <p style="color: #94a3b8;">尚未建立學生名單</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 4. 榮譽點數與福利 -->
-    <section id="tab-points" class="tab-content">
-      <div class="card">
-        <h2 style="font-size: 1.5rem; font-weight: 900; margin-top: 0;">🏆 榮譽點數與福利兌換</h2>
-        
-        <div style="background: #e0f2fe; border: 1px solid #bae6fd; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-          <h3 style="font-size: 1.1rem; font-weight: bold; color: #0369a1; margin-top: 0;">✨ 點數兌換免罰當值日生</h3>
-          <p style="font-size: 0.875rem; color: #0369a1; margin-bottom: 12px;">因遲到或行為不當被罰當值日生的學生，可使用累積點數（預設 15 點）兌換免罰一次！</p>
-          
-          <div class="admin-only">
-            <label style="font-size: 0.875rem; font-weight: bold;">選擇學生：</label>
-            <select id="redeemStudentSelect">
-              <option value="">-- 請先建立學生名單 --</option>
-            </select>
-            
-            <label style="font-size: 0.875rem; font-weight: bold;">扣除點數：</label>
-            <input type="number" id="redeemCost" value="15" min="1" />
-            
-            <button onclick="redeemDutyExemption()" class="btn btn-red" style="padding: 10px 16px;">🎫 扣點兌換免罰值日生</button>
-          </div>
-        </div>
-
-        <div class="admin-only" style="background: #f8fafc; padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-          <h3 style="font-size: 1rem; font-weight: bold; margin-top: 0;">➕ 一般個人加分紀錄</h3>
-          <label style="font-size: 0.875rem; font-weight: bold;">選擇學生：</label>
-          <select id="pointStudentSelect">
-            <option value="">-- 請先建立學生名單 --</option>
-          </select>
-          <label style="font-size: 0.875rem; font-weight: bold;">加分原因：</label>
-          <input type="text" id="pointReason" placeholder="例如：主動幫忙、作業優良..." />
-          <div style="display: flex; gap: 10px;">
-            <button onclick="addPoints(1)" class="btn btn-green">+1分</button>
-            <button onclick="addPoints(2)" class="btn btn-green">+2分</button>
-            <button onclick="addPoints(3)" class="btn btn-green">+3分</button>
-          </div>
-        </div>
-
-        <h3 style="font-size: 1rem; font-weight: bold; color: #334155;">📊 學生個人點數排行榜：</h3>
-        <div id="pointsLeaderboard" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
-          <p style="color: #94a3b8;">尚無點數資料</p>
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
+        <div id="calendarList" class="divide-y divide-gray-100">
+          <p class="text-gray-400 text-sm py-4 text-center">尚未有行事曆事件。</p>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- JS 邏輯區 -->
+  <!-- 核心 JS 邏輯 (唯讀 Firebase 同步) -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
@@ -198,28 +111,27 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let appState = { contactBooks: [], calendarEvents: [], students: [], points: {} };
-
-    const isNoticeMode = new URLSearchParams(window.location.search).get('mode') === 'notice';
+    let appState = {};
 
     window.onload = function() {
-      if (isNoticeMode) {
-        document.getElementById('modeTag').innerText = "📢 家長唯讀檢視模式";
-        document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-      }
-
+      // 即時從 Firebase 雲端讀取資料
       db.ref('classroom_data').on('value', (snapshot) => {
-        appState = snapshot.val() || { contactBooks: [], calendarEvents: [], students: [], points: {} };
+        appState = snapshot.val() || {};
         initTodayDate();
-        renderAll();
+        renderHistoryList();
+        renderCalendarList();
+        checkTodayEvents();
       });
     };
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.className = "nav-btn w-full text-left p-3 rounded-xl hover:bg-slate-800 text-slate-300 font-bold flex items-center gap-2.5 transition";
+      });
+
       document.getElementById('tab-' + tabId).classList.add('active');
-      document.getElementById('btn-' + tabId).classList.add('active');
+      document.getElementById('btn-' + tabId).className = "nav-btn w-full text-left p-3 rounded-xl bg-sky-600 text-white font-bold flex items-center gap-2.5 transition shadow";
     }
 
     function initTodayDate() {
@@ -238,177 +150,11 @@
       const records = appState.contactBooks || [];
       const record = records.find(r => r.date === dateStr);
       const displayEl = document.getElementById('cbContentDisplay');
-      const inputEl = document.getElementById('cbContentInput');
 
       if (record) {
         displayEl.innerText = record.content;
-        if (inputEl) inputEl.value = record.content;
       } else {
         displayEl.innerText = `【${dateStr}】 老師尚未發布當日聯絡事項。`;
-        if (inputEl) inputEl.value = '';
-      }
-      checkTodayEvents();
-    }
-
-    function saveContactBook() {
-      const dateStr = document.getElementById('cbDate').value;
-      const content = document.getElementById('cbContentInput').value;
-      if (!dateStr) return alert('請選擇日期');
-
-      if (!appState.contactBooks) appState.contactBooks = [];
-      const index = appState.contactBooks.findIndex(r => r.date === dateStr);
-      if (index >= 0) {
-        appState.contactBooks[index].content = content;
-      } else {
-        appState.contactBooks.push({ date: dateStr, content: content });
-      }
-
-      db.ref('classroom_data').set(appState).then(() => {
-        alert('聯絡簿儲存成功！');
-      });
-    }
-
-    function addCalendarEvent() {
-      const date = document.getElementById('evtDate').value;
-      const title = document.getElementById('evtTitle').value;
-      if (!date || !title) return alert('請填寫日期與事件標題');
-
-      if (!appState.calendarEvents) appState.calendarEvents = [];
-      appState.calendarEvents.push({ date, title });
-      db.ref('classroom_data').set(appState).then(() => {
-        document.getElementById('evtTitle').value = '';
-        document.getElementById('evtDate').value = '';
-        alert('行事曆新增成功！');
-      });
-    }
-
-    // 修改行事曆事件
-    function editCalendarEvent(index) {
-      const event = appState.calendarEvents[index];
-      const newDate = prompt("請修改事件日期 (YYYY-MM-DD)：", event.date);
-      if (newDate === null) return; // 取消
-      
-      const newTitle = prompt("請修改事件標題：", event.title);
-      if (newTitle === null) return; // 取消
-
-      if (!newDate.trim() || !newTitle.trim()) {
-        alert('日期與標題不可空白！');
-        return;
-      }
-
-      appState.calendarEvents[index] = { date: newDate.trim(), title: newTitle.trim() };
-      db.ref('classroom_data').set(appState).then(() => {
-        alert('行事曆修改成功！');
-      });
-    }
-
-    // 刪除行事曆事件
-    function deleteCalendarEvent(index) {
-      if (confirm(`確定要刪除「${appState.calendarEvents[index].title}」這個行程嗎？`)) {
-        appState.calendarEvents.splice(index, 1);
-        db.ref('classroom_data').set(appState).then(() => {
-          alert('行程已刪除！');
-        });
-      }
-    }
-
-    function importStudents() {
-      const raw = document.getElementById('studentsInput').value;
-      const lines = raw.split('\n').map(l => l.trim()).filter(l => l);
-      if (lines.length === 0) return alert('請輸入學生名單');
-
-      appState.students = lines;
-      db.ref('classroom_data').set(appState).then(() => {
-        alert('學生名單匯入成功！');
-      });
-    }
-
-    function addPoints(score) {
-      const student = document.getElementById('pointStudentSelect').value;
-      const reason = document.getElementById('pointReason').value || '表現良好';
-      if (!student) return alert('請選擇學生');
-
-      if (!appState.points) appState.points = {};
-      if (!appState.points[student]) appState.points[student] = 0;
-      appState.points[student] += score;
-
-      db.ref('classroom_data').set(appState).then(() => {
-        document.getElementById('pointReason').value = '';
-        alert(`已為 ${student} 加 ${score} 分！（原因：${reason}）`);
-      });
-    }
-
-    function redeemDutyExemption() {
-      const student = document.getElementById('redeemStudentSelect').value;
-      const cost = parseInt(document.getElementById('redeemCost').value) || 15;
-      if (!student) return alert('請選擇要兌換的學生');
-
-      if (!appState.points) appState.points = {};
-      const currentPoints = appState.points[student] || 0;
-
-      if (currentPoints < cost) {
-        alert(`該學生目前只有 ${currentPoints} 分，點數不足（需 ${cost} 分）！`);
-        return;
-      }
-
-      if (confirm(`確定要幫 ${student} 扣除 ${cost} 點，兌換免罰一次當值日生嗎？`)) {
-        appState.points[student] -= cost;
-        db.ref('classroom_data').set(appState).then(() => {
-          alert(`兌換成功！${student} 已成功免罰一次當值日生，目前剩餘點數：${appState.points[student]} 分。`);
-        });
-      }
-    }
-
-    function renderAll() {
-      const students = appState.students || [];
-      const studentSelects = [document.getElementById('pointStudentSelect'), document.getElementById('redeemStudentSelect')];
-      
-      studentSelects.forEach(sel => {
-        if (!sel) return;
-        if (students.length === 0) {
-          sel.innerHTML = '<option value="">-- 請先建立學生名單 --</option>';
-        } else {
-          sel.innerHTML = '<option value="">-- 請選擇學生 --</option>' + students.map(s => `<option value="${s}">${s}</option>`).join('');
-        }
-      });
-
-      const studentsListEl = document.getElementById('studentsList');
-      if (studentsListEl) {
-        studentsListEl.innerHTML = students.length === 0 ? '<p style="color: #94a3b8;">尚未建立學生名單</p>' : students.map(s => `<div style="background:#f1f5f9; padding:8px 12px; border-radius:8px; font-weight:bold; text-align:center;">${s}</div>`).join('');
-      }
-
-      const points = appState.points || {};
-      const leaderboardEl = document.getElementById('pointsLeaderboard');
-      if (leaderboardEl) {
-        const sorted = Object.entries(points).sort((a, b) => b[1] - a[1]);
-        leaderboardEl.innerHTML = sorted.length === 0 ? '<p style="color: #94a3b8;">尚無點數資料</p>' : sorted.map(([name, score], idx) => `
-          <div style="display:flex; justify-content:space-between; background:#f8fafc; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0; font-weight:bold;">
-            <span>#${idx+1} ${name}</span>
-            <span style="color:#0284c7;">${score} 分</span>
-          </div>
-        `).join('');
-      }
-
-      // 行事曆列表渲染（帶有各別修改與刪除按鈕）
-      const events = appState.calendarEvents || [];
-      const calListEl = document.getElementById('calendarList');
-      if (calListEl) {
-        if (events.length === 0) {
-          calListEl.innerHTML = '<p style="color: #94a3b8; text-align: center;">尚無行事曆事件。</p>';
-        } else {
-          calListEl.innerHTML = events.map((e, idx) => `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; margin-bottom:8px;">
-              <div style="display:flex; align-items:center; gap:12px;">
-                <span style="color:#d97706; background:#fef3c7; padding:4px 8px; border-radius:6px; font-size:0.875rem; font-weight:bold;">${e.date}</span>
-                <span style="font-weight:bold; color:#1e293b;">${e.title}</span>
-              </div>
-              <div class="admin-only" style="display:flex; gap:6px;">
-                <button onclick="editCalendarEvent(${idx})" class="btn btn-amber">✏️ 編輯</button>
-                <button onclick="deleteCalendarEvent(${idx})" class="btn btn-red">🗑️ 刪除</button>
-              </div>
-            </div>
-          `).join('');
-        }
       }
       checkTodayEvents();
     }
@@ -416,17 +162,61 @@
     function checkTodayEvents() {
       const currentDate = document.getElementById('cbDate').value;
       const events = appState.calendarEvents || [];
-      const matched = events.filter(e => e.date === currentDate);
-      const box = document.getElementById('todayEventsBox');
-      const list = document.getElementById('todayEventsList');
-      if (!box || !list) return;
+      const matchedEvents = events.filter(e => e.date === currentDate);
+      const eventsBox = document.getElementById('todayEventsBox');
+      const eventsList = document.getElementById('todayEventsList');
 
-      if (matched.length > 0) {
-        list.innerHTML = matched.map(e => `<li>${e.title}</li>`).join('');
-        box.style.display = 'block';
+      if (matchedEvents.length > 0) {
+        eventsList.innerHTML = matchedEvents.map(e => `<li>${e.title}</li>`).join('');
+        eventsBox.classList.remove('hidden');
       } else {
-        box.style.display = 'none';
+        eventsBox.classList.add('hidden');
       }
+    }
+
+    function renderHistoryList() {
+      const listContainer = document.getElementById('cbHistoryList');
+      const records = appState.contactBooks || [];
+      if (records.length === 0) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">目前沒有歷史紀錄</p>';
+        return;
+      }
+
+      listContainer.innerHTML = records.map(item => `
+        <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded-xl transition">
+          <div>
+            <span class="font-extrabold text-blue-600 text-sm">${item.date}</span>
+            <p class="text-xs text-gray-500 truncate max-w-xs md:max-w-md mt-0.5">${item.content.replace(/\n/g, ' ')}</p>
+          </div>
+          <button onclick="selectHistoryDate('${item.date}')" class="text-xs bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold px-3 py-1.5 rounded-lg border border-sky-200 transition shrink-0">📖 查看</button>
+        </div>
+      `).join('');
+    }
+
+    function selectHistoryDate(dateStr) {
+      document.getElementById('cbDate').value = dateStr;
+      loadRecordByDate(dateStr);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderCalendarList() {
+      const events = appState.calendarEvents || [];
+      document.getElementById('eventCount').innerText = `共 ${events.length} 筆事件`;
+      const listContainer = document.getElementById('calendarList');
+
+      if (events.length === 0) {
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-4 text-center">尚未有行事曆事件。</p>';
+        return;
+      }
+
+      listContainer.innerHTML = events.map(evt => `
+        <div class="py-3.5 flex items-center justify-between hover:bg-gray-50 px-3 rounded-xl transition">
+          <div class="flex items-center gap-3">
+            <span class="font-extrabold text-amber-800 bg-amber-50 px-3 py-1 rounded-xl border border-amber-200 text-xs shrink-0">${evt.date}</span>
+            <span class="font-bold text-gray-800 text-base">${evt.title}</span>
+          </div>
+        </div>
+      `).join('');
     }
   </script>
 </body>

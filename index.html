@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>班級經營工具包</title>
+  <title>班級經營工具包 (雲端同步版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 引入 Firebase 核心 SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
   <style>
     .tab-content { display: none; }
     .tab-content.active { display: block; }
@@ -47,7 +52,6 @@
         <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         
-        <!-- 以下管理選單在公告模式下會自動隱藏 -->
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
@@ -55,7 +59,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">專屬 iPad 營運模組 v3.5</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.0</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -551,15 +555,30 @@
     </div>
   </div>
 
-  <!-- 核心 JS 邏輯 -->
+  <!-- 核心 JS 邏輯 (已結合 Firebase 雲端同步) -->
   <script>
-    // ⭐ 檢查網址參數 ?mode=notice (專屬公告模式：僅顯示聯絡簿與行事曆)
+    // ⭐ 你的 Firebase 雲端資料庫設定
+    const firebaseConfig = {
+      apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
+      authDomain: "class-tools-49588.firebaseapp.com",
+      databaseURL: "https://class-tools-49588-default-rtdb.firebaseio.com",
+      projectId: "class-tools-49588",
+      storageBucket: "class-tools-49588.firebasestorage.app",
+      messagingSenderId: "126467689374",
+      appId: "1:126467689374:web:140f12f8830ab4eee9e48f",
+      measurementId: "G-GBLFFGWKR7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 記憶體中的全班資料狀態
+    let appState = {};
     const isNoticeMode = new URLSearchParams(window.location.search).get('mode') === 'notice';
 
     window.onload = function() {
       if (isNoticeMode) {
         document.body.classList.add('notice-readonly');
-        
         const textarea = document.getElementById('cbContent');
         const displayDiv = document.getElementById('cbContentReadOnlyDisplay');
         if (textarea && displayDiv) {
@@ -568,21 +587,30 @@
         }
       }
 
-      setTodayDate();
-      renderHistoryList();
-      renderStudentGrid();
-      renderCalendarList();
-      checkTodayEvents();
-      
-      renderPointStudentOptions();
-      renderRewardList();
-      renderPointRoster();
-      renderClassPointsDisplay();
-      renderClassPointHistory();
-
-      initAttendanceModule();
-      initTodoModule();
+      // 從 Firebase 即時載入雲端資料
+      db.ref('classroom_data').on('value', (snapshot) => {
+        appState = snapshot.val() || {};
+        
+        // 資料更新後重新渲染畫面
+        setTodayDate();
+        renderHistoryList();
+        renderStudentGrid();
+        renderCalendarList();
+        checkTodayEvents();
+        renderPointStudentOptions();
+        renderRewardList();
+        renderPointRoster();
+        renderClassPointsDisplay();
+        renderClassPointHistory();
+        initAttendanceModule();
+        initTodoModule();
+      });
     };
+
+    // 儲存資料至 Firebase 雲端
+    function saveStateToCloud() {
+      db.ref('classroom_data').set(appState);
+    }
 
     function switchTab(tabId) {
       document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
@@ -614,18 +642,45 @@
     function setTodayDate() {
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0];
-      document.getElementById('cbDate').value = dateStr;
+      if (!document.getElementById('cbDate').value) {
+        document.getElementById('cbDate').value = dateStr;
+      }
+      
+      const currentDate = document.getElementById('cbDate').value;
+      const records = appState.contactBooks || [];
+      const currentRecord = records.find(r => r.date === currentDate);
       
       const textarea = document.getElementById('cbContent');
-      if (!textarea.value.trim()) {
+      const displayDiv = document.getElementById('cbContentReadOnlyDisplay');
+
+      if (currentRecord) {
+        textarea.value = currentRecord.content;
+        if (displayDiv) displayDiv.innerText = currentRecord.content;
+      } else {
         updateHeaderDate();
       }
+
+      autoExpandTextarea(textarea);
       checkTodayEvents();
       loadDutyStudents();
     }
 
     function onDateChange() {
-      updateHeaderDate();
+      const currentDate = document.getElementById('cbDate').value;
+      const records = appState.contactBooks || [];
+      const currentRecord = records.find(r => r.date === currentDate);
+      
+      const textarea = document.getElementById('cbContent');
+      const displayDiv = document.getElementById('cbContentReadOnlyDisplay');
+
+      if (currentRecord) {
+        textarea.value = currentRecord.content;
+        if (displayDiv) displayDiv.innerText = currentRecord.content;
+      } else {
+        updateHeaderDate();
+      }
+
+      autoExpandTextarea(textarea);
       checkTodayEvents();
       loadDutyStudents();
     }
@@ -642,6 +697,7 @@
       const newHeader = `【${month}月${day}日 (${dayName}) 聯絡事項】`;
 
       const textarea = document.getElementById('cbContent');
+      const displayDiv = document.getElementById('cbContentReadOnlyDisplay');
       const lines = textarea.value.split('\n');
 
       if (lines.length > 0 && lines[0].startsWith('【') && lines[0].includes('聯絡事項】')) {
@@ -650,14 +706,13 @@
       } else {
         textarea.value = newHeader + '\n' + textarea.value;
       }
+      if (displayDiv) displayDiv.innerText = textarea.value;
       autoExpandTextarea(textarea);
     }
 
     function checkTodayEvents() {
       const currentDate = document.getElementById('cbDate').value;
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const events = state.calendarEvents || [];
-
+      const events = appState.calendarEvents || [];
       const matchedEvents = events.filter(e => e.date === currentDate);
       const eventsBox = document.getElementById('todayEventsBox');
       const eventsList = document.getElementById('todayEventsList');
@@ -672,19 +727,15 @@
 
     function loadDutyStudents() {
       const currentDate = document.getElementById('cbDate').value;
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const dutyMap = state.dutyRoster || {};
-      const dutyTypeMap = state.dutyTypeRoster || {};
+      const dutyMap = appState.dutyRoster || {};
+      const dutyTypeMap = appState.dutyTypeRoster || {};
       const assignedNames = dutyMap[currentDate] || [];
-
       const displayEl = document.getElementById('dutyStudentsDisplay');
 
       if (assignedNames.length > 0) {
         const dateTypes = dutyTypeMap[currentDate] || {};
-
         displayEl.innerHTML = assignedNames.map(name => {
           const type = dateTypes[name] || 'normal';
-          
           if (type === 'late') {
             return `<span class="inline-block bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-lg text-xl font-bold">⏰ ${name}</span>`;
           } else if (type === 'beh') {
@@ -699,150 +750,91 @@
     }
 
     function openBehaviorModal() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
+      const students = appState.students || [];
       const select = document.getElementById('behStudentSelect');
-
-      if (students.length === 0) {
-        select.innerHTML = '<option value="">-- 請先匯入學生名單 --</option>';
-      } else {
-        select.innerHTML = '<option value="">-- 請選擇學生 --</option>' + students.map(s => 
-          `<option value="${s.id}">${s.seatNo} ${s.name}</option>`
-        ).join('');
-      }
-
+      select.innerHTML = students.length === 0 ? '<option value="">-- 請先匯入學生名單 --</option>' : 
+        '<option value="">-- 請選擇學生 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
       document.getElementById('behReason').value = '';
       document.getElementById('behaviorModal').classList.remove('hidden');
     }
 
-    function setBehReason(text) {
-      document.getElementById('behReason').value = text;
-    }
-
-    function closeBehaviorModal() {
-      document.getElementById('behaviorModal').classList.add('hidden');
-    }
+    function setBehReason(text) { document.getElementById('behReason').value = text; }
+    function closeBehaviorModal() { document.getElementById('behaviorModal').classList.add('hidden'); }
 
     function saveBehaviorRecord() {
       const studentId = document.getElementById('behStudentSelect').value;
-      const reason = document.getElementById('behReason').value.trim() || '日常常規待改進';
       const days = parseInt(document.getElementById('behDaysSelect').value) || 1;
+      if (!studentId) { alert('請先選擇學生！'); return; }
 
-      if (!studentId) {
-        alert('請先選擇學生！');
-        return;
-      }
+      if (!appState.behaviorDutyMap) appState.behaviorDutyMap = {};
+      appState.behaviorDutyMap[studentId] = (appState.behaviorDutyMap[studentId] || 0) + days;
 
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      if (!state.behaviorDutyMap) state.behaviorDutyMap = {};
-
-      state.behaviorDutyMap[studentId] = (state.behaviorDutyMap[studentId] || 0) + days;
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      saveStateToCloud();
       alert(`✅ 已成功登記！指定該生補當值日生 ${days} 天。`);
       closeBehaviorModal();
     }
 
     function openDutyPicker() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
-      const attLogs = state.attendanceLogs || [];
-      const dutyClearedMap = state.dutyClearedMap || {};
-      const behaviorDutyMap = state.behaviorDutyMap || {};
+      const students = appState.students || [];
+      const attLogs = appState.attendanceLogs || [];
+      const dutyClearedMap = appState.dutyClearedMap || {};
+      const behaviorDutyMap = appState.behaviorDutyMap || {};
       const currentDate = document.getElementById('cbDate').value;
-      const currentAssigned = (state.dutyRoster || {})[currentDate] || [];
+      const currentAssigned = (appState.dutyRoster || {})[currentDate] || [];
 
       const penaltyButtonsHTML = [];
-
       students.forEach(s => {
         const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
         const totalBehDays = behaviorDutyMap[s.id] || 0;
-
         const clearedCount = dutyClearedMap[s.id] || 0;
 
         let pendingLateDays = Math.max(0, totalLateDays - clearedCount);
         let remainingCleared = Math.max(0, clearedCount - totalLateDays);
         let pendingBehDays = Math.max(0, totalBehDays - remainingCleared);
-
         const fullName = `${s.seatNo} ${s.name}`;
 
         if (pendingLateDays > 0) {
-          penaltyButtonsHTML.push(`
-            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-100 hover:bg-orange-200 text-orange-950 border border-orange-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
-              <span>⏰ ${fullName}</span>
-              <span class="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">遲到欠 ${pendingLateDays} 天</span>
-            </button>
-          `);
+          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-100 hover:bg-orange-200 text-orange-950 border border-orange-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>⏰ ${fullName}</span><span class="bg-orange-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">遲到欠 ${pendingLateDays} 天</span></button>`);
         }
-
         if (pendingBehDays > 0) {
-          penaltyButtonsHTML.push(`
-            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-950 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
-              <span>🚨 ${fullName}</span>
-              <span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">行為欠 ${pendingBehDays} 天</span>
-            </button>
-          `);
+          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-100 hover:bg-rose-200 text-rose-950 border border-rose-300 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>🚨 ${fullName}</span><span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">行為欠 ${pendingBehDays} 天</span></button>`);
         }
       });
 
-      const penaltyContainer = document.getElementById('penaltyDutyList');
-      if (penaltyButtonsHTML.length === 0) {
-        penaltyContainer.innerHTML = '<span class="text-gray-400 text-xs">目前沒有需補當值日生的學生 🎉</span>';
-      } else {
-        penaltyContainer.innerHTML = penaltyButtonsHTML.join('');
-      }
-
-      const listContainer = document.getElementById('dutyStudentList');
-      if (students.length === 0) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>';
-      } else {
-        listContainer.innerHTML = students.map(s => {
+      document.getElementById('penaltyDutyList').innerHTML = penaltyButtonsHTML.length === 0 ? '<span class="text-gray-400 text-xs">目前沒有需補當值日生的學生 🎉</span>' : penaltyButtonsHTML.join('');
+      document.getElementById('dutyStudentList').innerHTML = students.length === 0 ? '<p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>' :
+        students.map(s => {
           const fullName = `${s.seatNo} ${s.name}`;
           const isChecked = currentAssigned.includes(fullName) ? 'checked' : '';
-          return `
-            <label class="p-2 border rounded flex items-center gap-2 hover:bg-gray-50 cursor-pointer text-xs font-bold text-gray-700">
-              <input type="checkbox" name="dutyStudent" id="duty_cb_${fullName.replace(/\s+/g, '_')}" value="${fullName}" ${isChecked} class="w-4 h-4 text-sky-600 rounded">
-              <span>${fullName}</span>
-            </label>
-          `;
+          return `<label class="p-2 border rounded flex items-center gap-2 hover:bg-gray-50 cursor-pointer text-xs font-bold text-gray-700"><input type="checkbox" name="dutyStudent" id="duty_cb_${fullName.replace(/\s+/g, '_')}" value="${fullName}" ${isChecked} class="w-4 h-4 text-sky-600 rounded"><span>${fullName}</span></label>`;
         }).join('');
-      }
 
       document.getElementById('dutyModal').classList.remove('hidden');
     }
 
     function quickSelectPenaltyStudent(fullName) {
       const cb = document.getElementById(`duty_cb_${fullName.replace(/\s+/g, '_')}`);
-      if (cb) {
-        cb.checked = true;
-      }
+      if (cb) cb.checked = true;
     }
 
-    function closeDutyPicker() {
-      document.getElementById('dutyModal').classList.add('hidden');
-    }
+    function closeDutyPicker() { document.getElementById('dutyModal').classList.add('hidden'); }
 
     function saveDutySelection() {
       const checkboxes = document.querySelectorAll('input[name="dutyStudent"]:checked');
-      if (checkboxes.length > 2) {
-        alert('最多只能選擇 2 位值日生！');
-        return;
-      }
+      if (checkboxes.length > 2) { alert('最多只能選擇 2 位值日生！'); return; }
 
       const selectedNames = Array.from(checkboxes).map(cb => cb.value);
       const currentDate = document.getElementById('cbDate').value;
 
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      if (!state.dutyRoster) state.dutyRoster = {};
-      if (!state.dutyTypeRoster) state.dutyTypeRoster = {};
-      if (!state.dutyClearedMap) state.dutyClearedMap = {};
+      if (!appState.dutyRoster) appState.dutyRoster = {};
+      if (!appState.dutyTypeRoster) appState.dutyTypeRoster = {};
+      if (!appState.dutyClearedMap) appState.dutyClearedMap = {};
 
-      const previousAssigned = state.dutyRoster[currentDate] || [];
-      const attLogs = state.attendanceLogs || [];
-      const behaviorDutyMap = state.behaviorDutyMap || {};
-      const students = state.students || [];
-
+      const previousAssigned = appState.dutyRoster[currentDate] || [];
+      const attLogs = appState.attendanceLogs || [];
+      const behaviorDutyMap = appState.behaviorDutyMap || {};
+      const students = appState.students || [];
       const currentDayTypes = {};
 
       selectedNames.forEach(fullName => {
@@ -850,78 +842,54 @@
         if (student) {
           const lateDays = Math.floor(attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length / 5);
           const behDays = behaviorDutyMap[student.id] || 0;
-          const clearedCount = state.dutyClearedMap[student.id] || 0;
+          const clearedCount = appState.dutyClearedMap[student.id] || 0;
 
           let pendingLateDays = Math.max(0, lateDays - clearedCount);
           let remainingCleared = Math.max(0, clearedCount - lateDays);
           let pendingBehDays = Math.max(0, behDays - remainingCleared);
 
-          if (pendingLateDays > 0) {
-            currentDayTypes[fullName] = 'late';
-          } else if (pendingBehDays > 0) {
-            currentDayTypes[fullName] = 'beh';
-          } else {
-            currentDayTypes[fullName] = 'normal';
-          }
+          currentDayTypes[fullName] = pendingLateDays > 0 ? 'late' : (pendingBehDays > 0 ? 'beh' : 'normal');
 
-          if (!previousAssigned.includes(fullName)) {
-            if ((lateDays + behDays) > clearedCount) {
-              state.dutyClearedMap[student.id] = clearedCount + 1;
-            }
+          if (!previousAssigned.includes(fullName) && (lateDays + behDays) > clearedCount) {
+            appState.dutyClearedMap[student.id] = clearedCount + 1;
           }
         }
       });
 
-      state.dutyRoster[currentDate] = selectedNames;
-      state.dutyTypeRoster[currentDate] = currentDayTypes;
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-
+      appState.dutyRoster[currentDate] = selectedNames;
+      appState.dutyTypeRoster[currentDate] = currentDayTypes;
+      
+      saveStateToCloud();
       closeDutyPicker();
       loadDutyStudents();
     }
 
     function insertTemplate() {
-      const template = "1. 國\n2. 數";
       const textarea = document.getElementById('cbContent');
-      textarea.value += "\n" + template;
+      textarea.value += "\n1. 國\n2. 數";
       autoExpandTextarea(textarea);
     }
 
     function saveContactBook() {
       const date = document.getElementById('cbDate').value;
       const content = document.getElementById('cbContent').value;
+      if (!date || !content) { alert('請填寫日期與聯絡事項！'); return; }
 
-      if (!date || !content) {
-        alert('請填寫日期與聯絡事項！');
-        return;
-      }
-
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      if (!state.contactBooks) state.contactBooks = [];
-
-      const existingIndex = state.contactBooks.findIndex(item => item.date === date);
+      if (!appState.contactBooks) appState.contactBooks = [];
+      const existingIndex = appState.contactBooks.findIndex(item => item.date === date);
       const newEntry = { date, content, updatedAt: new Date().toISOString() };
 
-      if (existingIndex >= 0) {
-        state.contactBooks[existingIndex] = newEntry;
-      } else {
-        state.contactBooks.unshift(newEntry);
-      }
+      if (existingIndex >= 0) appState.contactBooks[existingIndex] = newEntry;
+      else appState.contactBooks.unshift(newEntry);
 
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      alert(`✅ ${date} 聯絡簿已成功儲存！`);
-      renderHistoryList();
+      saveStateToCloud();
+      alert(`✅ ${date} 聯絡簿已成功儲存至雲端！`);
     }
 
     function renderHistoryList() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
       const listContainer = document.getElementById('cbHistoryList');
-      const records = state.contactBooks || [];
-
-      if (records.length === 0) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">目前沒有歷史紀錄</p>';
-        return;
-      }
+      const records = appState.contactBooks || [];
+      if (records.length === 0) { listContainer.innerHTML = '<p class="text-gray-400 text-sm">目前沒有歷史紀錄</p>'; return; }
 
       listContainer.innerHTML = records.map(item => `
         <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
@@ -929,16 +897,13 @@
             <span class="font-bold text-blue-600 text-sm">${item.date}</span>
             <p class="text-xs text-gray-500 truncate max-w-md mt-0.5">${item.content.replace(/\n/g, ' ')}</p>
           </div>
-          <button onclick="loadRecord('${item.date}')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition">
-            🔍 查看/編輯
-          </button>
+          <button onclick="loadRecord('${item.date}')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition">🔍 查看/編輯</button>
         </div>
       `).join('');
     }
 
     function loadRecord(date) {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const record = (state.contactBooks || []).find(r => r.date === date);
+      const record = (appState.contactBooks || []).find(r => r.date === date);
       if (record) {
         document.getElementById('cbDate').value = record.date;
         const textarea = document.getElementById('cbContent');
@@ -958,41 +923,20 @@
       renderTodoFilterStudentOptions();
     }
 
-    function setTodoTitle(title) {
-      document.getElementById('todoTitle').value = title;
-    }
+    function setTodoTitle(title) { document.getElementById('todoTitle').value = title; }
 
     function renderTodoStudentCheckboxes() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
+      const students = appState.students || [];
       const container = document.getElementById('todoStudentCheckboxes');
-
-      if (students.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-xs col-span-full">請先至「學生名單」匯入學生資料。</p>';
-        return;
-      }
-
-      container.innerHTML = students.map(s => `
-        <label class="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer hover:bg-white p-1 rounded">
-          <input type="checkbox" name="todoPendingStudent" value="${s.id}" class="w-3.5 h-3.5 text-indigo-600 rounded">
-          <span>${s.seatNo} ${s.name}</span>
-        </label>
-      `).join('');
+      container.innerHTML = students.length === 0 ? '<p class="text-gray-400 text-xs col-span-full">請先至「學生名單」匯入學生。</p>' :
+        students.map(s => `<label class="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer hover:bg-white p-1 rounded"><input type="checkbox" name="todoPendingStudent" value="${s.id}" class="w-3.5 h-3.5 text-indigo-600 rounded"><span>${s.seatNo} ${s.name}</span></label>`).join('');
     }
 
     function renderTodoFilterStudentOptions() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
+      const students = appState.students || [];
       const filterSelect = document.getElementById('filterTodoStudentSelect');
-
-      if (students.length === 0) {
-        filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>';
-        return;
-      }
-
-      filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + students.map(s => 
-        `<option value="${s.id}">${s.seatNo} ${s.name}</option>`
-      ).join('');
+      filterSelect.innerHTML = students.length === 0 ? '<option value="">-- 請選擇學生 --</option>' :
+        '<option value="">-- 請選擇學生 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
     }
 
     function createTodoTask() {
@@ -1001,31 +945,18 @@
       const dueDate = document.getElementById('todoDueDate').value;
       const checkboxes = document.querySelectorAll('input[name="todoPendingStudent"]:checked');
 
-      if (!title || !dueDate) {
-        alert('請填寫項目名稱與截止日期！');
-        return;
-      }
+      if (!title || !dueDate) { alert('請填寫項目名稱與截止日期！'); return; }
+      if (checkboxes.length === 0) { alert('請至少勾選一位尚未繳交的學生！'); return; }
 
-      if (checkboxes.length === 0) {
-        alert('請至少勾選一位尚未繳交的學生！');
-        return;
-      }
-
-      const pendingStudentIds = Array.from(checkboxes).map(cb => cb.value);
-
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      if (!state.todoTasks) state.todoTasks = [];
-
-      state.todoTasks.unshift({
+      if (!appState.todoTasks) appState.todoTasks = [];
+      appState.todoTasks.unshift({
         id: 'todo_' + Date.now(),
-        title: title,
-        note: note,
-        dueDate: dueDate,
-        pendingStudentIds: pendingStudentIds,
+        title, note, dueDate,
+        pendingStudentIds: Array.from(checkboxes).map(cb => cb.value),
         createdAt: new Date().toISOString()
       });
 
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      saveStateToCloud();
       document.getElementById('todoTitle').value = '';
       document.getElementById('todoNote').value = '';
       renderTodoStudentCheckboxes();
@@ -1035,38 +966,21 @@
     }
 
     function calculateOverdueDays(studentId, dueDateStr) {
-      const today = new Date();
-      today.setHours(0,0,0,0);
-      
-      const due = new Date(dueDateStr);
-      due.setHours(0,0,0,0);
-
+      const today = new Date(); today.setHours(0,0,0,0);
+      const due = new Date(dueDateStr); due.setHours(0,0,0,0);
       if (today <= due) return 0;
 
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const attLogs = state.attendanceLogs || [];
-
-      let overdueDays = 0;
-      let curr = new Date(due);
+      const attLogs = appState.attendanceLogs || [];
+      let overdueDays = 0, curr = new Date(due);
       curr.setDate(curr.getDate() + 1);
 
       while (curr <= today) {
         const dayOfWeek = curr.getDay();
-        const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
-
         const dateStr = curr.toISOString().split('T')[0];
-        const isAbsent = attLogs.some(l => 
-          l.studentId === studentId && 
-          l.date === dateStr && 
-          ['病假', '事假', '公假', '喪假'].includes(l.category)
-        );
-
-        if (!isWeekend && !isAbsent) {
-          overdueDays++;
-        }
+        const isAbsent = attLogs.some(l => l.studentId === studentId && l.date === dateStr && ['病假', '事假', '公假', '喪假'].includes(l.category));
+        if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isAbsent) overdueDays++;
         curr.setDate(curr.getDate() + 1);
       }
-
       return overdueDays;
     }
 
@@ -1075,26 +989,16 @@
       const container = document.getElementById('individualTodoStatsContainer');
       const placeholder = document.getElementById('individualTodoPlaceholder');
 
-      if (!studentId) {
-        container.classList.add('hidden');
-        placeholder.classList.remove('hidden');
-        return;
-      }
+      if (!studentId) { container.classList.add('hidden'); placeholder.classList.remove('hidden'); return; }
+      container.classList.remove('hidden'); placeholder.classList.add('hidden');
 
-      container.classList.remove('hidden');
-      placeholder.classList.add('hidden');
-
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const student = (state.students || []).find(s => s.id === studentId);
-      const tasks = state.todoTasks || [];
-
+      const student = (appState.students || []).find(s => s.id === studentId);
+      const tasks = appState.todoTasks || [];
       if (!student) return;
 
       document.getElementById('indTodoStudentName').innerText = `${student.seatNo} ${student.name}`;
-
       const studentTasks = tasks.filter(t => t.pendingStudentIds.includes(studentId));
       let totalOverdueDays = 0;
-
       const listContainer = document.getElementById('indTodoList');
 
       if (studentTasks.length === 0) {
@@ -1104,114 +1008,48 @@
         listContainer.innerHTML = studentTasks.map(t => {
           const overdue = calculateOverdueDays(studentId, t.dueDate);
           totalOverdueDays += overdue;
-
-          return `
-            <div class="py-2.5 px-2 flex items-center justify-between text-xs">
-              <div>
-                <span class="font-bold text-indigo-900">${t.title}</span>
-                ${t.note ? `<span class="text-[10px] text-gray-500 ml-1.5 bg-gray-200 px-1.5 py-0.5 rounded">${t.note}</span>` : ''}
-                <div class="text-[10px] text-gray-400 mt-0.5">截止：${t.dueDate}</div>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="font-bold ${overdue > 0 ? 'text-rose-600' : 'text-gray-400'}">${overdue > 0 ? `逾期 ${overdue} 天` : '未逾期'}</span>
-                <button onclick="markStudentSubmitted('${t.id}', '${studentId}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">
-                  ✅ 銷案
-                </button>
-              </div>
-            </div>
-          `;
+          return `<div class="py-2.5 px-2 flex items-center justify-between text-xs"><div><span class="font-bold text-indigo-900">${t.title}</span>${t.note ? `<span class="text-[10px] text-gray-500 ml-1.5 bg-gray-200 px-1.5 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-[10px] text-gray-400 mt-0.5">截止：${t.dueDate}</div></div><div class="flex items-center gap-2"><span class="font-bold ${overdue > 0 ? 'text-rose-600' : 'text-gray-400'}">${overdue > 0 ? `逾期 ${overdue} 天` : '未逾期'}</span><button onclick="markStudentSubmitted('${t.id}', '${studentId}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div></div>`;
         }).join('');
-
         document.getElementById('indTodoTotalOverdue').innerText = `${totalOverdueDays} 天`;
       }
     }
 
     function renderTodoTaskList() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const tasks = state.todoTasks || [];
-      const students = state.students || [];
+      const tasks = appState.todoTasks || [];
+      const students = appState.students || [];
       const container = document.getElementById('todoTasksContainer');
 
-      if (tasks.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>';
-        return;
-      }
+      if (tasks.length === 0) { container.innerHTML = '<p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>'; return; }
 
       container.innerHTML = tasks.map(t => {
         const pendingStudents = students.filter(s => t.pendingStudentIds.includes(s.id));
-
-        return `
-          <div class="p-4 bg-gray-50 border rounded-xl space-y-3 shadow-sm">
-            <div class="flex justify-between items-start border-b pb-2">
-              <div>
-                <span class="font-extrabold text-base text-indigo-900">${t.title}</span>
-                ${t.note ? `<span class="text-xs text-gray-500 ml-2 bg-gray-200 px-2 py-0.5 rounded">${t.note}</span>` : ''}
-                <div class="text-xs text-gray-400 font-mono mt-0.5">截止日期：${t.dueDate}</div>
-              </div>
-              <button onclick="deleteTodoTask('${t.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">刪除項目 ✕</button>
-            </div>
-
-            <div>
-              <span class="text-xs font-bold text-gray-600 mb-2 block">未繳交學生名單 (${pendingStudents.length} 人)：</span>
-              
-              ${pendingStudents.length === 0 ? '<p class="text-xs text-emerald-600 font-bold">全班已全數繳交完成！🎉</p>' : `
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  ${pendingStudents.map(s => {
-                    const overdueDays = calculateOverdueDays(s.id, t.dueDate);
-                    return `
-                      <div class="p-2 bg-white border rounded-lg flex items-center justify-between text-xs">
-                        <div>
-                          <span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>
-                          ${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}
-                        </div>
-                        <button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">
-                          ✅ 銷案
-                        </button>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
-              `}
-            </div>
-          </div>
-        `;
+        return `<div class="p-4 bg-gray-50 border rounded-xl space-y-3 shadow-sm"><div class="flex justify-between items-start border-b pb-2"><div><span class="font-extrabold text-base text-indigo-900">${t.title}</span>${t.note ? `<span class="text-xs text-gray-500 ml-2 bg-gray-200 px-2 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-xs text-gray-400 font-mono mt-0.5">截止日期：${t.dueDate}</div></div><button onclick="deleteTodoTask('${t.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">刪除項目 ✕</button></div><div><span class="text-xs font-bold text-gray-600 mb-2 block">未繳交學生名單 (${pendingStudents.length} 人)：</span>${pendingStudents.length === 0 ? '<p class="text-xs text-emerald-600 font-bold">全班已全數繳交完成！🎉</p>' : `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${pendingStudents.map(s => { const overdueDays = calculateOverdueDays(s.id, t.dueDate); return `<div class="p-2 bg-white border rounded-lg flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}</div><button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div>`; }).join('')}</div>`}</div></div>`;
       }).join('');
     }
 
     function markStudentSubmitted(taskId, studentId) {
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const task = (state.todoTasks || []).find(t => t.id === taskId);
-
+      const task = (appState.todoTasks || []).find(t => t.id === taskId);
       if (task) {
         task.pendingStudentIds = task.pendingStudentIds.filter(id => id !== studentId);
-        localStorage.setItem('classroom_app_data', JSON.stringify(state));
-        renderTodoTaskList();
-        renderIndividualTodoStats();
+        saveStateToCloud();
       }
     }
 
     function deleteTodoTask(taskId) {
       if (!confirm('確定要刪除這項未完成追蹤項目嗎？')) return;
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      state.todoTasks = (state.todoTasks || []).filter(t => t.id !== taskId);
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderTodoTaskList();
-      renderIndividualTodoStats();
+      appState.todoTasks = (appState.todoTasks || []).filter(t => t.id !== taskId);
+      saveStateToCloud();
     }
 
-    // ----------------- 班級行事曆邏輯 -----------------
+    // ----------------- 行事曆邏輯 -----------------
     function importBatchCalendar() {
       const rawText = document.getElementById('batchCalendarInput').value.trim();
-      if (!rawText) {
-        alert('請填寫行事曆內容！');
-        return;
-      }
+      if (!rawText) { alert('請填寫行事曆內容！'); return; }
 
       const lines = rawText.split('\n');
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      if (!state.calendarEvents) state.calendarEvents = [];
-
+      if (!appState.calendarEvents) appState.calendarEvents = [];
       let count = 0;
+
       lines.forEach(line => {
         const trimmed = line.trim();
         if (trimmed) {
@@ -1219,48 +1057,30 @@
           if (parts.length >= 2) {
             const date = parts[0];
             const title = parts.slice(1).join(' ');
-            
-            const exists = state.calendarEvents.some(e => e.date === date && e.title === title);
-            if (!exists) {
-              state.calendarEvents.push({
-                id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                date: date,
-                title: title
-              });
+            if (!appState.calendarEvents.some(e => e.date === date && e.title === title)) {
+              appState.calendarEvents.push({ id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), date, title });
               count++;
             }
           }
         }
       });
 
-      state.calendarEvents.sort((a, b) => a.date.localeCompare(b.date));
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      appState.calendarEvents.sort((a, b) => a.date.localeCompare(b.date));
+      saveStateToCloud();
       document.getElementById('batchCalendarInput').value = '';
       alert(`🎉 成功新增/匯入 ${count} 筆行程事件！`);
-      renderCalendarList();
-      checkTodayEvents();
     }
 
     function renderCalendarList() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const events = state.calendarEvents || [];
+      const events = appState.calendarEvents || [];
+      document.getElementById('eventCount').innerText = `共 ${events.length} 筆事件`;
       const listContainer = document.getElementById('calendarList');
-      const countLabel = document.getElementById('eventCount');
 
-      countLabel.innerText = `共 ${events.length} 筆事件`;
-
-      if (events.length === 0) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>';
-        return;
-      }
+      if (events.length === 0) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>'; return; }
 
       listContainer.innerHTML = events.map(evt => `
         <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
-            <span class="font-bold text-gray-800 text-sm">${evt.title}</span>
-          </div>
+          <div class="flex items-center gap-3"><span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span><span class="font-bold text-gray-800 text-sm">${evt.title}</span></div>
           <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
         </div>
       `).join('');
@@ -1268,88 +1088,52 @@
 
     function deleteCalendarEvent(id) {
       if (!confirm('確定要刪除這筆行程嗎？')) return;
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      state.calendarEvents = (state.calendarEvents || []).filter(e => e.id !== id);
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderCalendarList();
-      checkTodayEvents();
+      appState.calendarEvents = (appState.calendarEvents || []).filter(e => e.id !== id);
+      saveStateToCloud();
     }
 
     function clearCalendar() {
       if (!confirm('確定要清空所有行事曆事件嗎？')) return;
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      state.calendarEvents = [];
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderCalendarList();
-      checkTodayEvents();
+      appState.calendarEvents = [];
+      saveStateToCloud();
     }
 
     // ----------------- 學生名單邏輯 -----------------
     function importBatchStudents() {
       const rawText = document.getElementById('batchStudentInput').value.trim();
-      if (!rawText) {
-        alert('請先在輸入框貼上學生名單！');
-        return;
-      }
+      if (!rawText) { alert('請先在輸入框貼上學生名單！'); return; }
 
       const lines = rawText.split('\n');
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      if (!state.students) state.students = [];
-
+      if (!appState.students) appState.students = [];
       let count = 0;
-      lines.forEach((line) => {
+
+      lines.forEach(line => {
         const trimmed = line.trim();
         if (trimmed) {
           const parts = trimmed.split(/\s+/);
-          let seatNo = (state.students.length + 1).toString().padStart(2, '0');
+          let seatNo = (appState.students.length + 1).toString().padStart(2, '0');
           let name = trimmed;
-
-          if (parts.length >= 2 && !isNaN(parts[0])) {
-            seatNo = parts[0].padStart(2, '0');
-            name = parts.slice(1).join(' ');
-          }
-
-          state.students.push({
-            id: 'stu_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-            seatNo: seatNo,
-            name: name,
-            points: 0
-          });
+          if (parts.length >= 2 && !isNaN(parts[0])) { seatNo = parts[0].padStart(2, '0'); name = parts.slice(1).join(' '); }
+          appState.students.push({ id: 'stu_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), seatNo, name, points: 0 });
           count++;
         }
       });
 
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      saveStateToCloud();
       document.getElementById('batchStudentInput').value = '';
       alert(`🎉 成功匯入 ${count} 位學生！`);
-      renderStudentGrid();
-      renderPointStudentOptions();
-      renderPointRoster();
-      renderAttendanceStudentOptions();
-      renderClassAttendanceStats();
-      renderTodoStudentCheckboxes();
-      renderTodoFilterStudentOptions();
     }
 
     function renderStudentGrid() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
+      const students = appState.students || [];
+      document.getElementById('studentCount').innerText = `共 ${students.length} 位學生`;
       const grid = document.getElementById('studentGrid');
-      const countLabel = document.getElementById('studentCount');
 
-      countLabel.innerText = `共 ${students.length} 位學生`;
-
-      if (students.length === 0) {
-        grid.innerHTML = '<p class="text-gray-400 text-sm col-span-full">尚未匯入學生資料，請在上方貼入名單並點擊匯入。</p>';
-        return;
-      }
+      if (students.length === 0) { grid.innerHTML = '<p class="text-gray-400 text-sm col-span-full">尚未匯入學生資料，請在上方貼入名單並點擊匯入。</p>'; return; }
 
       grid.innerHTML = students.map(stu => `
         <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm hover:shadow transition">
-          <div>
-            <span class="text-xs font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded mr-1.5">${stu.seatNo}</span>
-            <span class="font-bold text-gray-800 text-sm">${stu.name}</span>
-          </div>
+          <div><span class="text-xs font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded mr-1.5">${stu.seatNo}</span><span class="font-bold text-gray-800 text-sm">${stu.name}</span></div>
           <button onclick="deleteStudent('${stu.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
         </div>
       `).join('');
@@ -1357,125 +1141,55 @@
 
     function deleteStudent(id) {
       if (!confirm('確定要刪除這位學生嗎？')) return;
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      state.students = (state.students || []).filter(s => s.id !== id);
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderStudentGrid();
-      renderPointStudentOptions();
-      renderPointRoster();
-      renderAttendanceStudentOptions();
-      renderClassAttendanceStats();
-      renderTodoStudentCheckboxes();
-      renderTodoFilterStudentOptions();
+      appState.students = (appState.students || []).filter(s => s.id !== id);
+      saveStateToCloud();
     }
 
     function clearStudents() {
-      if (!confirm('確定要清空所有學生資料嗎？（此動作無法復原）')) return;
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      state.students = [];
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderStudentGrid();
-      renderPointStudentOptions();
-      renderPointRoster();
-      renderAttendanceStudentOptions();
-      renderClassAttendanceStats();
-      renderTodoStudentCheckboxes();
-      renderTodoFilterStudentOptions();
+      if (!confirm('確定要清空所有學生資料嗎？')) return;
+      appState.students = [];
+      saveStateToCloud();
     }
 
     // ----------------- 榮譽點數邏輯 -----------------
     function renderClassPointsDisplay() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const total = state.classTotalPoints || 0;
-      document.getElementById('classTotalPointsDisplay').innerHTML = `${total} <span class="text-sm font-bold text-white">分</span>`;
+      document.getElementById('classTotalPointsDisplay').innerHTML = `${appState.classTotalPoints || 0} <span class="text-sm font-bold text-white">分</span>`;
     }
 
     function renderPointStudentOptions() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
+      const students = appState.students || [];
       const select = document.getElementById('pointStudentSelect');
       const filterSelect = document.getElementById('filterStudentSelect');
-
-      if (students.length === 0) {
-        select.innerHTML = '<option value="">-- 請先新增/匯入學生 --</option>';
-        filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>';
-        return;
-      }
-
-      const optionsHTML = students.map(s => 
-        `<option value="${s.id}">${s.seatNo} / ${s.name} ｜ 當前：${s.points || 0} 點</option>`
-      ).join('');
-
+      const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : students.map(s => `<option value="${s.id}">${s.seatNo} / ${s.name} ｜ 當前：${s.points || 0} 點</option>`).join('');
       select.innerHTML = optionsHTML;
       filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
     }
 
-    function setPointReason(text) {
-      document.getElementById('pointReason').value = text;
-    }
-
-    function setClassPointReason(text) {
-      document.getElementById('classPointReason').value = text;
-    }
+    function setPointReason(text) { document.getElementById('pointReason').value = text; }
+    function setClassPointReason(text) { document.getElementById('classPointReason').value = text; }
 
     function applyPointChange(amount) {
-      const select = document.getElementById('pointStudentSelect');
-      const studentId = select.value;
+      const studentId = document.getElementById('pointStudentSelect').value;
       const reason = document.getElementById('pointReason').value.trim() || '日常表現優良';
+      if (!studentId) { alert('請先選擇學生！'); return; }
 
-      if (!studentId) {
-        alert('請先選擇學生！');
-        return;
-      }
-
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const student = (state.students || []).find(s => s.id === studentId);
-
+      const student = (appState.students || []).find(s => s.id === studentId);
       if (student) {
         student.points = (student.points || 0) + amount;
-
-        if (!state.pointLogs) state.pointLogs = [];
-        state.pointLogs.unshift({
-          id: 'log_' + Date.now(),
-          studentId: student.id,
-          date: new Date().toISOString().split('T')[0],
-          studentName: `${student.seatNo} ${student.name}`,
-          change: `+${amount}`,
-          reason: reason,
-          type: 'change'
-        });
-
-        localStorage.setItem('classroom_app_data', JSON.stringify(state));
-        
+        if (!appState.pointLogs) appState.pointLogs = [];
+        appState.pointLogs.unshift({ id: 'log_' + Date.now(), studentId: student.id, date: new Date().toISOString().split('T')[0], studentName: `${student.seatNo} ${student.name}`, change: `+${amount}`, reason, type: 'change' });
+        saveStateToCloud();
         document.getElementById('pointReason').value = '';
-        renderPointStudentOptions();
-        select.value = studentId;
-        renderPointRoster();
-        renderIndividualPointHistory();
       }
     }
 
     function applyClassPointChange(amount) {
       const reason = document.getElementById('classPointReason').value.trim() || (amount > 0 ? '全班表現優良' : '全班常規待加強');
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-
-      state.classTotalPoints = (state.classTotalPoints || 0) + amount;
-
-      if (!state.classPointLogs) state.classPointLogs = [];
-      state.classPointLogs.unshift({
-        id: 'clog_' + Date.now(),
-        date: new Date().toISOString().split('T')[0],
-        change: amount > 0 ? `+${amount}` : `${amount}`,
-        reason: reason,
-        type: 'change'
-      });
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-
+      appState.classTotalPoints = (appState.classTotalPoints || 0) + amount;
+      if (!appState.classPointLogs) appState.classPointLogs = [];
+      appState.classPointLogs.unshift({ id: 'clog_' + Date.now(), date: new Date().toISOString().split('T')[0], change: amount > 0 ? `+${amount}` : `${amount}`, reason, type: 'change' });
+      saveStateToCloud();
       document.getElementById('classPointReason').value = '';
-      renderClassPointsDisplay();
-      renderClassPointHistory();
-      alert(`✅ 已成功調整全班總分 (${amount > 0 ? '+' : ''}${amount} 分)！`);
     }
 
     function switchRewardTab(type) {
@@ -1483,302 +1197,121 @@
       const btnClass = document.getElementById('tabBtnRewClass');
       const tabInd = document.getElementById('rewardTabIndividual');
       const tabClass = document.getElementById('rewardTabClass');
-
       if (type === 'individual') {
         btnInd.className = "px-3 py-1 rounded-md bg-white shadow-sm text-indigo-600 font-bold";
         btnClass.className = "px-3 py-1 rounded-md text-gray-500 hover:text-gray-800";
-        tabInd.classList.remove('hidden');
-        tabClass.classList.add('hidden');
+        tabInd.classList.remove('hidden'); tabClass.classList.add('hidden');
       } else {
         btnClass.className = "px-3 py-1 rounded-md bg-white shadow-sm text-indigo-600 font-bold";
         btnInd.className = "px-3 py-1 rounded-md text-gray-500 hover:text-gray-800";
-        tabClass.classList.remove('hidden');
-        tabInd.classList.add('hidden');
+        tabClass.classList.remove('hidden'); tabInd.classList.add('hidden');
       }
     }
 
     function addRewardItem(target) {
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-
       if (target === 'individual') {
         const name = document.getElementById('rewardName').value.trim();
         const cost = parseInt(document.getElementById('rewardCost').value);
         const stock = parseInt(document.getElementById('rewardStock').value);
-
-        if (!name || isNaN(cost) || cost <= 0) {
-          alert('請填寫有效的個人獎品名稱與需要點數！');
-          return;
-        }
-
-        if (!state.rewards) state.rewards = [];
-        state.rewards.push({
-          id: 'rew_' + Date.now(),
-          name: name,
-          cost: cost,
-          stock: isNaN(stock) ? null : stock
-        });
-
-        document.getElementById('rewardName').value = '';
-        document.getElementById('rewardCost').value = '';
-        document.getElementById('rewardStock').value = '';
+        if (!name || isNaN(cost) || cost <= 0) { alert('請填寫有效的個人獎品名稱與需要點數！'); return; }
+        if (!appState.rewards) appState.rewards = [];
+        appState.rewards.push({ id: 'rew_' + Date.now(), name, cost, stock: isNaN(stock) ? null : stock });
+        document.getElementById('rewardName').value = ''; document.getElementById('rewardCost').value = ''; document.getElementById('rewardStock').value = '';
       } else {
         const name = document.getElementById('classRewardName').value.trim();
         const cost = parseInt(document.getElementById('classRewardCost').value);
-
-        if (!name || isNaN(cost) || cost <= 0) {
-          alert('請填寫有效的全班獎勵名稱與需要總分！');
-          return;
-        }
-
-        if (!state.classRewards) state.classRewards = [];
-        state.classRewards.push({
-          id: 'crew_' + Date.now(),
-          name: name,
-          cost: cost
-        });
-
-        document.getElementById('classRewardName').value = '';
-        document.getElementById('classRewardCost').value = '';
+        if (!name || isNaN(cost) || cost <= 0) { alert('請填寫有效的全班獎勵名稱與需要總分！'); return; }
+        if (!appState.classRewards) appState.classRewards = [];
+        appState.classRewards.push({ id: 'crew_' + Date.now(), name, cost });
+        document.getElementById('classRewardName').value = ''; document.getElementById('classRewardCost').value = '';
       }
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderRewardList();
+      saveStateToCloud();
     }
 
     function renderRewardList() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      
-      const indRewards = state.rewards || [];
-      const indContainer = document.getElementById('rewardListIndividual');
+      const indRewards = appState.rewards || [];
+      document.getElementById('rewardListIndividual').innerHTML = indRewards.length === 0 ? '<p class="text-gray-400 text-xs py-2">尚無個人獎品品項。</p>' :
+        indRewards.map(r => `<div class="p-2.5 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${r.name}</span><div class="text-[11px] text-gray-500">需要：<span class="font-bold text-indigo-600">${r.cost}</span> 點 ｜ 庫存：${r.stock !== null ? r.stock : '無限'}</div></div><div class="flex items-center gap-1 interactive-control"><button onclick="claimReward('${r.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎁 兌獎</button><button onclick="deleteReward('${r.id}', 'individual')" class="text-gray-400 hover:text-red-500 p-1">✕</button></div></div>`).join('');
 
-      if (indRewards.length === 0) {
-        indContainer.innerHTML = '<p class="text-gray-400 text-xs py-2">尚無個人獎品品項。</p>';
-      } else {
-        indContainer.innerHTML = indRewards.map(r => `
-          <div class="p-2.5 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-gray-800">${r.name}</span>
-              <div class="text-[11px] text-gray-500">需要：<span class="font-bold text-indigo-600">${r.cost}</span> 點 ｜ 庫存：${r.stock !== null ? r.stock : '無限'}</div>
-            </div>
-            <div class="flex items-center gap-1 interactive-control">
-              <button onclick="claimReward('${r.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎁 兌獎</button>
-              <button onclick="deleteReward('${r.id}', 'individual')" class="text-gray-400 hover:text-red-500 p-1">✕</button>
-            </div>
-          </div>
-        `).join('');
-      }
-
-      const classRewards = state.classRewards || [];
-      const classContainer = document.getElementById('rewardListClass');
-
-      if (classRewards.length === 0) {
-        classContainer.innerHTML = '<p class="text-gray-400 text-xs py-2">尚無全班獎勵品項。</p>';
-      } else {
-        classContainer.innerHTML = classRewards.map(r => `
-          <div class="p-2.5 bg-amber-50/60 rounded-lg border border-amber-100 flex items-center justify-between text-xs">
-            <div>
-              <span class="font-bold text-gray-800">${r.name}</span>
-              <div class="text-[11px] text-gray-500">需要全班總分：<span class="font-bold text-amber-700">${r.cost}</span> 分</div>
-            </div>
-            <div class="flex items-center gap-1 interactive-control">
-              <button onclick="claimClassReward('${r.id}')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎉 兌換全班獎勵</button>
-              <button onclick="deleteReward('${r.id}', 'class')" class="text-gray-400 hover:text-red-500 p-1">✕</button>
-            </div>
-          </div>
-        `).join('');
-      }
+      const classRewards = appState.classRewards || [];
+      document.getElementById('rewardListClass').innerHTML = classRewards.length === 0 ? '<p class="text-gray-400 text-xs py-2">尚無全班獎勵品項。</p>' :
+        classRewards.map(r => `<div class="p-2.5 bg-amber-50/60 rounded-lg border border-amber-100 flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${r.name}</span><div class="text-[11px] text-gray-500">需要全班總分：<span class="font-bold text-amber-700">${r.cost}</span> 分</div></div><div class="flex items-center gap-1 interactive-control"><button onclick="claimClassReward('${r.id}')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎉 兌換全班獎勵</button><button onclick="deleteReward('${r.id}', 'class')" class="text-gray-400 hover:text-red-500 p-1">✕</button></div></div>`).join('');
     }
 
     function claimReward(rewardId) {
-      const select = document.getElementById('pointStudentSelect');
-      const studentId = select.value;
-
-      if (!studentId) {
-        alert('請先在左側選單選擇要兌獎的學生！');
-        return;
-      }
-
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const student = (state.students || []).find(s => s.id === studentId);
-      const reward = (state.rewards || []).find(r => r.id === rewardId);
-
+      const studentId = document.getElementById('pointStudentSelect').value;
+      if (!studentId) { alert('請先在左側選單選擇要兌獎的學生！'); return; }
+      const student = (appState.students || []).find(s => s.id === studentId);
+      const reward = (appState.rewards || []).find(r => r.id === rewardId);
       if (!student || !reward) return;
 
-      if ((student.points || 0) < reward.cost) {
-        alert(`❌ 點數不足！${student.name} 目前只有 ${student.points || 0} 點，兌換「${reward.name}」需要 ${reward.cost} 點。`);
-        return;
-      }
-
-      if (reward.stock !== null && reward.stock <= 0) {
-        alert(`❌ 「${reward.name}」已無庫存！`);
-        return;
-      }
+      if ((student.points || 0) < reward.cost) { alert(`❌ 點數不足！`); return; }
+      if (reward.stock !== null && reward.stock <= 0) { alert(`❌ 已無庫存！`); return; }
 
       student.points -= reward.cost;
       if (reward.stock !== null) reward.stock -= 1;
-
-      if (!state.pointLogs) state.pointLogs = [];
-      state.pointLogs.unshift({
-        id: 'log_' + Date.now(),
-        studentId: student.id,
-        date: new Date().toISOString().split('T')[0],
-        studentName: `${student.seatNo} ${student.name}`,
-        change: `-${reward.cost}`,
-        reason: `兌換獎品：${reward.name}`,
-        type: 'reward'
-      });
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      alert(`🎉 兌換成功！${student.name} 成功兌換「${reward.name}」，扣除 ${reward.cost} 點。`);
-      
-      renderPointStudentOptions();
-      select.value = studentId;
-      renderRewardList();
-      renderPointRoster();
+      if (!appState.pointLogs) appState.pointLogs = [];
+      appState.pointLogs.unshift({ id: 'log_' + Date.now(), studentId: student.id, date: new Date().toISOString().split('T')[0], studentName: `${student.seatNo} ${student.name}`, change: `-${reward.cost}`, reason: `兌換獎品：${reward.name}`, type: 'reward' });
+      saveStateToCloud();
+      alert(`🎉 兌換成功！`);
     }
 
     function claimClassReward(rewardId) {
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const reward = (state.classRewards || []).find(r => r.id === rewardId);
-      const currentPoints = state.classTotalPoints || 0;
-
+      const reward = (appState.classRewards || []).find(r => r.id === rewardId);
+      const currentPoints = appState.classTotalPoints || 0;
       if (!reward) return;
+      if (currentPoints < reward.cost) { alert(`❌ 全班總分不足！`); return; }
+      if (!confirm(`確定要消耗 ${reward.cost} 分兌換「${reward.name}」嗎？`)) return;
 
-      if (currentPoints < reward.cost) {
-        alert(`❌ 全班累積分數不足！當前全班總分：${currentPoints} 分，兌換「${reward.name}」需要 ${reward.cost} 分。`);
-        return;
-      }
-
-      if (!confirm(`確定要消耗 ${reward.cost} 分全班積分為全班兌換「${reward.name}」嗎？`)) return;
-
-      state.classTotalPoints -= reward.cost;
-
-      if (!state.classPointLogs) state.classPointLogs = [];
-      state.classPointLogs.unshift({
-        id: 'clog_' + Date.now(),
-        date: new Date().toISOString().split('T')[0],
-        change: `-${reward.cost}`,
-        reason: `兌換全班獎勵：${reward.name}`,
-        type: 'reward'
-      });
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      alert(`🎉 恭喜全班成功兌換「${reward.name}」！已扣除 ${reward.cost} 分全班總分。`);
-
-      renderClassPointsDisplay();
-      renderClassPointHistory();
+      appState.classTotalPoints -= reward.cost;
+      if (!appState.classPointLogs) appState.classPointLogs = [];
+      appState.classPointLogs.unshift({ id: 'clog_' + Date.now(), date: new Date().toISOString().split('T')[0], change: `-${reward.cost}`, reason: `兌換全班獎勵：${reward.name}`, type: 'reward' });
+      saveStateToCloud();
+      alert(`🎉 恭喜全班成功兌換！`);
     }
 
     function deleteReward(id, target) {
       if (!confirm('確定要刪除這項獎品嗎？')) return;
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-
-      if (target === 'individual') {
-        state.rewards = (state.rewards || []).filter(r => r.id !== id);
-      } else {
-        state.classRewards = (state.classRewards || []).filter(r => r.id !== id);
-      }
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderRewardList();
+      if (target === 'individual') appState.rewards = (appState.rewards || []).filter(r => r.id !== id);
+      else appState.classRewards = (appState.classRewards || []).filter(r => r.id !== id);
+      saveStateToCloud();
     }
 
     function renderPointRoster() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
-      const grid = document.getElementById('pointRosterGrid');
-
-      if (students.length === 0) {
-        grid.innerHTML = '<p class="text-gray-400 text-sm col-span-full">尚未建立學生資料。</p>';
-        return;
-      }
-
-      grid.innerHTML = students.map(s => `
-        <div class="p-2 bg-gray-50 border rounded flex justify-between items-center text-xs">
-          <span class="font-medium text-gray-700">${s.seatNo} ${s.name}</span>
-          <span class="font-bold text-emerald-600">${s.points || 0} 點</span>
-        </div>
-      `).join('');
+      const students = appState.students || [];
+      document.getElementById('pointRosterGrid').innerHTML = students.length === 0 ? '<p class="text-gray-400 text-sm col-span-full">尚未建立學生資料。</p>' :
+        students.map(s => `<div class="p-2 bg-gray-50 border rounded flex justify-between items-center text-xs"><span class="font-medium text-gray-700">${s.seatNo} ${s.name}</span><span class="font-bold text-emerald-600">${s.points || 0} 點</span></div>`).join('');
     }
 
     function renderIndividualPointHistory() {
-      const filterSelect = document.getElementById('filterStudentSelect');
-      const studentId = filterSelect.value;
+      const studentId = document.getElementById('filterStudentSelect').value;
       const listContainer = document.getElementById('individualHistoryList');
-
-      if (!studentId) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">請從上方選取學生查詢加分紀錄。</p>';
-        return;
-      }
-
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const logs = (state.pointLogs || []).filter(l => l.studentId === studentId);
-
-      if (logs.length === 0) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">該位學生目前尚無紀錄。</p>';
-        return;
-      }
-
-      listContainer.innerHTML = logs.map(l => `
-        <div class="py-2 flex justify-between items-center text-xs">
-          <div>
-            <span class="text-gray-400 mr-2 font-mono">${l.date}</span>
-            <span class="text-gray-800 font-medium">${l.reason}</span>
-          </div>
-          <span class="font-bold ${l.change.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}">${l.change} 點</span>
-        </div>
-      `).join('');
+      if (!studentId) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">請從上方選取學生查詢加分紀錄。</p>'; return; }
+      const logs = (appState.pointLogs || []).filter(l => l.studentId === studentId);
+      listContainer.innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-2">該位學生目前尚無紀錄。</p>' :
+        logs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="text-gray-400 mr-2 font-mono">${l.date}</span><span class="text-gray-800 font-medium">${l.reason}</span></div><span class="font-bold ${l.change.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}">${l.change} 點</span></div>`).join('');
     }
 
     function renderClassPointHistory() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const logs = state.classPointLogs || [];
-      const list = document.getElementById('classPointHistoryList');
-
-      if (logs.length === 0) {
-        list.innerHTML = '<p class="text-gray-400 text-sm py-2">目前尚無全班歷程。</p>';
-        return;
-      }
-
-      list.innerHTML = logs.map(l => `
-        <div class="py-2 flex justify-between items-center text-xs">
-          <div>
-            <span class="text-gray-400 mr-2 font-mono">${l.date}</span>
-            <span class="font-bold ${l.type === 'reward' ? 'text-amber-700' : 'text-gray-800'}">${l.reason}</span>
-          </div>
-          <span class="font-bold ${l.change.startsWith('+') ? 'text-indigo-600' : 'text-rose-600'}">${l.change} 分</span>
-        </div>
-      `).join('');
+      const logs = appState.classPointLogs || [];
+      document.getElementById('classPointHistoryList').innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-2">目前尚無全班歷程。</p>' :
+        logs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="text-gray-400 mr-2 font-mono">${l.date}</span><span class="font-bold ${l.type === 'reward' ? 'text-amber-700' : 'text-gray-800'}">${l.reason}</span></div><span class="font-bold ${l.change.startsWith('+') ? 'text-indigo-600' : 'text-rose-600'}">${l.change} 分</span></div>`).join('');
     }
 
-    // ----------------- 請假遲到與統計邏輯 -----------------
+    // ----------------- 請假遲到模組 -----------------
     function initAttendanceModule() {
-      document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
+      if (!document.getElementById('attDate').value) document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
       renderAttendanceStudentOptions();
       renderAttendanceList();
       renderClassAttendanceStats();
-      
-      document.getElementById('attDate').addEventListener('change', renderAttendanceList);
     }
 
     function renderAttendanceStudentOptions() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
+      const students = appState.students || [];
       const select = document.getElementById('attStudentSelect');
       const filterSelect = document.getElementById('filterAttStudentSelect');
-
-      if (students.length === 0) {
-        select.innerHTML = '<option value="">-- 請先新增/匯入學生 --</option>';
-        filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>';
-        return;
-      }
-
-      const optionsHTML = students.map(s => 
-        `<option value="${s.id}">${s.seatNo} ${s.name}</option>`
-      ).join('');
-
-      select.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
-      filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
+      const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : '<option value="">-- 請選擇學生 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
+      select.innerHTML = optionsHTML; filterSelect.innerHTML = optionsHTML;
     }
 
     function saveAttendanceRecord() {
@@ -1787,106 +1320,41 @@
       const category = document.getElementById('attCategorySelect').value;
       const note = document.getElementById('attNote').value.trim();
 
-      if (!date || !studentId) {
-        alert('請選取有效的日期與學生！');
-        return;
-      }
-
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const student = (state.students || []).find(s => s.id === studentId);
+      if (!date || !studentId) { alert('請選取有效的日期與學生！'); return; }
+      const student = (appState.students || []).find(s => s.id === studentId);
       if (!student) return;
 
-      if (!state.attendanceLogs) state.attendanceLogs = [];
-
-      state.attendanceLogs.unshift({
-        id: 'att_' + Date.now(),
-        date: date,
-        studentId: student.id,
-        studentName: `${student.seatNo} ${student.name}`,
-        category: category,
-        note: note
-      });
-
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
+      if (!appState.attendanceLogs) appState.attendanceLogs = [];
+      appState.attendanceLogs.unshift({ id: 'att_' + Date.now(), date, studentId: student.id, studentName: `${student.seatNo} ${student.name}`, category, note });
+      saveStateToCloud();
       document.getElementById('attNote').value = '';
       alert(`✅ 已儲存 ${student.name} 的「${category}」紀錄！`);
-      renderAttendanceList();
-      renderClassAttendanceStats();
-      renderIndividualAttendanceStats();
-      if (typeof renderTodoTaskList === 'function') renderTodoTaskList();
-      if (typeof renderIndividualTodoStats === 'function') renderIndividualTodoStats();
     }
 
     function renderAttendanceList() {
       const currentDate = document.getElementById('attDate').value;
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const logs = (state.attendanceLogs || []).filter(l => l.date === currentDate);
+      const logs = (appState.attendanceLogs || []).filter(l => l.date === currentDate);
       const listContainer = document.getElementById('attendanceList');
-
-      if (logs.length === 0) {
-        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-3">當天無請假/遲到紀錄。</p>';
-        return;
-      }
-
-      listContainer.innerHTML = logs.map(l => `
-        <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
-          <div>
-            <div class="flex items-center gap-2 mb-0.5">
-              <span class="font-bold text-gray-800 text-sm">${l.studentName}</span>
-              <span class="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">${l.category}</span>
-            </div>
-            ${l.note ? `<p class="text-xs text-gray-500">備註：${l.note}</p>` : '<p class="text-xs text-gray-300">無備註</p>'}
-          </div>
-          <button onclick="deleteAttendanceRecord('${l.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
-        </div>
-      `).join('');
+      listContainer.innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-3">當天無請假/遲到紀錄。</p>' :
+        logs.map(l => `<div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded"><div><div class="flex items-center gap-2 mb-0.5"><span class="font-bold text-gray-800 text-sm">${l.studentName}</span><span class="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">${l.category}</span></div>${l.note ? `<p class="text-xs text-gray-500">備註：${l.note}</p>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button></div>`).join('');
     }
 
     function deleteAttendanceRecord(id) {
       if (!confirm('確定要刪除這筆紀錄嗎？')) return;
-      let state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      state.attendanceLogs = (state.attendanceLogs || []).filter(l => l.id !== id);
-      localStorage.setItem('classroom_app_data', JSON.stringify(state));
-      renderAttendanceList();
-      renderClassAttendanceStats();
-      renderIndividualAttendanceStats();
-      if (typeof renderTodoTaskList === 'function') renderTodoTaskList();
-      if (typeof renderIndividualTodoStats === 'function') renderIndividualTodoStats();
+      appState.attendanceLogs = (appState.attendanceLogs || []).filter(l => l.id !== id);
+      saveStateToCloud();
     }
 
     function renderClassAttendanceStats() {
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const students = state.students || [];
-      const logs = state.attendanceLogs || [];
+      const students = appState.students || [];
+      const logs = appState.attendanceLogs || [];
       const tbody = document.getElementById('classAttendanceStatsTable');
-
-      if (students.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>';
-        return;
-      }
+      if (students.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>'; return; }
 
       tbody.innerHTML = students.map(s => {
         const studentLogs = logs.filter(l => l.studentId === s.id);
-        const counts = {
-          病假: studentLogs.filter(l => l.category === '病假').length,
-          事假: studentLogs.filter(l => l.category === '事假').length,
-          公假: studentLogs.filter(l => l.category === '公假').length,
-          喪假: studentLogs.filter(l => l.category === '喪假').length,
-          上學遲到: studentLogs.filter(l => l.category === '上學遲到').length,
-          上課遲到: studentLogs.filter(l => l.category === '上課遲到').length,
-        };
-
-        return `
-          <tr class="hover:bg-slate-50 transition">
-            <td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td>
-            <td class="p-3 text-center ${counts.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${counts.病假}</td>
-            <td class="p-3 text-center ${counts.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${counts.事假}</td>
-            <td class="p-3 text-center ${counts.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${counts.公假}</td>
-            <td class="p-3 text-center ${counts.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${counts.喪假}</td>
-            <td class="p-3 text-center ${counts.上學遲到 > 0 ? 'font-bold text-purple-600' : 'text-gray-300'}">${counts.上學遲到}</td>
-            <td class="p-3 text-center ${counts.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${counts.上課遲到}</td>
-          </tr>
-        `;
+        const c = { 病假: studentLogs.filter(l => l.category === '病假').length, 事假: studentLogs.filter(l => l.category === '事假').length, 公假: studentLogs.filter(l => l.category === '公假').length, 喪假: studentLogs.filter(l => l.category === '喪假').length, 上學遲到: studentLogs.filter(l => l.category === '上學遲到').length, 上課遲到: studentLogs.filter(l => l.category === '上課遲到').length };
+        return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-purple-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
       }).join('');
     }
 
@@ -1894,47 +1362,18 @@
       const studentId = document.getElementById('filterAttStudentSelect').value;
       const container = document.getElementById('individualAttStatsContainer');
       const placeholder = document.getElementById('individualAttPlaceholder');
+      if (!studentId) { container.classList.add('hidden'); placeholder.classList.remove('hidden'); return; }
+      container.classList.remove('hidden'); placeholder.classList.add('hidden');
 
-      if (!studentId) {
-        container.classList.add('hidden');
-        placeholder.classList.remove('hidden');
-        return;
-      }
-
-      container.classList.remove('hidden');
-      placeholder.classList.add('hidden');
-
-      const state = JSON.parse(localStorage.getItem('classroom_app_data') || '{}');
-      const studentLogs = (state.attendanceLogs || []).filter(l => l.studentId === studentId);
-
+      const studentLogs = (appState.attendanceLogs || []).filter(l => l.studentId === studentId);
       const categories = ['病假', '事假', '公假', '喪假', '上學遲到', '上課遲到'];
-      const cardsContainer = document.getElementById('individualCategoryCards');
-
-      cardsContainer.innerHTML = categories.map(cat => {
+      document.getElementById('individualCategoryCards').innerHTML = categories.map(cat => {
         const count = studentLogs.filter(l => l.category === cat).length;
-        return `
-          <div class="p-3 rounded-lg border text-center ${count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100 opacity-60'}">
-            <span class="text-xs text-gray-500 font-bold block">${cat}</span>
-            <span class="text-xl font-extrabold ${count > 0 ? 'text-amber-800' : 'text-gray-400'}">${count} <span class="text-xs font-normal">次</span></span>
-          </div>
-        `;
+        return `<div class="p-3 rounded-lg border text-center ${count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100 opacity-60'}"><span class="text-xs text-gray-500 font-bold block">${cat}</span><span class="text-xl font-extrabold ${count > 0 ? 'text-amber-800' : 'text-gray-400'}">${count} <span class="text-xs font-normal">次</span></span></div>`;
       }).join('');
 
-      const historyContainer = document.getElementById('individualAttHistoryList');
-      if (studentLogs.length === 0) {
-        historyContainer.innerHTML = '<p class="text-gray-400 text-xs py-3">該生尚無任何請假與遲到紀錄。</p>';
-      } else {
-        historyContainer.innerHTML = studentLogs.map(l => `
-          <div class="py-2 flex justify-between items-center text-xs">
-            <div>
-              <span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span>
-              <span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}</span>
-              ${l.note ? `<span class="text-gray-600">${l.note}</span>` : '<span class="text-gray-300">無備註</span>'}
-            </div>
-            <button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500 interactive-control">✕</button>
-          </div>
-        `).join('');
-      }
+      document.getElementById('individualAttHistoryList').innerHTML = studentLogs.length === 0 ? '<p class="text-gray-400 text-xs py-3">該生尚無任何請假與遲到紀錄。</p>' :
+        studentLogs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span><span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}</span>${l.note ? `<span class="text-gray-600">${l.note}</span>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500 interactive-control">✕</button></div>`).join('');
     }
   </script>
 </body>

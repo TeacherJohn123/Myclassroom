@@ -54,13 +54,13 @@
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
         <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
-        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
+        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         <button onclick="switchTab('remedial')" id="btn-remedial" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📚 學習扶助</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.16</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.15</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -1009,11 +1009,8 @@
 
       const penaltyButtonsHTML = [];
       students.forEach(s => {
-        // 核心邏輯：上學遲到 + 上課遲到 合併計算，每滿 5 次增加值日生 1 天
-        const lateLogs = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到'));
-        const totalLateCount = lateLogs.length;
-        const totalLateDays = Math.floor(totalLateCount / 5);
-
+        const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+        const totalLateDays = Math.floor(lateCount / 5);
         const totalBehDays = behaviorDutyMap[s.id] || 0;
         const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
 
@@ -1026,16 +1023,11 @@
         const fullName = `${s.seatNo} ${s.name}`;
 
         if (pendingPenaltyDays > 0) {
-          // 顏色判定：遲到=橘色(orange)，違規事項=紅色(rose)，走廊奔跑=土黃色(amber)
           let badgeClass = 'bg-orange-500 text-white';
           let borderClass = 'border-orange-300 bg-orange-50 text-orange-950';
           let icon = '⏰';
 
-          if (totalLateDays > 0 && totalLateDays >= totalBehDays && totalLateDays >= totalCorridorDays) {
-            badgeClass = 'bg-orange-500 text-white';
-            borderClass = 'border-orange-300 bg-orange-50 text-orange-950';
-            icon = '⏰';
-          } else if (totalBehDays > 0 && totalBehDays >= totalLateDays && totalBehDays >= totalCorridorDays) {
+          if (totalBehDays > 0 && totalBehDays >= totalLateDays && totalBehDays >= totalCorridorDays) {
             badgeClass = 'bg-rose-600 text-white';
             borderClass = 'border-rose-300 bg-rose-50 text-rose-950';
             icon = '🚨';
@@ -1770,8 +1762,8 @@
       const listContainer = document.getElementById('individualHistoryList');
       if (!studentId) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">請從上方選取學生查詢加分紀錄。</p>'; return; }
       const logs = (appState.pointLogs || []).filter(l => l.studentId === studentId);
-      listContainer.innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-2">該位學生目前尚無紀錄。</p>'; return; }
-      listContainer.innerHTML = logs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="text-gray-400 mr-2 font-mono">${l.date}</span><span class="text-gray-800 font-medium">${l.reason}</span></div><span class="font-bold ${l.change.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}">${l.change} 點</span></div>`).join('');
+      listContainer.innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-2">該位學生目前尚無紀錄。</p>' :
+        logs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="text-gray-400 mr-2 font-mono">${l.date}</span><span class="text-gray-800 font-medium">${l.reason}</span></div><span class="font-bold ${l.change.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}">${l.change} 點</span></div>`).join('');
     }
 
     function renderClassPointHistory() {
@@ -1862,13 +1854,14 @@
       const select = document.getElementById('attStudentSelect');
       const filterSelect = document.getElementById('filterAttStudentSelect');
       
-      const currentSelectedId = select.value;
+      const currentSelectedId = select.value; // 保留登記下拉選單當前選取的學生 ID
 
       const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : '<option value="">-- 請選擇學生 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
       
       select.innerHTML = optionsHTML;
       filterSelect.innerHTML = optionsHTML;
 
+      // 如果之前有選過學生且該學生存在，維持選擇狀態，不跳回預設
       if (currentSelectedId && students.some(s => s.id === currentSelectedId)) {
         select.value = currentSelectedId;
       }

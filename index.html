@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.13.1</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.15</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -1023,7 +1023,6 @@
         const fullName = `${s.seatNo} ${s.name}`;
 
         if (pendingPenaltyDays > 0) {
-          // 顏色判定：遲到=橘色(orange)，違規事項=紅色(rose)，走廊奔跑=土黃色(amber)
           let badgeClass = 'bg-orange-500 text-white';
           let borderClass = 'border-orange-300 bg-orange-50 text-orange-950';
           let icon = '⏰';
@@ -1082,11 +1081,12 @@
       selectedNames.forEach(fullName => {
         const student = students.find(s => `${s.seatNo} ${s.name}` === fullName);
         if (student) {
-          const lateDays = Math.floor(attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length / 5);
+          const lateCount = attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+          const totalLateDays = Math.floor(lateCount / 5);
           const behDays = behaviorDutyMap[student.id] || 0;
           const corrDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + l.count, 0);
 
-          const totalPenaltyDays = lateDays + behDays + corrDays;
+          const totalPenaltyDays = totalLateDays + behDays + corrDays;
           const clearedCount = appState.dutyClearedMap[student.id] || 0;
           const redeemedDays = dutyExemptionCredits[student.id] || 0;
           const totalExempted = clearedCount + redeemedDays;
@@ -1583,7 +1583,6 @@
       const student = (appState.students || []).find(s => s.id === studentId);
       if (!student) return;
 
-      // 🛡️ 防呆檢查：計算該生目前實際還欠多少天值日生
       const attLogs = appState.attendanceLogs || [];
       const behaviorDutyMap = appState.behaviorDutyMap || {};
       const corridorLogs = appState.corridorLogs || [];
@@ -1854,8 +1853,18 @@
       const students = appState.students || [];
       const select = document.getElementById('attStudentSelect');
       const filterSelect = document.getElementById('filterAttStudentSelect');
+      
+      const currentSelectedId = select.value; // 保留登記下拉選單當前選取的學生 ID
+
       const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : '<option value="">-- 請選擇學生 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
-      select.innerHTML = optionsHTML; filterSelect.innerHTML = optionsHTML;
+      
+      select.innerHTML = optionsHTML;
+      filterSelect.innerHTML = optionsHTML;
+
+      // 如果之前有選過學生且該學生存在，維持選擇狀態，不跳回預設
+      if (currentSelectedId && students.some(s => s.id === currentSelectedId)) {
+        select.value = currentSelectedId;
+      }
     }
 
     function saveAttendanceRecord() {

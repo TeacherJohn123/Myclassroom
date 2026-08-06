@@ -54,13 +54,13 @@
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
         <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
-        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
+        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         <button onclick="switchTab('remedial')" id="btn-remedial" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📚 學習扶助</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.13</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.13.1</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -360,7 +360,6 @@
               </div>
             </div>
             
-            <!-- 快捷加分與自訂加減分區塊 -->
             <div class="space-y-2">
               <label class="block text-xs font-bold text-gray-600">個人加分操作：</label>
               <div class="flex gap-2">
@@ -1024,7 +1023,7 @@
         const fullName = `${s.seatNo} ${s.name}`;
 
         if (pendingPenaltyDays > 0) {
-          // 顏色判定：遲到=橘色，違規事項=紅色，走廊奔跑=土黃色
+          // 顏色判定：遲到=橘色(orange)，違規事項=紅色(rose)，走廊奔跑=土黃色(amber)
           let badgeClass = 'bg-orange-500 text-white';
           let borderClass = 'border-orange-300 bg-orange-50 text-orange-950';
           let icon = '⏰';
@@ -1532,7 +1531,7 @@
       const filterSelect = document.getElementById('filterStudentSelect');
       const redeemSelect = document.getElementById('redeemStudentSelect');
       
-      const currentSelectedId = select.value; // 保留當前選擇的學生 ID，避免重新渲染時跳掉
+      const currentSelectedId = select.value;
 
       const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : students.map(s => `<option value="${s.id}">${s.seatNo} / ${s.name} ｜ 當前：${s.points || 0} 點</option>`).join('');
       
@@ -1540,13 +1539,11 @@
       filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
       if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
 
-      // 如果之前有選過學生，且該學生仍然存在，則維持選定狀態
       if (currentSelectedId && students.some(s => s.id === currentSelectedId)) {
         select.value = currentSelectedId;
       }
     }
 
-    // 自訂加減分功能
     function applyCustomPoint(multiplier) {
       const studentId = document.getElementById('pointStudentSelect').value;
       const amount = parseInt(document.getElementById('customPointInput').value) || 0;
@@ -1585,6 +1582,34 @@
 
       const student = (appState.students || []).find(s => s.id === studentId);
       if (!student) return;
+
+      // 🛡️ 防呆檢查：計算該生目前實際還欠多少天值日生
+      const attLogs = appState.attendanceLogs || [];
+      const behaviorDutyMap = appState.behaviorDutyMap || {};
+      const corridorLogs = appState.corridorLogs || [];
+      const dutyClearedMap = appState.dutyClearedMap || {};
+      const dutyExemptionCredits = appState.dutyExemptionCredits || {};
+
+      const lateCount = attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+      const totalLateDays = Math.floor(lateCount / 5);
+      const totalBehDays = behaviorDutyMap[student.id] || 0;
+      const totalCorridorDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + l.count, 0);
+
+      const totalPenaltyDays = totalLateDays + totalBehDays + totalCorridorDays;
+      const clearedCount = dutyClearedMap[student.id] || 0;
+      const redeemedDays = dutyExemptionCredits[student.id] || 0;
+      const totalExempted = clearedCount + redeemedDays;
+      const pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);
+
+      if (pendingPenaltyDays <= 0) {
+        alert(`❌ ${student.name} 目前並不需要補當值日生，無須兌換折抵！`);
+        return;
+      }
+
+      if (daysToRedeem > pendingPenaltyDays) {
+        alert(`❌ 兌換失敗！${student.name} 目前尚欠 ${pendingPenaltyDays} 天值日生，您輸入的折抵天數 (${daysToRedeem} 天) 超過實際欠繳天數，無法兌換！`);
+        return;
+      }
 
       const currentPoints = student.points || 0;
       const totalCost = cost * daysToRedeem;

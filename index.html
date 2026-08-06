@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.22 (獨立標籤修正版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.23 (ID精密對齊版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -1037,8 +1037,8 @@
         const totalLateDays = Math.floor(lateCount / 5);
         let pendingLateDays = totalLateDays - servedDaysExcludingToday.late;
 
-        // 2. 行為 (紅色)
-        const totalBehDays = behaviorDutyMap[s.id] || 0;
+        // 2. 行為 (紅色) - 修正：相容 ID 與舊座號 Key 比對
+        const totalBehDays = behaviorDutyMap[s.id] || behaviorDutyMap[fullName] || 0;
         let pendingBehDays = totalBehDays - servedDaysExcludingToday.beh;
 
         // 3. 走廊 (紫色)
@@ -1156,7 +1156,7 @@
 
           const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
           let pLate = Math.floor(lateCount / 5) - servedDaysExcludingToday.late;
-          let pBeh = (behaviorDutyMap[student.id] || 0) - servedDaysExcludingToday.beh;
+          let pBeh = (behaviorDutyMap[student.id] || behaviorDutyMap[fullName] || 0) - servedDaysExcludingToday.beh;
           let pCorr = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0) - servedDaysExcludingToday.corridor;
 
           let remRedeemed = dutyExemptionCredits[student.id] || 0;
@@ -1677,7 +1677,7 @@
 
       const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
       const totalLateDays = Math.floor(lateCount / 5);
-      const totalBehDays = behaviorDutyMap[student.id] || 0;
+      const totalBehDays = behaviorDutyMap[student.id] || behaviorDutyMap[`${student.seatNo} ${student.name}`] || 0;
       const totalCorridorDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
 
       const totalPenaltyDays = totalLateDays + totalBehDays + totalCorridorDays;
@@ -2133,7 +2133,7 @@
     }
 
     function closeRemedialCase(caseId) {
-      if (!confirm('確定要將此扶助案結案嗎？')) return;
+      if (!confirm('確定要將此輔導案結案嗎？')) return;
       const cases = appState.remedialCases || [];
       const c = cases.find(item => item.id === caseId);
       if (c) {

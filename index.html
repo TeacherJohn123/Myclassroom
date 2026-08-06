@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.19 (色彩校正版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.21 (精準邏輯與色彩校正版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -197,8 +197,8 @@
                 <th class="p-3 text-center text-amber-700">🏠 事假</th>
                 <th class="p-3 text-center text-blue-700">🏆 公假</th>
                 <th class="p-3 text-center text-gray-700">🕯️ 喪假</th>
-                <th class="p-3 text-center text-purple-700">⏰ 上學遲到</th>
-                <th class="p-3 text-center text-orange-700">🔔 上課遲到</th>
+                <th class="p-3 text-center text-orange-600">⏰ 上學遲到</th>
+                <th class="p-3 text-center text-orange-600">🔔 上課遲到</th>
               </tr>
             </thead>
             <tbody id="classAttendanceStatsTable" class="divide-y divide-gray-100 font-medium">
@@ -497,7 +497,7 @@
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 登記走廊奔跑違規</h3>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">選擇週次：</label>
-            <select id="corridorWeekSelect" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-emerald-50/50 text-emerald-900 border-emerald-200">
+            <select id="corridorWeekSelect" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-purple-50/50 text-purple-900 border-purple-200">
               <!-- 動態產生 1-21 週 -->
             </select>
           </div>
@@ -515,7 +515,7 @@
             <label class="block text-xs font-bold text-gray-600 mb-1">備註說明：</label>
             <input type="text" id="corridorNote" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：中廊奔跑、樓梯嬉戲..." />
           </div>
-          <button onclick="saveCorridorRecord()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-lg text-sm shadow transition">💾 儲存走廊奔跑紀錄</button>
+          <button onclick="saveCorridorRecord()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg text-sm shadow transition">💾 儲存走廊奔跑紀錄</button>
         </div>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
@@ -536,7 +536,7 @@
             <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
               <tr>
                 <th class="p-3">座號 / 姓名</th>
-                <th class="p-3 text-center text-emerald-700">🏃 累積奔跑次數</th>
+                <th class="p-3 text-center text-purple-700">🏃 累積奔跑次數</th>
               </tr>
             </thead>
             <tbody id="corridorStatsTable" class="divide-y divide-gray-100 font-medium">
@@ -702,7 +702,10 @@
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
       <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-        <span class="font-bold text-slate-800 text-sm flex items-center gap-1">⚠️ 需補當值日生學生清單：</span>
+        <div class="flex justify-between items-center">
+          <span class="font-bold text-slate-800 text-sm flex items-center gap-1">⚠️ 需補當值日生學生清單：</span>
+        </div>
+        <p class="text-[10px] text-gray-500">💡 系統規則：遲到每滿 5 次換算 1 天。若學生未出現，代表「尚未集滿」或「已安排值日生抵銷完畢」。</p>
         <div id="penaltyDutyList" class="flex flex-wrap gap-1.5">
           <span class="text-gray-400 text-xs">尚無需要補值日生的學生</span>
         </div>
@@ -958,11 +961,11 @@
         displayEl.innerHTML = assignedNames.map(name => {
           const type = dateTypes[name] || 'normal';
           if (type === 'late') {
-            return `<span class="inline-block bg-purple-100 text-purple-950 border border-purple-300 px-3 py-1 rounded-lg text-xl font-bold">⏰ ${name}</span>`;
+            return `<span class="inline-block bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-lg text-xl font-bold">⏰ ${name}</span>`;
           } else if (type === 'beh') {
             return `<span class="inline-block bg-rose-100 text-rose-950 border border-rose-300 px-3 py-1 rounded-lg text-xl font-bold">🚨 ${name}</span>`;
           } else if (type === 'corridor') {
-            return `<span class="inline-block bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1 rounded-lg text-xl font-bold">🏃 ${name}</span>`;
+            return `<span class="inline-block bg-purple-100 text-purple-950 border border-purple-300 px-3 py-1 rounded-lg text-xl font-bold">🏃 ${name}</span>`;
           } else {
             return `<span class="inline-block bg-sky-200 text-sky-950 px-3 py-1 rounded-lg text-xl font-bold">${name}</span>`;
           }
@@ -1029,16 +1032,16 @@
           }
         });
 
-        // 1. 遲到
+        // 1. 遲到 (橘色)
         const lateCount = attLogs.filter(l => l.studentId === s.id && l.category && l.category.includes('遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
         let pendingLateDays = totalLateDays - servedDaysExcludingToday.late;
 
-        // 2. 行為
+        // 2. 行為 (紅色)
         const totalBehDays = behaviorDutyMap[s.id] || 0;
         let pendingBehDays = totalBehDays - servedDaysExcludingToday.beh;
 
-        // 3. 走廊
+        // 3. 走廊 (紫色)
         const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
         let pendingCorridorDays = totalCorridorDays - servedDaysExcludingToday.corridor;
 
@@ -1065,12 +1068,12 @@
         pendingBehDays = Math.max(0, pendingBehDays);
         pendingCorridorDays = Math.max(0, pendingCorridorDays);
 
-        // 獨立產生：紫色 + ⏰ (遲到)
+        // 獨立產生：橘色 + ⏰ (遲到)
         if (pendingLateDays > 0) {
           penaltyButtonsHTML.push(`
-            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-purple-50 border border-purple-300 text-purple-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-50 border border-orange-300 text-orange-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
               <span>⏰ ${fullName} (遲到${lateCount}次)</span>
-              <span class="bg-purple-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingLateDays} 天</span>
+              <span class="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingLateDays} 天</span>
             </button>
           `);
         }
@@ -1085,12 +1088,12 @@
           `);
         }
 
-        // 獨立產生：橘黃色 + 🏃 (走廊奔跑)
+        // 獨立產生：紫色 + 🏃 (走廊奔跑)
         if (pendingCorridorDays > 0) {
           penaltyButtonsHTML.push(`
-            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-amber-50 border border-amber-300 text-amber-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-purple-50 border border-purple-300 text-purple-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
               <span>🏃 ${fullName} (走廊奔跑)</span>
-              <span class="bg-amber-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingCorridorDays} 天</span>
+              <span class="bg-purple-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingCorridorDays} 天</span>
             </button>
           `);
         }
@@ -1556,9 +1559,9 @@
         <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded text-xs">
           <div>
             <div class="flex items-center gap-2 mb-0.5">
-              <span class="font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded">${l.week}</span>
+              <span class="font-extrabold text-purple-800 bg-purple-100 border border-purple-300 px-2 py-0.5 rounded">${l.week}</span>
               <span class="font-bold text-gray-800 text-sm">${l.studentName}</span>
-              <span class="font-bold text-rose-600">登記 ${l.count} 次</span>
+              <span class="font-bold text-purple-600">登記 ${l.count} 次</span>
             </div>
             ${l.note ? `<p class="text-gray-500 mt-0.5">備註：${l.note}</p>` : ''}
             <span class="text-[10px] text-gray-400">登記日期：${l.createdAt}</span>
@@ -1583,7 +1586,7 @@
         return `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td>
-            <td class="p-3 text-center ${totalCount > 0 ? 'font-black text-amber-700 text-base' : 'text-gray-300'}">${totalCount} 次</td>
+            <td class="p-3 text-center ${totalCount > 0 ? 'font-black text-purple-700 text-base' : 'text-gray-300'}">${totalCount} 次</td>
           </tr>
         `;
       }).join('');
@@ -1888,7 +1891,7 @@
         reportHTML += `<h4 class="font-bold text-sm text-gray-800 mb-2">📋 本學期走廊奔跑違規統計總報告</h4>`;
         reportHTML += students.map(s => {
           const totalCorr = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
-          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span><span class="font-bold text-amber-700">累積奔跑: ${totalCorr} 次</span></div>`;
+          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span><span class="font-bold text-purple-700">累積奔跑: ${totalCorr} 次</span></div>`;
         }).join('');
 
         appState.corridorLogs = [];
@@ -1989,7 +1992,7 @@
       tbody.innerHTML = students.map(s => {
         const studentLogs = logs.filter(l => l.studentId === s.id);
         const c = { 病假: studentLogs.filter(l => l.category === '病假').length, 事假: studentLogs.filter(l => l.category === '事假').length, 公假: studentLogs.filter(l => l.category === '公假').length, 喪假: studentLogs.filter(l => l.category === '喪假').length, 上學遲到: studentLogs.filter(l => l.category === '上學遲到').length, 上課遲到: studentLogs.filter(l => l.category === '上課遲到').length };
-        return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-purple-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
+        return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
       }).join('');
     }
 

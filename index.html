@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.17</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.18 (動態歷史回溯版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -1002,35 +1002,49 @@
       const attLogs = appState.attendanceLogs || [];
       const behaviorDutyMap = appState.behaviorDutyMap || {};
       const corridorLogs = appState.corridorLogs || [];
+      const dutyExemptionCredits = appState.dutyExemptionCredits || {};
       
-      const typeClearedMap = appState.typeClearedMap || {}; // 各類型已消天數 { studentId: { late: 0, beh: 0, corridor: 0 } }
-      const dutyExemptionCredits = appState.dutyExemptionCredits || {}; // 點數抵銷天數（累積）
+      const dutyRoster = appState.dutyRoster || {};
+      const dutyTypeRoster = appState.dutyTypeRoster || {};
       
       const currentDate = document.getElementById('cbDate').value;
-      const currentAssigned = (appState.dutyRoster || {})[currentDate] || [];
+      const currentAssigned = dutyRoster[currentDate] || [];
 
       const penaltyButtonsHTML = [];
 
       students.forEach(s => {
         const fullName = `${s.seatNo} ${s.name}`;
-        const studentCleared = typeClearedMap[s.id] || { late: 0, beh: 0, corridor: 0 };
-        const redeemedDays = dutyExemptionCredits[s.id] || 0;
 
-        // 1. 計算遲到欠天數 (放寬條件：只要包含「遲到」二字即採計)
+        // 動態計算該學生在「今天以前」已經服役的懲罰天數
+        const servedDaysExcludingToday = { late: 0, beh: 0, corridor: 0 };
+        Object.keys(dutyRoster).forEach(date => {
+          if (date === currentDate) return; // 排除今天，這樣才能正確判斷今天是否還欠
+          const assignedStudents = dutyRoster[date] || [];
+          const types = dutyTypeRoster[date] || {};
+          if (assignedStudents.includes(fullName)) {
+            const type = types[fullName];
+            if (type === 'late') servedDaysExcludingToday.late++;
+            if (type === 'beh') servedDaysExcludingToday.beh++;
+            if (type === 'corridor') servedDaysExcludingToday.corridor++;
+          }
+        });
+
+        // 1. 遲到
         const lateCount = attLogs.filter(l => l.studentId === s.id && l.category && l.category.includes('遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
-        let pendingLateDays = Math.max(0, totalLateDays - (studentCleared.late || 0));
+        let pendingLateDays = totalLateDays - servedDaysExcludingToday.late;
 
-        // 2. 計算行為不當欠天數
+        // 2. 行為
         const totalBehDays = behaviorDutyMap[s.id] || 0;
-        let pendingBehDays = Math.max(0, totalBehDays - (studentCleared.beh || 0));
+        let pendingBehDays = totalBehDays - servedDaysExcludingToday.beh;
 
-        // 3. 計算走廊奔跑欠天數
-        const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
-        let pendingCorridorDays = Math.max(0, totalCorridorDays - (studentCleared.corridor || 0));
+        // 3. 走廊
+        const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
+        let pendingCorridorDays = totalCorridorDays - servedDaysExcludingToday.corridor;
 
         // 扣除點數兌換抵銷的優先順序 (遲到 -> 行為不當 -> 走廊奔跑)
-        let remRedeemed = redeemedDays;
+        let remRedeemed = dutyExemptionCredits[s.id] || 0;
+        
         if (remRedeemed > 0 && pendingLateDays > 0) {
           const sub = Math.min(pendingLateDays, remRedeemed);
           pendingLateDays -= sub;
@@ -1047,6 +1061,10 @@
           remRedeemed -= sub;
         }
 
+        pendingLateDays = Math.max(0, pendingLateDays);
+        pendingBehDays = Math.max(0, pendingBehDays);
+        pendingCorridorDays = Math.max(0, pendingCorridorDays);
+
         // 獨立產生：橘色 (遲到)
         if (pendingLateDays > 0) {
           penaltyButtonsHTML.push(`
@@ -1061,7 +1079,7 @@
         if (pendingBehDays > 0) {
           penaltyButtonsHTML.push(`
             <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-50 border border-rose-300 text-rose-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
-              <span>🚨 ${fullName} (行為不當)</span>
+              <span>🚨 ${fullName} (行為違規)</span>
               <span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingBehDays} 天</span>
             </button>
           `);
@@ -1105,49 +1123,50 @@
 
       if (!appState.dutyRoster) appState.dutyRoster = {};
       if (!appState.dutyTypeRoster) appState.dutyTypeRoster = {};
-      if (!appState.typeClearedMap) appState.typeClearedMap = {};
 
-      const previousAssigned = appState.dutyRoster[currentDate] || [];
+      const currentDayTypes = {};
+      const students = appState.students || [];
+      const dutyRoster = appState.dutyRoster || {};
+      const dutyTypeRoster = appState.dutyTypeRoster || {};
+      
       const attLogs = appState.attendanceLogs || [];
       const behaviorDutyMap = appState.behaviorDutyMap || {};
       const corridorLogs = appState.corridorLogs || [];
-      const students = appState.students || [];
-      const currentDayTypes = {};
+      const dutyExemptionCredits = appState.dutyExemptionCredits || {};
 
       selectedNames.forEach(fullName => {
         const student = students.find(s => `${s.seatNo} ${s.name}` === fullName);
         if (student) {
-          if (!appState.typeClearedMap[student.id]) {
-            appState.typeClearedMap[student.id] = { late: 0, beh: 0, corridor: 0 };
-          }
-          const cleared = appState.typeClearedMap[student.id];
+          // 計算今天之前欠的
+          const servedDaysExcludingToday = { late: 0, beh: 0, corridor: 0 };
+          Object.keys(dutyRoster).forEach(date => {
+            if (date === currentDate) return;
+            const assignedStudents = dutyRoster[date] || [];
+            const types = dutyTypeRoster[date] || {};
+            if (assignedStudents.includes(fullName)) {
+              const type = types[fullName];
+              if (type === 'late') servedDaysExcludingToday.late++;
+              if (type === 'beh') servedDaysExcludingToday.beh++;
+              if (type === 'corridor') servedDaysExcludingToday.corridor++;
+            }
+          });
 
           const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
-          const totalLateDays = Math.floor(lateCount / 5);
-          const behDays = behaviorDutyMap[student.id] || 0;
-          const corrDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + l.count, 0);
+          let pLate = Math.floor(lateCount / 5) - servedDaysExcludingToday.late;
+          let pBeh = (behaviorDutyMap[student.id] || 0) - servedDaysExcludingToday.beh;
+          let pCorr = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0) - servedDaysExcludingToday.corridor;
 
-          const pendingLate = totalLateDays - (cleared.late || 0);
-          const pendingBeh = behDays - (cleared.beh || 0);
-          const pendingCorr = corrDays - (cleared.corridor || 0);
+          let remRedeemed = dutyExemptionCredits[student.id] || 0;
+          if (remRedeemed > 0 && pLate > 0) { const s = Math.min(pLate, remRedeemed); pLate -= s; remRedeemed -= s; }
+          if (remRedeemed > 0 && pBeh > 0) { const s = Math.min(pBeh, remRedeemed); pBeh -= s; remRedeemed -= s; }
+          if (remRedeemed > 0 && pCorr > 0) { const s = Math.min(pCorr, remRedeemed); pCorr -= s; remRedeemed -= s; }
 
-          // 判斷當日顯示型態並更新對應銷案次數
-          if (!previousAssigned.includes(fullName)) {
-            if (pendingLate > 0) {
-              currentDayTypes[fullName] = 'late';
-              cleared.late = (cleared.late || 0) + 1;
-            } else if (pendingBeh > 0) {
-              currentDayTypes[fullName] = 'beh';
-              cleared.beh = (cleared.beh || 0) + 1;
-            } else if (pendingCorr > 0) {
-              currentDayTypes[fullName] = 'corridor';
-              cleared.corridor = (cleared.corridor || 0) + 1;
-            } else {
-              currentDayTypes[fullName] = 'normal';
-            }
-          } else {
-            currentDayTypes[fullName] = (appState.dutyTypeRoster[currentDate] && appState.dutyTypeRoster[currentDate][fullName]) || 'normal';
-          }
+          if (pLate > 0) currentDayTypes[fullName] = 'late';
+          else if (pBeh > 0) currentDayTypes[fullName] = 'beh';
+          else if (pCorr > 0) currentDayTypes[fullName] = 'corridor';
+          else currentDayTypes[fullName] = 'normal';
+        } else {
+          currentDayTypes[fullName] = 'normal';
         }
       });
 
@@ -1636,17 +1655,30 @@
       const attLogs = appState.attendanceLogs || [];
       const behaviorDutyMap = appState.behaviorDutyMap || {};
       const corridorLogs = appState.corridorLogs || [];
-      const typeClearedMap = appState.typeClearedMap || {};
+      const dutyRoster = appState.dutyRoster || {};
+      const dutyTypeRoster = appState.dutyTypeRoster || {};
       const dutyExemptionCredits = appState.dutyExemptionCredits || {};
 
-      const studentCleared = typeClearedMap[student.id] || { late: 0, beh: 0, corridor: 0 };
+      // 動態計算已服役天數
+      const studentCleared = { late: 0, beh: 0, corridor: 0 };
+      Object.keys(dutyRoster).forEach(date => {
+        const assignedStudents = dutyRoster[date] || [];
+        const types = dutyTypeRoster[date] || {};
+        if (assignedStudents.includes(`${student.seatNo} ${student.name}`)) {
+          const type = types[`${student.seatNo} ${student.name}`];
+          if (type === 'late') studentCleared.late++;
+          if (type === 'beh') studentCleared.beh++;
+          if (type === 'corridor') studentCleared.corridor++;
+        }
+      });
+
       const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
       const totalLateDays = Math.floor(lateCount / 5);
       const totalBehDays = behaviorDutyMap[student.id] || 0;
-      const totalCorridorDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + l.count, 0);
+      const totalCorridorDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
 
       const totalPenaltyDays = totalLateDays + totalBehDays + totalCorridorDays;
-      const clearedCount = (studentCleared.late || 0) + (studentCleared.beh || 0) + (studentCleared.corridor || 0);
+      const clearedCount = studentCleared.late + studentCleared.beh + studentCleared.corridor;
       const redeemedDays = dutyExemptionCredits[student.id] || 0;
       const totalExempted = clearedCount + redeemedDays;
       const pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);

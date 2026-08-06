@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.21 (精準邏輯與色彩校正版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.22 (獨立標籤修正版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -1071,7 +1071,7 @@
         // 獨立產生：橘色 + ⏰ (遲到)
         if (pendingLateDays > 0) {
           penaltyButtonsHTML.push(`
-            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-50 border border-orange-300 text-orange-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-50 border border-orange-300 text-orange-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
               <span>⏰ ${fullName} (遲到${lateCount}次)</span>
               <span class="bg-orange-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingLateDays} 天</span>
             </button>
@@ -1081,7 +1081,7 @@
         // 獨立產生：紅色 + 🚨 (行為不當)
         if (pendingBehDays > 0) {
           penaltyButtonsHTML.push(`
-            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-50 border border-rose-300 text-rose-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-50 border border-rose-300 text-rose-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
               <span>🚨 ${fullName} (行為違規)</span>
               <span class="bg-rose-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingBehDays} 天</span>
             </button>
@@ -1091,7 +1091,7 @@
         // 獨立產生：紫色 + 🏃 (走廊奔跑)
         if (pendingCorridorDays > 0) {
           penaltyButtonsHTML.push(`
-            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-purple-50 border border-purple-300 text-purple-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-purple-50 border border-purple-300 text-purple-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
               <span>🏃 ${fullName} (走廊奔跑)</span>
               <span class="bg-purple-600 text-white text-[10px] px-1.5 py-0.5 rounded-full">欠 ${pendingCorridorDays} 天</span>
             </button>

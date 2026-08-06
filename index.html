@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.23 (ID精密對齊版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.24 (斷鏈修復防呆版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -1032,21 +1032,21 @@
           }
         });
 
-        // 1. 遲到 (橘色)
-        const lateCount = attLogs.filter(l => l.studentId === s.id && l.category && l.category.includes('遲到')).length;
+        // 1. 遲到 (橘色) - 加入防呆雙重比對
+        const lateCount = attLogs.filter(l => (l.studentId === s.id || l.studentName === fullName) && l.category && l.category.includes('遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
         let pendingLateDays = totalLateDays - servedDaysExcludingToday.late;
 
-        // 2. 行為 (紅色) - 修正：相容 ID 與舊座號 Key 比對
-        const totalBehDays = behaviorDutyMap[s.id] || behaviorDutyMap[fullName] || 0;
+        // 2. 行為 (紅色) - 加入防呆雙重比對
+        const totalBehDays = (behaviorDutyMap[s.id] || 0) + (behaviorDutyMap[fullName] || 0);
         let pendingBehDays = totalBehDays - servedDaysExcludingToday.beh;
 
-        // 3. 走廊 (紫色)
-        const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
+        // 3. 走廊 (紫色) - 加入防呆雙重比對
+        const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id || l.studentName === fullName).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
         let pendingCorridorDays = totalCorridorDays - servedDaysExcludingToday.corridor;
 
         // 扣除點數兌換抵銷的優先順序 (遲到 -> 行為不當 -> 走廊奔跑)
-        let remRedeemed = dutyExemptionCredits[s.id] || 0;
+        let remRedeemed = (dutyExemptionCredits[s.id] || 0) + (dutyExemptionCredits[fullName] || 0);
         
         if (remRedeemed > 0 && pendingLateDays > 0) {
           const sub = Math.min(pendingLateDays, remRedeemed);
@@ -1154,12 +1154,12 @@
             }
           });
 
-          const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
+          const lateCount = attLogs.filter(l => (l.studentId === student.id || l.studentName === fullName) && l.category && l.category.includes('遲到')).length;
           let pLate = Math.floor(lateCount / 5) - servedDaysExcludingToday.late;
-          let pBeh = (behaviorDutyMap[student.id] || behaviorDutyMap[fullName] || 0) - servedDaysExcludingToday.beh;
-          let pCorr = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0) - servedDaysExcludingToday.corridor;
+          let pBeh = ((behaviorDutyMap[student.id] || 0) + (behaviorDutyMap[fullName] || 0)) - servedDaysExcludingToday.beh;
+          let pCorr = corridorLogs.filter(l => l.studentId === student.id || l.studentName === fullName).reduce((sum, l) => sum + parseInt(l.count || 1), 0) - servedDaysExcludingToday.corridor;
 
-          let remRedeemed = dutyExemptionCredits[student.id] || 0;
+          let remRedeemed = (dutyExemptionCredits[student.id] || 0) + (dutyExemptionCredits[fullName] || 0);
           if (remRedeemed > 0 && pLate > 0) { const s = Math.min(pLate, remRedeemed); pLate -= s; remRedeemed -= s; }
           if (remRedeemed > 0 && pBeh > 0) { const s = Math.min(pBeh, remRedeemed); pBeh -= s; remRedeemed -= s; }
           if (remRedeemed > 0 && pCorr > 0) { const s = Math.min(pCorr, remRedeemed); pCorr -= s; remRedeemed -= s; }
@@ -1582,7 +1582,8 @@
       }
 
       tbody.innerHTML = students.map(s => {
-        const totalCount = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
+        const fullName = `${s.seatNo} ${s.name}`;
+        const totalCount = logs.filter(l => l.studentId === s.id || l.studentName === fullName).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
         return `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td>
@@ -1655,6 +1656,7 @@
       const student = (appState.students || []).find(s => s.id === studentId);
       if (!student) return;
 
+      const fullName = `${student.seatNo} ${student.name}`;
       const attLogs = appState.attendanceLogs || [];
       const behaviorDutyMap = appState.behaviorDutyMap || {};
       const corridorLogs = appState.corridorLogs || [];
@@ -1667,22 +1669,22 @@
       Object.keys(dutyRoster).forEach(date => {
         const assignedStudents = dutyRoster[date] || [];
         const types = dutyTypeRoster[date] || {};
-        if (assignedStudents.includes(`${student.seatNo} ${student.name}`)) {
-          const type = types[`${student.seatNo} ${student.name}`];
+        if (assignedStudents.includes(fullName)) {
+          const type = types[fullName];
           if (type === 'late') studentCleared.late++;
           if (type === 'beh') studentCleared.beh++;
           if (type === 'corridor') studentCleared.corridor++;
         }
       });
 
-      const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
+      const lateCount = attLogs.filter(l => (l.studentId === student.id || l.studentName === fullName) && l.category && l.category.includes('遲到')).length;
       const totalLateDays = Math.floor(lateCount / 5);
-      const totalBehDays = behaviorDutyMap[student.id] || behaviorDutyMap[`${student.seatNo} ${student.name}`] || 0;
-      const totalCorridorDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
+      const totalBehDays = (behaviorDutyMap[student.id] || 0) + (behaviorDutyMap[fullName] || 0);
+      const totalCorridorDays = corridorLogs.filter(l => l.studentId === student.id || l.studentName === fullName).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
 
       const totalPenaltyDays = totalLateDays + totalBehDays + totalCorridorDays;
       const clearedCount = studentCleared.late + studentCleared.beh + studentCleared.corridor;
-      const redeemedDays = dutyExemptionCredits[student.id] || 0;
+      const redeemedDays = (dutyExemptionCredits[student.id] || 0) + (dutyExemptionCredits[fullName] || 0);
       const totalExempted = clearedCount + redeemedDays;
       const pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);
 
@@ -1715,7 +1717,7 @@
           id: 'log_' + Date.now(),
           studentId: student.id,
           date: new Date().toISOString().split('T')[0],
-          studentName: `${student.seatNo} ${student.name}`,
+          studentName: fullName,
           change: `-${totalCost}`,
           reason: `點數兌換抵銷值日生 ${daysToRedeem} 天`,
           type: 'reward'
@@ -1811,7 +1813,8 @@
       student.points -= reward.cost;
       if (reward.stock !== null) reward.stock -= 1;
       if (!appState.pointLogs) appState.pointLogs = [];
-      appState.pointLogs.unshift({ id: 'log_' + Date.now(), studentId: student.id, date: new Date().toISOString().split('T')[0], studentName: `${student.seatNo} ${student.name}`, change: `-${reward.cost}`, reason: `兌換獎品：${reward.name}`, type: 'reward' });
+      const fullName = `${student.seatNo} ${student.name}`;
+      appState.pointLogs.unshift({ id: 'log_' + Date.now(), studentId: student.id, date: new Date().toISOString().split('T')[0], studentName: fullName, change: `-${reward.cost}`, reason: `兌換獎品：${reward.name}`, type: 'reward' });
       saveStateToCloud();
       alert(`🎉 兌換成功！`);
     }
@@ -1847,7 +1850,11 @@
       const studentId = document.getElementById('filterStudentSelect').value;
       const listContainer = document.getElementById('individualHistoryList');
       if (!studentId) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">請從上方選取學生查詢加分紀錄。</p>'; return; }
-      const logs = (appState.pointLogs || []).filter(l => l.studentId === studentId);
+      
+      const student = (appState.students || []).find(s => s.id === studentId);
+      const fullName = student ? `${student.seatNo} ${student.name}` : "";
+      const logs = (appState.pointLogs || []).filter(l => l.studentId === studentId || l.studentName === fullName);
+      
       listContainer.innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-2">該位學生目前尚無紀錄。</p>' :
         logs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="text-gray-400 mr-2 font-mono">${l.date}</span><span class="text-gray-800 font-medium">${l.reason}</span></div><span class="font-bold ${l.change.startsWith('+') ? 'text-emerald-600' : 'text-rose-600'}">${l.change} 點</span></div>`).join('');
     }
@@ -1873,14 +1880,15 @@
         const logs = appState.attendanceLogs || [];
         reportHTML += `<h4 class="font-bold text-sm text-gray-800 mb-2">📋 本學期出缺勤與遲到統計總報告</h4>`;
         reportHTML += students.map(s => {
-          const sLogs = logs.filter(l => l.studentId === s.id);
+          const fullName = `${s.seatNo} ${s.name}`;
+          const sLogs = logs.filter(l => l.studentId === s.id || l.studentName === fullName);
           const sick = sLogs.filter(l => l.category === '病假').length;
           const personal = sLogs.filter(l => l.category === '事假').length;
           const official = sLogs.filter(l => l.category === '公假').length;
           const funeral = sLogs.filter(l => l.category === '喪假').length;
           const schoolLate = sLogs.filter(l => l.category === '上學遲到').length;
           const classLate = sLogs.filter(l => l.category === '上課遲到').length;
-          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span><span class="text-gray-600">病假: ${sick} ｜ 事假: ${personal} ｜ 公假: ${official} ｜ 喪假: ${funeral} ｜ 上學遲到: ${schoolLate} ｜ 上課遲到: ${classLate}</span></div>`;
+          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${fullName}</span><span class="text-gray-600">病假: ${sick} ｜ 事假: ${personal} ｜ 公假: ${official} ｜ 喪假: ${funeral} ｜ 上學遲到: ${schoolLate} ｜ 上課遲到: ${classLate}</span></div>`;
         }).join('');
 
         appState.attendanceLogs = [];
@@ -1890,8 +1898,9 @@
         const logs = appState.corridorLogs || [];
         reportHTML += `<h4 class="font-bold text-sm text-gray-800 mb-2">📋 本學期走廊奔跑違規統計總報告</h4>`;
         reportHTML += students.map(s => {
-          const totalCorr = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
-          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span><span class="font-bold text-purple-700">累積奔跑: ${totalCorr} 次</span></div>`;
+          const fullName = `${s.seatNo} ${s.name}`;
+          const totalCorr = logs.filter(l => l.studentId === s.id || l.studentName === fullName).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
+          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${fullName}</span><span class="font-bold text-purple-700">累積奔跑: ${totalCorr} 次</span></div>`;
         }).join('');
 
         appState.corridorLogs = [];
@@ -1990,9 +1999,10 @@
       if (students.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>'; return; }
 
       tbody.innerHTML = students.map(s => {
-        const studentLogs = logs.filter(l => l.studentId === s.id);
+        const fullName = `${s.seatNo} ${s.name}`;
+        const studentLogs = logs.filter(l => l.studentId === s.id || l.studentName === fullName);
         const c = { 病假: studentLogs.filter(l => l.category === '病假').length, 事假: studentLogs.filter(l => l.category === '事假').length, 公假: studentLogs.filter(l => l.category === '公假').length, 喪假: studentLogs.filter(l => l.category === '喪假').length, 上學遲到: studentLogs.filter(l => l.category === '上學遲到').length, 上課遲到: studentLogs.filter(l => l.category === '上課遲到').length };
-        return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
+        return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800">${fullName}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
       }).join('');
     }
 
@@ -2003,7 +2013,10 @@
       if (!studentId) { container.classList.add('hidden'); placeholder.classList.remove('hidden'); return; }
       container.classList.remove('hidden'); placeholder.classList.add('hidden');
 
-      const studentLogs = (appState.attendanceLogs || []).filter(l => l.studentId === studentId);
+      const student = (appState.students || []).find(s => s.id === studentId);
+      const fullName = student ? `${student.seatNo} ${student.name}` : "";
+      const studentLogs = (appState.attendanceLogs || []).filter(l => l.studentId === studentId || l.studentName === fullName);
+      
       const categories = ['病假', '事假', '公假', '喪假', '上學遲到', '上課遲到'];
       document.getElementById('individualCategoryCards').innerHTML = categories.map(cat => {
         const count = studentLogs.filter(l => l.category === cat).length;
@@ -2133,7 +2146,7 @@
     }
 
     function closeRemedialCase(caseId) {
-      if (!confirm('確定要將此輔導案結案嗎？')) return;
+      if (!confirm('確定要將此扶助案結案嗎？')) return;
       const cases = appState.remedialCases || [];
       const c = cases.find(item => item.id === caseId);
       if (c) {

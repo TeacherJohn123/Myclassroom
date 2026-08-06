@@ -59,7 +59,7 @@
         <button onclick="switchTab('remedial')" id="btn-remedial" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📚 學習扶助</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.6</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.7</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -254,10 +254,10 @@
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
       
-      <!-- 🎫 點數兌換免罰當值日生專區 -->
+      <!-- 🎫 點數兌換免罰當值日生專區 (支援扣點數抵銷指定天數 n 天) -->
       <div class="bg-sky-50 border-2 border-sky-200 p-6 rounded-2xl shadow-sm space-y-3 interactive-control">
         <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換抵銷當值日生</h3>
-        <p class="text-xs text-sky-700 font-bold">因遲到或行為不當被罰當值日生的學生，可使用累積點數（預設 15 點）抵銷因累積遲到、不當行為的值日生一次！</p>
+        <p class="text-xs text-sky-700 font-bold">因遲到或行為不當被罰當值日生的學生，可使用累積點數兌換抵銷值日生天數！</p>
         <div class="flex flex-wrap gap-3 items-center">
           <select id="redeemStudentSelect" class="border rounded-lg p-2 text-sm bg-white font-medium outline-none flex-1 min-w-[200px]">
             <option value="">-- 請選擇學生 --</option>
@@ -266,7 +266,11 @@
             <span class="text-xs font-bold text-gray-700">扣除點數：</span>
             <input type="number" id="redeemCost" value="15" min="1" class="border rounded-lg p-2 text-sm bg-white font-bold w-20 text-center outline-none" />
           </div>
-          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換抵銷值日生</button>
+          <div class="flex items-center gap-1.5">
+            <span class="text-xs font-bold text-gray-700">抵銷天數 (n 天)：</span>
+            <input type="number" id="redeemDays" value="1" min="1" class="border rounded-lg p-2 text-sm bg-white font-bold w-20 text-center outline-none" />
+          </div>
+          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換抵銷天數</button>
         </div>
       </div>
 
@@ -887,7 +891,7 @@
       const attLogs = appState.attendanceLogs || [];
       const dutyClearedMap = appState.dutyClearedMap || {};
       const behaviorDutyMap = appState.behaviorDutyMap || {};
-      const dutyExemptionCredits = appState.dutyExemptionCredits || {};
+      const dutyExemptionCredits = appState.dutyExemptionCredits || {}; // 累計已抵銷的天數
       const currentDate = document.getElementById('cbDate').value;
       const currentAssigned = (appState.dutyRoster || {})[currentDate] || [];
 
@@ -899,8 +903,8 @@
         
         const totalPenaltyDays = totalLateDays + totalBehDays;
         const clearedCount = dutyClearedMap[s.id] || 0;
-        const redeemedCount = dutyExemptionCredits[s.id] || 0;
-        const totalExempted = clearedCount + redeemedCount;
+        const redeemedDays = dutyExemptionCredits[s.id] || 0; // 已扣點抵銷的天數
+        const totalExempted = clearedCount + redeemedDays;
 
         let pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);
         const fullName = `${s.seatNo} ${s.name}`;
@@ -953,8 +957,8 @@
           const behDays = behaviorDutyMap[student.id] || 0;
           const totalPenaltyDays = lateDays + behDays;
           const clearedCount = appState.dutyClearedMap[student.id] || 0;
-          const redeemedCount = dutyExemptionCredits[student.id] || 0;
-          const totalExempted = clearedCount + redeemedCount;
+          const redeemedDays = dutyExemptionCredits[student.id] || 0;
+          const totalExempted = clearedCount + redeemedDays;
 
           let pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);
 
@@ -1307,25 +1311,31 @@
       if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
     }
 
+    // 🎫 點數兌換抵銷值日生邏輯 (支援抵銷指定 n 天，自動從聯絡簿待補清單中扣除)
     function redeemDutyExemption() {
       const studentId = document.getElementById('redeemStudentSelect').value;
       const cost = parseInt(document.getElementById('redeemCost').value) || 15;
+      const daysToRedeem = parseInt(document.getElementById('redeemDays').value) || 1;
+      
       if (!studentId) { alert('請選擇要兌換的學生！'); return; }
 
       const student = (appState.students || []).find(s => s.id === studentId);
       if (!student) return;
 
       const currentPoints = student.points || 0;
-      if (currentPoints < cost) {
-        alert(`❌ 該學生目前只有 ${currentPoints} 點，點數不足（需 ${cost} 點）！`);
+      const totalCost = cost * daysToRedeem;
+
+      if (currentPoints < totalCost) {
+        alert(`❌ 該學生目前只有 ${currentPoints} 點，點數不足（需 ${totalCost} 點以抵銷 ${daysToRedeem} 天）！`);
         return;
       }
 
-      if (confirm(`確定要幫 ${student.name} 扣除 ${cost} 點，兌換抵銷一次當值日生嗎？`)) {
-        student.points -= cost;
+      if (confirm(`確定要幫 ${student.name} 扣除 ${totalCost} 點，兌換抵銷當值日生 ${daysToRedeem} 天嗎？`)) {
+        student.points -= totalCost;
         
+        // 增加該學生的點數兌換抵銷天數，讓聯絡簿值日生待補清單自動扣除
         if (!appState.dutyExemptionCredits) appState.dutyExemptionCredits = {};
-        appState.dutyExemptionCredits[student.id] = (appState.dutyExemptionCredits[student.id] || 0) + 1;
+        appState.dutyExemptionCredits[student.id] = (appState.dutyExemptionCredits[student.id] || 0) + daysToRedeem;
 
         if (!appState.pointLogs) appState.pointLogs = [];
         appState.pointLogs.unshift({
@@ -1333,12 +1343,12 @@
           studentId: student.id,
           date: new Date().toISOString().split('T')[0],
           studentName: `${student.seatNo} ${student.name}`,
-          change: `-${cost}`,
-          reason: '點數兌換抵銷值日生',
+          change: `-${totalCost}`,
+          reason: `點數兌換抵銷值日生 ${daysToRedeem} 天`,
           type: 'reward'
         });
         saveStateToCloud();
-        alert(`🎉 兌換成功！${student.name} 已成功抵銷一次當值日生，目前剩餘點數：${student.points} 點。`);
+        alert(`🎉 兌換成功！${student.name} 已成功抵銷值日生 ${daysToRedeem} 天，目前剩餘點數：${student.points} 點。`);
       }
     }
 
@@ -1579,7 +1589,6 @@
         return;
       }
 
-      // 收集所有已被安排的學生 ID
       const assignedStudentIds = Object.values(seatingMap);
 
       let gridHTML = `<div class="grid gap-3" style="grid-template-columns: repeat(${config.cols}, minmax(130px, 1fr));">`;
@@ -1588,7 +1597,6 @@
           const seatKey = `${r}_${c}`;
           const currentStudentId = seatingMap[seatKey] || "";
           
-          // 過濾可用學生：未被安排，或是當前座位已經選了的學生
           const availableStudents = students.filter(s => !assignedStudentIds.includes(s.id) || s.id === currentStudentId);
 
           gridHTML += `
@@ -1638,7 +1646,6 @@
 
       if (!appState.remedialCases) appState.remedialCases = [];
       
-      // 檢查該生是否在該科目有「未結案」的案件
       const activeCase = appState.remedialCases.find(c => c.studentId === studentId && c.subject === subject && !c.closed);
       if (activeCase) {
         alert('該學生在此科目已有進行中的輔導案，無須重複建案！');

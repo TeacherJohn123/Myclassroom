@@ -55,10 +55,11 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
         <button onclick="switchTab('attendance')" id="btn-attendance" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">⏱️ 請假遲到</button>
-        <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
+        <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位表</button>
+        <button onclick="switchTab('remedial')" id="btn-remedial" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📚 學習扶助</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.5</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.6</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -500,11 +501,101 @@
       </div>
     </section>
 
-    <!-- 分頁 7：座位表 -->
+    <!-- 分頁 7：班級座位表 -->
     <section id="tab-seating" class="tab-content space-y-6">
-      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🪑 座位表</h2>
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-2xl font-bold text-slate-800">🪑 視覺化班級座位表</h2>
+        <div class="flex items-center gap-3 interactive-control">
+          <div class="flex items-center gap-1 text-sm font-bold">
+            <span>行：</span>
+            <input type="number" id="seatRows" value="5" min="1" max="10" class="w-16 border rounded p-1 text-center font-bold" />
+            <span>列：</span>
+            <input type="number" id="seatCols" value="6" min="1" max="10" class="w-16 border rounded p-1 text-center font-bold" />
+            <button onclick="generateSeatingGrid()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs shadow transition font-bold">🔄 產生網格</button>
+          </div>
+        </div>
+      </div>
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <p class="text-gray-600">拖拉座位表模組建置中...</p>
+        <p class="text-xs text-gray-500 mb-4">提示：點擊各座位的下拉選單即可安排學生。已被選入座位的學生會自動從其他選單中隱藏，避免重複安排。</p>
+        <div id="seatingChartContainer" class="overflow-x-auto p-4 bg-slate-50 border rounded-xl">
+          <p class="text-gray-400 text-sm text-center py-6">請點擊上方「產生網格」來建立座位表。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 分頁 8：學習扶助 -->
+    <section id="tab-remedial" class="tab-content space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📚 學習扶助學生追蹤管理</h2>
+
+      <!-- 三大科目區塊 -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- 國語區塊 -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="font-extrabold text-lg text-rose-700">📖 國語學習扶助</h3>
+            <span id="remedialCount_chinese" class="text-xs bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full">0 人</span>
+          </div>
+          <div class="interactive-control space-y-2">
+            <label class="block text-xs font-bold text-gray-600">加入扶助學生：</label>
+            <div class="flex gap-2">
+              <select id="addRemedial_chinese" class="w-full border rounded-lg p-2 text-xs outline-none bg-gray-50 font-medium">
+                <option value="">-- 選擇學生 --</option>
+              </select>
+              <button onclick="addRemedialStudent('chinese')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0">➕ 加入</button>
+            </div>
+          </div>
+          <div id="remedialList_chinese" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+            <p class="text-gray-400 text-xs py-2 text-center">尚無國語扶助學生。</p>
+          </div>
+        </div>
+
+        <!-- 數學區塊 -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="font-extrabold text-lg text-blue-700">🔢 數學學習扶助</h3>
+            <span id="remedialCount_math" class="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">0 人</span>
+          </div>
+          <div class="interactive-control space-y-2">
+            <label class="block text-xs font-bold text-gray-600">加入扶助學生：</label>
+            <div class="flex gap-2">
+              <select id="addRemedial_math" class="w-full border rounded-lg p-2 text-xs outline-none bg-gray-50 font-medium">
+                <option value="">-- 選擇學生 --</option>
+              </select>
+              <button onclick="addRemedialStudent('math')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0">➕ 加入</button>
+            </div>
+          </div>
+          <div id="remedialList_math" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+            <p class="text-gray-400 text-xs py-2 text-center">尚無數學扶助學生。</p>
+          </div>
+        </div>
+
+        <!-- 英語區塊 -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="font-extrabold text-lg text-emerald-700">🔤 英語學習扶助</h3>
+            <span id="remedialCount_english" class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">0 人</span>
+          </div>
+          <div class="interactive-control space-y-2">
+            <label class="block text-xs font-bold text-gray-600">加入扶助學生：</label>
+            <div class="flex gap-2">
+              <select id="addRemedial_english" class="w-full border rounded-lg p-2 text-xs outline-none bg-gray-50 font-medium">
+                <option value="">-- 選擇學生 --</option>
+              </select>
+              <button onclick="addRemedialStudent('english')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0">➕ 加入</button>
+            </div>
+          </div>
+          <div id="remedialList_english" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+            <p class="text-gray-400 text-xs py-2 text-center">尚無英語扶助學生。</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 測驗歷程總覽 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📜 學生學習扶助測驗歷程總覽</h3>
+        <div id="remedialHistoryContainer" class="divide-y divide-gray-100 max-h-72 overflow-y-auto pr-1">
+          <p class="text-gray-400 text-sm py-2">尚無測驗歷程記錄。</p>
+        </div>
       </div>
     </section>
 
@@ -571,7 +662,7 @@
     </div>
   </div>
 
-  <!-- 核心 JS 邏輯 (支援多班級自動隔離與點數連動消除) -->
+  <!-- 核心 JS 邏輯 -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
@@ -587,7 +678,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // 🌐 動態抓取網址上的 ?class=xxx，自動對應不同班級的專屬資料庫路徑
     const urlParams = new URLSearchParams(window.location.search);
     const classId = urlParams.get('class') || 'class1';
     const dbPath = 'classroom_data_' + classId;
@@ -606,7 +696,6 @@
         }
       }
 
-      // 從 Firebase 即時載入該班級專屬的雲端資料
       db.ref(dbPath).on('value', (snapshot) => {
         appState = snapshot.val() || {};
         
@@ -622,10 +711,11 @@
         renderClassPointHistory();
         initAttendanceModule();
         initTodoModule();
+        renderSeatingChart();
+        renderRemedialModule();
       });
     };
 
-    // 儲存資料至該班級專屬的 Firebase 路徑
     function saveStateToCloud() {
       db.ref(dbPath).set(appState);
     }
@@ -997,7 +1087,7 @@
       while (curr <= today) {
         const dayOfWeek = curr.getDay();
         const dateStr = curr.toISOString().split('T')[0];
-        const isAbsent = attLogs.some(l => l.studentId === studentId && l.date === dateStr && ['病假', '事假', '公假', '喪假'].includes(l.category));
+        const isAbsent = attLogs.some(l => l.studentId === studentId && l.date === dateStr && l.category === '病假'); // 僅扣除病假
         if (dayOfWeek !== 0 && dayOfWeek !== 6 && !isAbsent) overdueDays++;
         curr.setDate(curr.getDate() + 1);
       }
@@ -1061,7 +1151,7 @@
       saveStateToCloud();
     }
 
-    // ----------------- 行事曆邏輯 (支援各別修改日期與事件內容) -----------------
+    // ----------------- 行事曆邏輯 -----------------
     function importBatchCalendar() {
       const rawText = document.getElementById('batchCalendarInput').value.trim();
       if (!rawText) { alert('請填寫行事曆內容！'); return; }
@@ -1217,7 +1307,6 @@
       if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
     }
 
-    // 🎫 點數兌換抵銷值日生邏輯 (自動同步更新補罰次數，從待補清單連動消除)
     function redeemDutyExemption() {
       const studentId = document.getElementById('redeemStudentSelect').value;
       const cost = parseInt(document.getElementById('redeemCost').value) || 15;
@@ -1235,7 +1324,6 @@
       if (confirm(`確定要幫 ${student.name} 扣除 ${cost} 點，兌換抵銷一次當值日生嗎？`)) {
         student.points -= cost;
         
-        // 增加該學生的點數兌換抵銷次數，讓聯絡簿值日生待補清單自動扣除
         if (!appState.dutyExemptionCredits) appState.dutyExemptionCredits = {};
         appState.dutyExemptionCredits[student.id] = (appState.dutyExemptionCredits[student.id] || 0) + 1;
 
@@ -1463,6 +1551,204 @@
 
       document.getElementById('individualAttHistoryList').innerHTML = studentLogs.length === 0 ? '<p class="text-gray-400 text-xs py-3">該生尚無任何請假與遲到紀錄。</p>' :
         studentLogs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span><span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}</span>${l.note ? `<span class="text-gray-600">${l.note}</span>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500 interactive-control">✕</button></div>`).join('');
+    }
+
+    // ----------------- 班級座位表邏輯 -----------------
+    function generateSeatingGrid() {
+      const rows = parseInt(document.getElementById('seatRows').value) || 5;
+      const cols = parseInt(document.getElementById('seatCols').value) || 6;
+      if (!appState.seatingConfig) appState.seatingConfig = {};
+      appState.seatingConfig.rows = rows;
+      appState.seatingConfig.cols = cols;
+      if (!appState.seatingMap) appState.seatingMap = {};
+      saveStateToCloud();
+      renderSeatingChart();
+    }
+
+    function renderSeatingChart() {
+      const container = document.getElementById('seatingChartContainer');
+      const config = appState.seatingConfig || { rows: 5, cols: 6 };
+      const seatingMap = appState.seatingMap || {};
+      const students = appState.students || [];
+
+      document.getElementById('seatRows').value = config.rows;
+      document.getElementById('seatCols').value = config.cols;
+
+      if (students.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm text-center py-6">請先至「學生名單」匯入學生資料。</p>';
+        return;
+      }
+
+      // 收集所有已被安排的學生 ID
+      const assignedStudentIds = Object.values(seatingMap);
+
+      let gridHTML = `<div class="grid gap-3" style="grid-template-columns: repeat(${config.cols}, minmax(130px, 1fr));">`;
+      for (let r = 0; r < config.rows; r++) {
+        for (let c = 0; c < config.cols; c++) {
+          const seatKey = `${r}_${c}`;
+          const currentStudentId = seatingMap[seatKey] || "";
+          
+          // 過濾可用學生：未被安排，或是當前座位已經選了的學生
+          const availableStudents = students.filter(s => !assignedStudentIds.includes(s.id) || s.id === currentStudentId);
+
+          gridHTML += `
+            <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-between text-center">
+              <span class="text-[10px] text-gray-400 font-mono mb-1">第 ${r+1} 行 · 第 ${c+1} 列</span>
+              <select onchange="updateSeat('${seatKey}', this.value)" class="w-full border rounded-lg p-2 text-xs font-bold text-gray-800 bg-gray-50 outline-none interactive-control">
+                <option value="">-- 空座位 --</option>
+                ${availableStudents.map(s => `<option value="${s.id}" ${s.id === currentStudentId ? 'selected' : ''}>${s.seatNo} ${s.name}</option>`).join('')}
+              </select>
+            </div>
+          `;
+        }
+      }
+      gridHTML += `</div>`;
+      container.innerHTML = gridHTML;
+    }
+
+    function updateSeat(seatKey, studentId) {
+      if (!appState.seatingMap) appState.seatingMap = {};
+      if (studentId === "") {
+        delete appState.seatingMap[seatKey];
+      } else {
+        appState.seatingMap[seatKey] = studentId;
+      }
+      saveStateToCloud();
+    }
+
+    // ----------------- 學習扶助模組邏輯 -----------------
+    function renderRemedialModule() {
+      const students = appState.students || [];
+      const subjects = ['chinese', 'math', 'english'];
+
+      subjects.forEach(sub => {
+        const select = document.getElementById(`addRemedial_${sub}`);
+        select.innerHTML = students.length === 0 ? '<option value="">-- 尚無學生 --</option>' :
+          '<option value="">-- 選擇學生加入 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
+      });
+
+      renderRemedialLists();
+      renderRemedialHistory();
+    }
+
+    function addRemedialStudent(subject) {
+      const select = document.getElementById(`addRemedial_${subject}`);
+      const studentId = select.value;
+      if (!studentId) { alert('請先選擇學生！'); return; }
+
+      if (!appState.remedialCases) appState.remedialCases = [];
+      
+      // 檢查該生是否在該科目有「未結案」的案件
+      const activeCase = appState.remedialCases.find(c => c.studentId === studentId && c.subject === subject && !c.closed);
+      if (activeCase) {
+        alert('該學生在此科目已有進行中的輔導案，無須重複建案！');
+        return;
+      }
+
+      const student = (appState.students || []).find(s => s.id === studentId);
+      if (!student) return;
+
+      const newCase = {
+        id: 'rem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        studentId: student.id,
+        studentName: `${student.seatNo} ${student.name}`,
+        subject,
+        scores: { '五上': '', '五下': '', '六上': '', '六下': '' },
+        closed: false,
+        createdAt: new Date().toISOString()
+      };
+
+      appState.remedialCases.unshift(newCase);
+      saveStateToCloud();
+      select.value = '';
+      alert(`✅ 成功建立 ${student.name} 的${subject === 'chinese' ? '國語' : subject === 'math' ? '數學' : '英語'}學習扶助案！`);
+    }
+
+    function updateRemedialScore(caseId, semester, scoreValue) {
+      const cases = appState.remedialCases || [];
+      const c = cases.find(item => item.id === caseId);
+      if (c) {
+        if (!c.scores) c.scores = {};
+        c.scores[semester] = scoreValue;
+        saveStateToCloud();
+      }
+    }
+
+    function closeRemedialCase(caseId) {
+      if (!confirm('確定要將此扶助案結案嗎？')) return;
+      const cases = appState.remedialCases || [];
+      const c = cases.find(item => item.id === caseId);
+      if (c) {
+        c.closed = true;
+        c.closedAt = new Date().toISOString().split('T')[0];
+        saveStateToCloud();
+        alert('✅ 輔導案已成功結案！');
+      }
+    }
+
+    function renderRemedialLists() {
+      const cases = appState.remedialCases || [];
+      const subjects = ['chinese', 'math', 'english'];
+      const semesters = ['五上', '五下', '六上', '六下'];
+
+      subjects.forEach(sub => {
+        const activeCases = cases.filter(c => c.subject === sub && !c.closed);
+        document.getElementById(`remedialCount_${sub}`).innerText = `${activeCases.length} 人`;
+        const container = document.getElementById(`remedialList_${sub}`);
+
+        if (activeCases.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-xs py-2 text-center">尚無扶助學生。</p>';
+          return;
+        }
+
+        container.innerHTML = activeCases.map(c => `
+          <div class="p-3 bg-gray-50 border rounded-xl space-y-2.5">
+            <div class="flex justify-between items-center">
+              <span class="font-extrabold text-sm text-gray-800">${c.studentName}</span>
+              <button onclick="closeRemedialCase('${c.id}')" class="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded transition interactive-control">🎯 結案</button>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 text-xs">
+              ${semesters.map(sem => `
+                <div class="flex items-center gap-1 bg-white p-1.5 rounded border">
+                  <span class="text-[10px] font-bold text-gray-500 w-8">${sem}</span>
+                  <input type="text" value="${(c.scores && c.scores[sem]) || ''}" onchange="updateRemedialScore('${c.id}', '${sem}', this.value)" class="w-full border rounded p-1 text-xs text-center font-bold outline-none bg-gray-50 interactive-control" placeholder="成績" />
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    function renderRemedialHistory() {
+      const cases = appState.remedialCases || [];
+      const container = document.getElementById(`remedialHistoryContainer`);
+      const semesters = ['五上', '五下', '六上', '六下'];
+
+      if (cases.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm py-2">尚無測驗歷程記錄。</p>';
+        return;
+      }
+
+      container.innerHTML = cases.map(c => {
+        const subName = c.subject === 'chinese' ? '國語' : c.subject === 'math' ? '數學' : '英語';
+        const statusBadge = c.closed ? `<span class="text-[10px] bg-gray-200 text-gray-700 font-bold px-2 py-0.5 rounded">已結案 (${c.closedAt || ''})</span>` : `<span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">輔導中</span>`;
+        
+        return `
+          <div class="py-3 px-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-extrabold text-gray-900 text-sm">${c.studentName}</span>
+                <span class="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">${subName}</span>
+                ${statusBadge}
+              </div>
+              <div class="text-gray-500 flex flex-wrap gap-2">
+                ${semesters.map(sem => `<span>${sem}: <strong class="text-gray-800">${(c.scores && c.scores[sem]) || '未填'}</strong></span>`).join(' | ')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
     }
   </script>
 </body>

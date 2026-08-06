@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.12</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.13</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -359,12 +359,19 @@
                 <button onclick="setPointReason('上課專心')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">上課專心</button>
               </div>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-gray-600 mb-1">個人加分操作：</label>
+            
+            <!-- 快捷加分與自訂加減分區塊 -->
+            <div class="space-y-2">
+              <label class="block text-xs font-bold text-gray-600">個人加分操作：</label>
               <div class="flex gap-2">
                 <button onclick="applyPointChange(1)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition shadow">+1 分</button>
                 <button onclick="applyPointChange(2)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition shadow">+2 分</button>
                 <button onclick="applyPointChange(3)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition shadow">+3 分</button>
+              </div>
+              <div class="flex gap-2 pt-1">
+                <input type="number" id="customPointInput" value="1" min="1" class="border rounded-lg p-2 text-sm font-bold w-24 text-center outline-none bg-gray-50" placeholder="分數" />
+                <button onclick="applyCustomPoint(1)" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-lg text-xs transition shadow">✨ 自訂加分</button>
+                <button onclick="applyCustomPoint(-1)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition shadow">📉 自訂減分</button>
               </div>
             </div>
           </div>
@@ -1525,11 +1532,48 @@
       const filterSelect = document.getElementById('filterStudentSelect');
       const redeemSelect = document.getElementById('redeemStudentSelect');
       
+      const currentSelectedId = select.value; // 保留當前選擇的學生 ID，避免重新渲染時跳掉
+
       const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : students.map(s => `<option value="${s.id}">${s.seatNo} / ${s.name} ｜ 當前：${s.points || 0} 點</option>`).join('');
       
       select.innerHTML = optionsHTML;
       filterSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
       if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
+
+      // 如果之前有選過學生，且該學生仍然存在，則維持選定狀態
+      if (currentSelectedId && students.some(s => s.id === currentSelectedId)) {
+        select.value = currentSelectedId;
+      }
+    }
+
+    // 自訂加減分功能
+    function applyCustomPoint(multiplier) {
+      const studentId = document.getElementById('pointStudentSelect').value;
+      const amount = parseInt(document.getElementById('customPointInput').value) || 0;
+      const reason = document.getElementById('pointReason').value.trim() || (multiplier > 0 ? '自訂加分' : '自訂扣分');
+
+      if (!studentId) { alert('請先選擇學生！'); return; }
+      if (amount <= 0) { alert('請輸入有效的點數！'); return; }
+
+      const finalAmount = amount * multiplier;
+      const student = (appState.students || []).find(s => s.id === studentId);
+
+      if (student) {
+        student.points = (student.points || 0) + finalAmount;
+        if (!appState.pointLogs) appState.pointLogs = [];
+        appState.pointLogs.unshift({
+          id: 'log_' + Date.now(),
+          studentId: student.id,
+          date: new Date().toISOString().split('T')[0],
+          studentName: `${student.seatNo} ${student.name}`,
+          change: finalAmount > 0 ? `+${finalAmount}` : `${finalAmount}`,
+          reason,
+          type: 'change'
+        });
+        saveStateToCloud();
+        document.getElementById('pointReason').value = '';
+        alert(`✅ 已成功對 ${student.name} 執行 ${finalAmount > 0 ? '+' + finalAmount : finalAmount} 點！`);
+      }
     }
 
     function redeemDutyExemption() {

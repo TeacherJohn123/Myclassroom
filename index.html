@@ -1009,8 +1009,9 @@
 
       const penaltyButtonsHTML = [];
       students.forEach(s => {
+        // 合算上學遲到與上課遲到的總次數
         const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
-        const totalLateDays = Math.floor(lateCount / 5);
+        const totalLateDays = Math.floor(lateCount / 5); // 每滿 5 次算 1 天值日生
         const totalBehDays = behaviorDutyMap[s.id] || 0;
         const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
 
@@ -1023,21 +1024,31 @@
         const fullName = `${s.seatNo} ${s.name}`;
 
         if (pendingPenaltyDays > 0) {
-          let badgeClass = 'bg-orange-500 text-white';
+          let badgeClass = 'bg-orange-600 text-white';
           let borderClass = 'border-orange-300 bg-orange-50 text-orange-950';
           let icon = '⏰';
 
-          if (totalBehDays > 0 && totalBehDays >= totalLateDays && totalBehDays >= totalCorridorDays) {
-            badgeClass = 'bg-rose-600 text-white';
+          // 判定主要懲罰來源顯示對應圖示
+          if (totalLateDays >= totalBehDays && totalLateDays >= totalCorridorDays) {
+            icon = '⏰';
+            borderClass = 'border-orange-300 bg-orange-50 text-orange-950';
+            badgeClass = 'bg-orange-600 text-white';
+          } else if (totalBehDays > totalLateDays && totalBehDays >= totalCorridorDays) {
             borderClass = 'border-rose-300 bg-rose-50 text-rose-950';
+            badgeClass = 'bg-rose-600 text-white';
             icon = '🚨';
-          } else if (totalCorridorDays > 0 && totalCorridorDays >= totalLateDays && totalCorridorDays >= totalBehDays) {
-            badgeClass = 'bg-amber-600 text-white';
+          } else if (totalCorridorDays > totalLateDays && totalCorridorDays > totalBehDays) {
             borderClass = 'border-amber-300 bg-amber-50 text-amber-950';
+            badgeClass = 'bg-amber-600 text-white';
             icon = '🏃';
           }
 
-          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="${borderClass} border px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>${icon} ${fullName}</span><span class="${badgeClass} text-[10px] px-1.5 py-0.5 rounded-full">尚欠 ${pendingPenaltyDays} 天</span></button>`);
+          penaltyButtonsHTML.push(`
+            <button onclick="quickSelectPenaltyStudent('${fullName}')" class="${borderClass} border px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1">
+              <span>${icon} ${fullName} ${totalLateDays > 0 ? `(遲到${lateCount}次)` : ''}</span>
+              <span class="${badgeClass} text-[10px] px-1.5 py-0.5 rounded-full">尚欠 ${pendingPenaltyDays} 天</span>
+            </button>
+          `);
         }
       });
 
@@ -1093,7 +1104,18 @@
 
           let pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);
 
-          currentDayTypes[fullName] = pendingPenaltyDays > 0 ? (corrDays > 0 ? 'corridor' : 'late') : 'normal';
+          // 正確設定值日生標籤屬性 (優先採用遲到)
+          if (pendingPenaltyDays > 0) {
+            if (totalLateDays >= behDays && totalLateDays >= corrDays) {
+              currentDayTypes[fullName] = 'late';
+            } else if (corrDays > behDays) {
+              currentDayTypes[fullName] = 'corridor';
+            } else {
+              currentDayTypes[fullName] = 'beh';
+            }
+          } else {
+            currentDayTypes[fullName] = 'normal';
+          }
 
           if (!previousAssigned.includes(fullName) && totalPenaltyDays > totalExempted) {
             appState.dutyClearedMap[student.id] = clearedCount + 1;
@@ -1854,14 +1876,13 @@
       const select = document.getElementById('attStudentSelect');
       const filterSelect = document.getElementById('filterAttStudentSelect');
       
-      const currentSelectedId = select.value; // 保留登記下拉選單當前選取的學生 ID
+      const currentSelectedId = select.value;
 
       const optionsHTML = students.length === 0 ? '<option value="">-- 請先新增/匯入學生 --</option>' : '<option value="">-- 請選擇學生 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
       
       select.innerHTML = optionsHTML;
       filterSelect.innerHTML = optionsHTML;
 
-      // 如果之前有選過學生且該學生存在，維持選擇狀態，不跳回預設
       if (currentSelectedId && students.some(s => s.id === currentSelectedId)) {
         select.value = currentSelectedId;
       }

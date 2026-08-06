@@ -58,7 +58,7 @@
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位表</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.4</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.5</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -571,7 +571,7 @@
     </div>
   </div>
 
-  <!-- 核心 JS 邏輯 (已結合 Firebase 雲端同步) -->
+  <!-- 核心 JS 邏輯 (支援多班級自動隔離與點數連動消除) -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
@@ -587,8 +587,13 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
+    // 🌐 動態抓取網址上的 ?class=xxx，自動對應不同班級的專屬資料庫路徑
+    const urlParams = new URLSearchParams(window.location.search);
+    const classId = urlParams.get('class') || 'class1';
+    const dbPath = 'classroom_data_' + classId;
+
     let appState = {};
-    const isNoticeMode = new URLSearchParams(window.location.search).get('mode') === 'notice';
+    const isNoticeMode = urlParams.get('mode') === 'notice';
 
     window.onload = function() {
       if (isNoticeMode) {
@@ -601,7 +606,8 @@
         }
       }
 
-      db.ref('classroom_data').on('value', (snapshot) => {
+      // 從 Firebase 即時載入該班級專屬的雲端資料
+      db.ref(dbPath).on('value', (snapshot) => {
         appState = snapshot.val() || {};
         
         setTodayDate();
@@ -619,8 +625,9 @@
       });
     };
 
+    // 儲存資料至該班級專屬的 Firebase 路徑
     function saveStateToCloud() {
-      db.ref('classroom_data').set(appState);
+      db.ref(dbPath).set(appState);
     }
 
     function switchTab(tabId) {
@@ -1210,7 +1217,7 @@
       if (redeemSelect) redeemSelect.innerHTML = '<option value="">-- 請選擇學生 --</option>' + optionsHTML;
     }
 
-    // 🎫 點數兌換抵銷值日生邏輯 (自動同步更新補罰次數，從待補清單連動扣除)
+    // 🎫 點數兌換抵銷值日生邏輯 (自動同步更新補罰次數，從待補清單連動消除)
     function redeemDutyExemption() {
       const studentId = document.getElementById('redeemStudentSelect').value;
       const cost = parseInt(document.getElementById('redeemCost').value) || 15;

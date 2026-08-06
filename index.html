@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.16</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.17</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -1016,18 +1016,18 @@
         const studentCleared = typeClearedMap[s.id] || { late: 0, beh: 0, corridor: 0 };
         const redeemedDays = dutyExemptionCredits[s.id] || 0;
 
-        // 1. 計算遲到欠天數 (每滿 5 次算 1 天)
-        const lateCount = attLogs.filter(l => l.studentId === s.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+        // 1. 計算遲到欠天數 (放寬條件：只要包含「遲到」二字即採計)
+        const lateCount = attLogs.filter(l => l.studentId === s.id && l.category && l.category.includes('遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
-        let pendingLateDays = Math.max(0, totalLateDays - studentCleared.late);
+        let pendingLateDays = Math.max(0, totalLateDays - (studentCleared.late || 0));
 
         // 2. 計算行為不當欠天數
         const totalBehDays = behaviorDutyMap[s.id] || 0;
-        let pendingBehDays = Math.max(0, totalBehDays - studentCleared.beh);
+        let pendingBehDays = Math.max(0, totalBehDays - (studentCleared.beh || 0));
 
-        // 3. 計算走廊奔跑欠天數 (次數直接等同天數)
+        // 3. 計算走廊奔跑欠天數
         const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
-        let pendingCorridorDays = Math.max(0, totalCorridorDays - studentCleared.corridor);
+        let pendingCorridorDays = Math.max(0, totalCorridorDays - (studentCleared.corridor || 0));
 
         // 扣除點數兌換抵銷的優先順序 (遲到 -> 行為不當 -> 走廊奔跑)
         let remRedeemed = redeemedDays;
@@ -1122,26 +1122,26 @@
           }
           const cleared = appState.typeClearedMap[student.id];
 
-          const lateCount = attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+          const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
           const totalLateDays = Math.floor(lateCount / 5);
           const behDays = behaviorDutyMap[student.id] || 0;
           const corrDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + l.count, 0);
 
-          const pendingLate = totalLateDays - cleared.late;
-          const pendingBeh = behDays - cleared.beh;
-          const pendingCorr = corrDays - cleared.corridor;
+          const pendingLate = totalLateDays - (cleared.late || 0);
+          const pendingBeh = behDays - (cleared.beh || 0);
+          const pendingCorr = corrDays - (cleared.corridor || 0);
 
           // 判斷當日顯示型態並更新對應銷案次數
           if (!previousAssigned.includes(fullName)) {
             if (pendingLate > 0) {
               currentDayTypes[fullName] = 'late';
-              cleared.late += 1;
+              cleared.late = (cleared.late || 0) + 1;
             } else if (pendingBeh > 0) {
               currentDayTypes[fullName] = 'beh';
-              cleared.beh += 1;
+              cleared.beh = (cleared.beh || 0) + 1;
             } else if (pendingCorr > 0) {
               currentDayTypes[fullName] = 'corridor';
-              cleared.corridor += 1;
+              cleared.corridor = (cleared.corridor || 0) + 1;
             } else {
               currentDayTypes[fullName] = 'normal';
             }
@@ -1640,13 +1640,13 @@
       const dutyExemptionCredits = appState.dutyExemptionCredits || {};
 
       const studentCleared = typeClearedMap[student.id] || { late: 0, beh: 0, corridor: 0 };
-      const lateCount = attLogs.filter(l => l.studentId === student.id && (l.category === '上學遲到' || l.category === '上課遲到')).length;
+      const lateCount = attLogs.filter(l => l.studentId === student.id && l.category && l.category.includes('遲到')).length;
       const totalLateDays = Math.floor(lateCount / 5);
       const totalBehDays = behaviorDutyMap[student.id] || 0;
       const totalCorridorDays = corridorLogs.filter(l => l.studentId === student.id).reduce((sum, l) => sum + l.count, 0);
 
       const totalPenaltyDays = totalLateDays + totalBehDays + totalCorridorDays;
-      const clearedCount = studentCleared.late + studentCleared.beh + studentCleared.corridor;
+      const clearedCount = (studentCleared.late || 0) + (studentCleared.beh || 0) + (studentCleared.corridor || 0);
       const redeemedDays = dutyExemptionCredits[student.id] || 0;
       const totalExempted = clearedCount + redeemedDays;
       const pendingPenaltyDays = Math.max(0, totalPenaltyDays - totalExempted);

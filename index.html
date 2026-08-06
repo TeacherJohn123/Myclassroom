@@ -54,13 +54,14 @@
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
         <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
-        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
+        <!-- 👇 取消了 hide-in-notice，讓家長能看見行事曆按鈕 -->
+        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         <button onclick="switchTab('remedial')" id="btn-remedial" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📚 學習扶助</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.24 (斷鏈修復防呆版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.26 (家長行事曆開放版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -567,7 +568,7 @@
       </div>
 
       <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單（可各別修改日期或事件內容）</h3>
+        <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單<span class="hide-in-notice">（可各別修改日期或事件內容）</span></h3>
         <div id="calendarList" class="divide-y divide-gray-100">
           <p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>
         </div>
@@ -714,9 +715,12 @@
       <div id="dutyStudentList" class="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto p-1 border rounded-lg">
         <p class="text-gray-400 text-xs p-2 col-span-full">請先至「學生名單」匯入學生資料。</p>
       </div>
-      <div class="flex justify-end gap-2 pt-2 border-t">
-        <button onclick="closeDutyPicker()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold">取消</button>
-        <button onclick="saveDutySelection()" class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold">儲存安排</button>
+      <div class="flex justify-between items-center pt-3 border-t">
+        <button onclick="clearDutyHistory()" class="px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition">🗑️ 重置所有歷史銷案</button>
+        <div class="flex gap-2">
+          <button onclick="closeDutyPicker()" class="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-bold">取消</button>
+          <button onclick="saveDutySelection()" class="px-5 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold">儲存安排</button>
+        </div>
       </div>
     </div>
   </div>
@@ -998,6 +1002,17 @@
       saveStateToCloud();
       alert(`✅ 已成功登記！指定該生補當值日生 ${days} 天。`);
       closeBehaviorModal();
+    }
+
+    // 💡 新增：重置歷史紀錄功能
+    function clearDutyHistory() {
+      if (!confirm('⚠️ 警告：確定要清除「所有過去的值日生排班」與「點數抵銷」紀錄嗎？\n\n(這會讓所有學生的欠繳天數重新從頭計算，通常用於測試完畢後清空)')) return;
+      appState.dutyRoster = {};
+      appState.dutyTypeRoster = {};
+      appState.dutyExemptionCredits = {};
+      saveStateToCloud();
+      alert('✅ 紀錄已完全清空！');
+      closeDutyPicker();
     }
 
     function openDutyPicker() {

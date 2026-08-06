@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.11</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.12</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -310,7 +310,7 @@
       
       <div class="bg-sky-50 border-2 border-sky-200 p-6 rounded-2xl shadow-sm space-y-3 interactive-control">
         <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換抵銷當值日生</h3>
-        <p class="text-xs text-sky-700 font-bold">因遲到、行為不當或走廊奔跑被罰當值日生的學生，可使用累積點數兌換抵銷值日生天數！</p>
+        <p class="text-xs text-sky-700 font-bold">因遲到、違規事項或走廊奔跑被罰當值日生的學生，可使用累積點數兌換抵銷值日生天數！</p>
         <div class="flex flex-wrap gap-3 items-center">
           <select id="redeemStudentSelect" class="border rounded-lg p-2 text-sm bg-white font-medium outline-none flex-1 min-w-[200px]">
             <option value="">-- 請選擇學生 --</option>
@@ -785,8 +785,6 @@
 
     let appState = {};
     const isNoticeMode = urlParams.get('mode') === 'notice';
-
-    // 用於學期結算恢復上一步的暫存記憶體
     let backupState = null;
 
     window.onload = function() {
@@ -958,7 +956,7 @@
           } else if (type === 'beh') {
             return `<span class="inline-block bg-rose-100 text-rose-950 border border-rose-300 px-3 py-1 rounded-lg text-xl font-bold">🚨 ${name}</span>`;
           } else if (type === 'corridor') {
-            return `<span class="inline-block bg-emerald-100 text-emerald-950 border border-emerald-300 px-3 py-1 rounded-lg text-xl font-bold">🏃 ${name}</span>`;
+            return `<span class="inline-block bg-amber-100 text-amber-950 border border-amber-300 px-3 py-1 rounded-lg text-xl font-bold">🏃 ${name}</span>`;
           } else {
             return `<span class="inline-block bg-sky-200 text-sky-950 px-3 py-1 rounded-lg text-xl font-bold">${name}</span>`;
           }
@@ -1019,11 +1017,22 @@
         const fullName = `${s.seatNo} ${s.name}`;
 
         if (pendingPenaltyDays > 0) {
-          const isCorridorPrimary = totalCorridorDays > 0 && totalCorridorDays >= (totalLateDays + totalBehDays);
-          const badgeColor = isCorridorPrimary ? 'bg-emerald-600 text-white' : 'bg-orange-500 text-white';
-          const borderColor = isCorridorPrimary ? 'border-emerald-300 bg-emerald-50 text-emerald-950' : 'border-orange-300 bg-orange-50 text-orange-950';
+          // 顏色判定：遲到=橘色，違規事項=紅色，走廊奔跑=土黃色
+          let badgeClass = 'bg-orange-500 text-white';
+          let borderClass = 'border-orange-300 bg-orange-50 text-orange-950';
+          let icon = '⏰';
 
-          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="${borderColor} border px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>🏃 ${fullName}</span><span class="${badgeColor} text-[10px] px-1.5 py-0.5 rounded-full">尚欠 ${pendingPenaltyDays} 天</span></button>`);
+          if (totalBehDays > 0 && totalBehDays >= totalLateDays && totalBehDays >= totalCorridorDays) {
+            badgeClass = 'bg-rose-600 text-white';
+            borderClass = 'border-rose-300 bg-rose-50 text-rose-950';
+            icon = '🚨';
+          } else if (totalCorridorDays > 0 && totalCorridorDays >= totalLateDays && totalCorridorDays >= totalBehDays) {
+            badgeClass = 'bg-amber-600 text-white';
+            borderClass = 'border-amber-300 bg-amber-50 text-amber-950';
+            icon = '🏃';
+          }
+
+          penaltyButtonsHTML.push(`<button onclick="quickSelectPenaltyStudent('${fullName}')" class="${borderClass} border px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1"><span>${icon} ${fullName}</span><span class="${badgeClass} text-[10px] px-1.5 py-0.5 rounded-full">尚欠 ${pendingPenaltyDays} 天</span></button>`);
         }
       });
 
@@ -1472,7 +1481,7 @@
         <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded text-xs">
           <div>
             <div class="flex items-center gap-2 mb-0.5">
-              <span class="font-extrabold text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded">${l.week}</span>
+              <span class="font-extrabold text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded">${l.week}</span>
               <span class="font-bold text-gray-800 text-sm">${l.studentName}</span>
               <span class="font-bold text-rose-600">登記 ${l.count} 次</span>
             </div>
@@ -1499,7 +1508,7 @@
         return `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td>
-            <td class="p-3 text-center ${totalCount > 0 ? 'font-black text-emerald-700 text-base' : 'text-gray-300'}">${totalCount} 次</td>
+            <td class="p-3 text-center ${totalCount > 0 ? 'font-black text-amber-700 text-base' : 'text-gray-300'}">${totalCount} 次</td>
           </tr>
         `;
       }).join('');
@@ -1698,13 +1707,11 @@
     // ----------------- 學期結算功能 -----------------
     function triggerSemesterReset(type) {
       const typeName = type === 'attendance' ? '【請假遲到】' : '【走廊奔跑】';
-      if (!confirm(`⚠️ 【警告】您即將進行 ${typeName} 學期結算！\n\n結算後會將該頁面的所有紀錄進行統計，並將目前數據全數「歸零」。\n\n確定要執行學期結算嗎？`)) {
+      if (!confirm(`⚠️ 【警告提醒】\n\n您即將執行 ${typeName} 學期結算！\n此操作將會清除並歸零該頁面的所有累積數據。\n\n確定要繼續進行結算嗎？`)) {
         return;
       }
 
-      // 備份目前狀態以供恢復
       backupState = JSON.parse(JSON.stringify(appState));
-
       const students = appState.students || [];
       let reportHTML = '';
 
@@ -1722,7 +1729,6 @@
           return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span><span class="text-gray-600">病假: ${sick} ｜ 事假: ${personal} ｜ 公假: ${official} ｜ 喪假: ${funeral} ｜ 上學遲到: ${schoolLate} ｜ 上課遲到: ${classLate}</span></div>`;
         }).join('');
 
-        // 歸零出缺勤紀錄
         appState.attendanceLogs = [];
         document.getElementById('undoAttendanceContainer').classList.remove('hidden');
 
@@ -1731,17 +1737,14 @@
         reportHTML += `<h4 class="font-bold text-sm text-gray-800 mb-2">📋 本學期走廊奔跑違規統計總報告</h4>`;
         reportHTML += students.map(s => {
           const totalCorr = logs.filter(l => l.studentId === s.id).reduce((sum, l) => sum + l.count, 0);
-          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span><span class="font-bold text-emerald-700">累積奔跑: ${totalCorr} 次</span></div>`;
+          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span><span class="font-bold text-amber-700">累積奔跑: ${totalCorr} 次</span></div>`;
         }).join('');
 
-        // 歸零走廊奔跑紀錄
         appState.corridorLogs = [];
         document.getElementById('undoCorridorContainer').classList.remove('hidden');
       }
 
       saveStateToCloud();
-
-      // 顯示報告彈窗
       document.getElementById('reportModalContent').innerHTML = reportHTML;
       document.getElementById('reportModal').classList.remove('hidden');
     }

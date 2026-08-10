@@ -2102,6 +2102,141 @@
       }
       saveStateToCloud();
     }
+
+    // ----------------- 學習扶助模組邏輯 -----------------
+    function renderRemedialModule() {
+      const students = appState.students || [];
+      const subjects = ['chinese', 'math', 'english'];
+
+      subjects.forEach(sub => {
+        const select = document.getElementById(`addRemedial_${sub}`);
+        select.innerHTML = students.length === 0 ? '<option value="">-- 尚無學生 --</option>' :
+          '<option value="">-- 選擇學生加入 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
+      });
+
+      renderRemedialLists();
+      renderRemedialHistory();
+    }
+
+    function addRemedialStudent(subject) {
+      const select = document.getElementById(`addRemedial_${subject}`);
+      const studentId = select.value;
+      if (!studentId) { alert('請先選擇學生！'); return; }
+
+      if (!appState.remedialCases) appState.remedialCases = [];
+      
+      const activeCase = appState.remedialCases.find(c => c.studentId === studentId && c.subject === subject && !c.closed);
+      if (activeCase) {
+        alert('該學生在此科目已有進行中的輔導案，無須重複建案！');
+        return;
+      }
+
+      const student = (appState.students || []).find(s => s.id === studentId);
+      if (!student) return;
+
+      const newCase = {
+        id: 'rem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        studentId: student.id,
+        studentName: `${student.seatNo} ${student.name}`,
+        subject,
+        scores: { '五上': '', '五下': '', '六上': '', '六下': '' },
+        closed: false,
+        createdAt: new Date().toISOString()
+      };
+
+      appState.remedialCases.unshift(newCase);
+      saveStateToCloud();
+      select.value = '';
+      alert(`✅ 成功建立 ${student.name} 的${subject === 'chinese' ? '國語' : subject === 'math' ? '數學' : '英語'}學習扶助案！`);
+    }
+
+    function updateRemedialScore(caseId, semester, scoreValue) {
+      const cases = appState.remedialCases || [];
+      const c = cases.find(item => item.id === caseId);
+      if (c) {
+        if (!c.scores) c.scores = {};
+        c.scores[semester] = scoreValue;
+        saveStateToCloud();
+      }
+    }
+
+    function closeRemedialCase(caseId) {
+      if (!confirm('確定要將此扶助案結案嗎？')) return;
+      const cases = appState.remedialCases || [];
+      const c = cases.find(item => item.id === caseId);
+      if (c) {
+        c.closed = true;
+        c.closedAt = new Date().toISOString().split('T')[0];
+        saveStateToCloud();
+        alert('✅ 輔導案已成功結案！');
+      }
+    }
+
+    function renderRemedialLists() {
+      const cases = appState.remedialCases || [];
+      const subjects = ['chinese', 'math', 'english'];
+      const semesters = ['五上', '五下', '六上', '六下'];
+
+      subjects.forEach(sub => {
+        const activeCases = cases.filter(c => c.subject === sub && !c.closed);
+        document.getElementById(`remedialCount_${sub}`).innerText = `${activeCases.length} 人`;
+        const container = document.getElementById(`remedialList_${sub}`);
+
+        if (activeCases.length === 0) {
+          container.innerHTML = '<p class="text-gray-400 text-xs py-2 text-center">尚無扶助學生。</p>';
+          return;
+        }
+
+        container.innerHTML = activeCases.map(c => `
+          <div class="p-3 bg-gray-50 border rounded-xl space-y-2.5">
+            <div class="flex justify-between items-center">
+              <span class="font-extrabold text-sm text-gray-800">${c.studentName}</span>
+              <button onclick="closeRemedialCase('${c.id}')" class="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded transition interactive-control">🎯 結案</button>
+            </div>
+            <div class="grid grid-cols-2 gap-1.5 text-xs">
+              ${semesters.map(sem => `
+                <div class="flex items-center gap-1 bg-white p-1.5 rounded border">
+                  <span class="text-[10px] font-bold text-gray-500 w-8">${sem}</span>
+                  <input type="text" value="${(c.scores && c.scores[sem]) || ''}" onchange="updateRemedialScore('${c.id}', '${sem}', this.value)" class="w-full border rounded p-1 text-xs text-center font-bold outline-none bg-gray-50 interactive-control" placeholder="成績" />
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    function renderRemedialHistory() {
+      const cases = appState.remedialCases || [];
+      const container = document.getElementById(`remedialHistoryContainer`);
+      const semesters = ['五上', '五下', '六上', '六下'];
+
+      if (cases.length === 0) {
+        container.innerHTML = '<p class="text-gray-400 text-sm py-2">尚無測驗歷程記錄。</p>';
+        return;
+      }
+
+      container.innerHTML = cases.map(c => {
+        const subName = c.subject === 'chinese' ? '國語' : c.subject === 'math' ? '數學' : '英語';
+        const statusBadge = c.closed ? `<span class="text-[10px] bg-gray-200 text-gray-700 font-bold px-2 py-0.5 rounded">已結案 (${c.closedAt || ''})</span>` : `<span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">輔導中</span>`;
+        
+        return `
+          <div class="py-3 px-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-extrabold text-gray-900 text-sm">${c.studentName}</span>
+                <span class="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">${subName}</span>
+                ${statusBadge}
+              </div>
+              <div class="text-gray-500 flex flex-wrap gap-2">
+                ${semesters.map(sem => `<span>${sem}: <strong class="text-gray-800">${(c.scores && c.scores[sem]) || '未填'}</strong></span>`).join(' | ')}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  </script>
 </body>
 </html>
 

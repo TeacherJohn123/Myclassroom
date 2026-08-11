@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -54,9 +56,7 @@
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
         <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
-        <!-- 👇 此處確保沒有 hide-in-notice，讓家長能看見行事曆按鈕 -->
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
-        <button onclick="switchTab('remedial')" id="btn-remedial" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📚 學習扶助</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
@@ -91,7 +91,8 @@
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="font-bold text-lg flex items-center gap-1">🧹 當日值日生：</span>
+                <!-- 💡 修改點 2：當日值日生 改為 值日生 -->
+                <span class="font-bold text-lg flex items-center gap-1">🧹 值日生：</span>
                 <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition interactive-control">⚙️ 安排值日生</button>
               </div>
               <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900 mb-3 flex flex-wrap gap-2">
@@ -462,7 +463,11 @@
         </div>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
-          <h3 class="font-bold text-lg text-gray-800">📜 全班積分與兌獎歷程</h3>
+          <!-- 💡 修改點 3：全班積分與兌獎歷程 增加清除按鈕 -->
+          <div class="flex items-center justify-between border-b pb-2">
+            <h3 class="font-bold text-lg text-gray-800">📜 全班積分與兌獎歷程</h3>
+            <button onclick="clearClassPointHistory()" class="text-xs text-red-500 hover:text-red-700 font-bold transition interactive-control">🗑️ 清除歷程</button>
+          </div>
           <div id="classPointHistoryList" class="divide-y divide-gray-100 max-h-56 overflow-y-auto pr-1">
             <p class="text-gray-400 text-sm py-2">目前尚無全班歷程。</p>
           </div>
@@ -571,82 +576,6 @@
         <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單<span class="hide-in-notice">（可各別修改日期或事件內容）</span></h3>
         <div id="calendarList" class="divide-y divide-gray-100">
           <p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>
-        </div>
-      </div>
-    </section>
-
-    <!-- 分頁 7：學習扶助 -->
-    <section id="tab-remedial" class="tab-content space-y-6">
-      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📚 學習扶助學生追蹤管理</h2>
-
-      <!-- 三大科目區塊 -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- 國語區塊 -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
-          <div class="flex items-center justify-between border-b pb-2">
-            <h3 class="font-extrabold text-lg text-rose-700">📖 國語學習扶助</h3>
-            <span id="remedialCount_chinese" class="text-xs bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded-full">0 人</span>
-          </div>
-          <div class="interactive-control space-y-2">
-            <label class="block text-xs font-bold text-gray-600">加入扶助學生：</label>
-            <div class="flex gap-2">
-              <select id="addRemedial_chinese" class="w-full border rounded-lg p-2 text-xs outline-none bg-gray-50 font-medium">
-                <option value="">-- 選擇學生 --</option>
-              </select>
-              <button onclick="addRemedialStudent('chinese')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0">➕ 加入</button>
-            </div>
-          </div>
-          <div id="remedialList_chinese" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-            <p class="text-gray-400 text-xs py-2 text-center">尚無國語扶助學生。</p>
-          </div>
-        </div>
-
-        <!-- 數學區塊 -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
-          <div class="flex items-center justify-between border-b pb-2">
-            <h3 class="font-extrabold text-lg text-blue-700">🔢 數學學習扶助</h3>
-            <span id="remedialCount_math" class="text-xs bg-blue-100 text-blue-800 font-bold px-2 py-0.5 rounded-full">0 人</span>
-          </div>
-          <div class="interactive-control space-y-2">
-            <label class="block text-xs font-bold text-gray-600">加入扶助學生：</label>
-            <div class="flex gap-2">
-              <select id="addRemedial_math" class="w-full border rounded-lg p-2 text-xs outline-none bg-gray-50 font-medium">
-                <option value="">-- 選擇學生 --</option>
-              </select>
-              <button onclick="addRemedialStudent('math')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0">➕ 加入</button>
-            </div>
-          </div>
-          <div id="remedialList_math" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-            <p class="text-gray-400 text-xs py-2 text-center">尚無數學扶助學生。</p>
-          </div>
-        </div>
-
-        <!-- 英語區塊 -->
-        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 space-y-4">
-          <div class="flex items-center justify-between border-b pb-2">
-            <h3 class="font-extrabold text-lg text-emerald-700">🔤 英語學習扶助</h3>
-            <span id="remedialCount_english" class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">0 人</span>
-          </div>
-          <div class="interactive-control space-y-2">
-            <label class="block text-xs font-bold text-gray-600">加入扶助學生：</label>
-            <div class="flex gap-2">
-              <select id="addRemedial_english" class="w-full border rounded-lg p-2 text-xs outline-none bg-gray-50 font-medium">
-                <option value="">-- 選擇學生 --</option>
-              </select>
-              <button onclick="addRemedialStudent('english')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-2 rounded-lg text-xs shrink-0">➕ 加入</button>
-            </div>
-          </div>
-          <div id="remedialList_english" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
-            <p class="text-gray-400 text-xs py-2 text-center">尚無英語扶助學生。</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 測驗歷程總覽 -->
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
-        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📜 學生學習扶助測驗歷程總覽</h3>
-        <div id="remedialHistoryContainer" class="divide-y divide-gray-100 max-h-72 overflow-y-auto pr-1">
-          <p class="text-gray-400 text-sm py-2">尚無測驗歷程記錄。</p>
         </div>
       </div>
     </section>
@@ -829,7 +758,6 @@
         initAttendanceModule();
         initTodoModule();
         renderSeatingChart();
-        renderRemedialModule();
         renderCorridorStudentOptions();
         renderCorridorList();
         renderCorridorStatsTable();
@@ -1494,9 +1422,35 @@
       grid.innerHTML = students.map(stu => `
         <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm hover:shadow transition">
           <div><span class="text-xs font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded mr-1.5">${stu.seatNo}</span><span class="font-bold text-gray-800 text-sm">${stu.name}</span></div>
-          <button onclick="deleteStudent('${stu.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
+          <!-- 💡 修改點 1：學生名單增加編輯按鈕 -->
+          <div class="flex items-center gap-1 interactive-control">
+            <button onclick="editStudent('${stu.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 px-2 py-1 rounded transition">✏️ 編輯</button>
+            <button onclick="deleteStudent('${stu.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+          </div>
         </div>
       `).join('');
+    }
+
+    function editStudent(id) {
+      const students = appState.students || [];
+      const student = students.find(s => s.id === id);
+      if (!student) return;
+
+      const newSeatNo = prompt("請修改座號：", student.seatNo);
+      if (newSeatNo === null) return;
+      const newName = prompt("請修改學生姓名：", student.name);
+      if (newName === null) return;
+
+      if (!newSeatNo.trim() || !newName.trim()) {
+        alert('座號與姓名不可空白！');
+        return;
+      }
+
+      student.seatNo = newSeatNo.trim().padStart(2, '0');
+      student.name = newName.trim();
+      
+      saveStateToCloud();
+      alert('✅ 學生資料修改成功！');
     }
 
     function deleteStudent(id) {
@@ -1880,6 +1834,13 @@
         logs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="text-gray-400 mr-2 font-mono">${l.date}</span><span class="font-bold ${l.type === 'reward' ? 'text-amber-700' : 'text-gray-800'}">${l.reason}</span></div><span class="font-bold ${l.change.startsWith('+') ? 'text-indigo-600' : 'text-rose-600'}">${l.change} 分</span></div>`).join('');
     }
 
+    // 💡 新增功能 3：清除全班積分歷程
+    function clearClassPointHistory() {
+      if (!confirm('確定要清除所有「全班積分與兌獎歷程」嗎？\n（注意：此操作不會影響目前的總分，僅清除過往紀錄）')) return;
+      appState.classPointLogs = [];
+      saveStateToCloud();
+    }
+
     // ----------------- 學期結算功能 -----------------
     function triggerSemesterReset(type) {
       const typeName = type === 'attendance' ? '【請假遲到】' : '【走廊奔跑】';
@@ -2102,142 +2063,6 @@
       }
       saveStateToCloud();
     }
-
-    // ----------------- 學習扶助模組邏輯 -----------------
-    function renderRemedialModule() {
-      const students = appState.students || [];
-      const subjects = ['chinese', 'math', 'english'];
-
-      subjects.forEach(sub => {
-        const select = document.getElementById(`addRemedial_${sub}`);
-        select.innerHTML = students.length === 0 ? '<option value="">-- 尚無學生 --</option>' :
-          '<option value="">-- 選擇學生加入 --</option>' + students.map(s => `<option value="${s.id}">${s.seatNo} ${s.name}</option>`).join('');
-      });
-
-      renderRemedialLists();
-      renderRemedialHistory();
-    }
-
-    function addRemedialStudent(subject) {
-      const select = document.getElementById(`addRemedial_${subject}`);
-      const studentId = select.value;
-      if (!studentId) { alert('請先選擇學生！'); return; }
-
-      if (!appState.remedialCases) appState.remedialCases = [];
-      
-      const activeCase = appState.remedialCases.find(c => c.studentId === studentId && c.subject === subject && !c.closed);
-      if (activeCase) {
-        alert('該學生在此科目已有進行中的輔導案，無須重複建案！');
-        return;
-      }
-
-      const student = (appState.students || []).find(s => s.id === studentId);
-      if (!student) return;
-
-      const newCase = {
-        id: 'rem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-        studentId: student.id,
-        studentName: `${student.seatNo} ${student.name}`,
-        subject,
-        scores: { '五上': '', '五下': '', '六上': '', '六下': '' },
-        closed: false,
-        createdAt: new Date().toISOString()
-      };
-
-      appState.remedialCases.unshift(newCase);
-      saveStateToCloud();
-      select.value = '';
-      alert(`✅ 成功建立 ${student.name} 的${subject === 'chinese' ? '國語' : subject === 'math' ? '數學' : '英語'}學習扶助案！`);
-    }
-
-    function updateRemedialScore(caseId, semester, scoreValue) {
-      const cases = appState.remedialCases || [];
-      const c = cases.find(item => item.id === caseId);
-      if (c) {
-        if (!c.scores) c.scores = {};
-        c.scores[semester] = scoreValue;
-        saveStateToCloud();
-      }
-    }
-
-    function closeRemedialCase(caseId) {
-      if (!confirm('確定要將此扶助案結案嗎？')) return;
-      const cases = appState.remedialCases || [];
-      const c = cases.find(item => item.id === caseId);
-      if (c) {
-        c.closed = true;
-        c.closedAt = new Date().toISOString().split('T')[0];
-        saveStateToCloud();
-        alert('✅ 輔導案已成功結案！');
-      }
-    }
-
-    function renderRemedialLists() {
-      const cases = appState.remedialCases || [];
-      const subjects = ['chinese', 'math', 'english'];
-      const semesters = ['五上', '五下', '六上', '六下'];
-
-      subjects.forEach(sub => {
-        const activeCases = cases.filter(c => c.subject === sub && !c.closed);
-        document.getElementById(`remedialCount_${sub}`).innerText = `${activeCases.length} 人`;
-        const container = document.getElementById(`remedialList_${sub}`);
-
-        if (activeCases.length === 0) {
-          container.innerHTML = '<p class="text-gray-400 text-xs py-2 text-center">尚無扶助學生。</p>';
-          return;
-        }
-
-        container.innerHTML = activeCases.map(c => `
-          <div class="p-3 bg-gray-50 border rounded-xl space-y-2.5">
-            <div class="flex justify-between items-center">
-              <span class="font-extrabold text-sm text-gray-800">${c.studentName}</span>
-              <button onclick="closeRemedialCase('${c.id}')" class="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-1 rounded transition interactive-control">🎯 結案</button>
-            </div>
-            <div class="grid grid-cols-2 gap-1.5 text-xs">
-              ${semesters.map(sem => `
-                <div class="flex items-center gap-1 bg-white p-1.5 rounded border">
-                  <span class="text-[10px] font-bold text-gray-500 w-8">${sem}</span>
-                  <input type="text" value="${(c.scores && c.scores[sem]) || ''}" onchange="updateRemedialScore('${c.id}', '${sem}', this.value)" class="w-full border rounded p-1 text-xs text-center font-bold outline-none bg-gray-50 interactive-control" placeholder="成績" />
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        `).join('');
-      });
-    }
-
-    function renderRemedialHistory() {
-      const cases = appState.remedialCases || [];
-      const container = document.getElementById(`remedialHistoryContainer`);
-      const semesters = ['五上', '五下', '六上', '六下'];
-
-      if (cases.length === 0) {
-        container.innerHTML = '<p class="text-gray-400 text-sm py-2">尚無測驗歷程記錄。</p>';
-        return;
-      }
-
-      container.innerHTML = cases.map(c => {
-        const subName = c.subject === 'chinese' ? '國語' : c.subject === 'math' ? '數學' : '英語';
-        const statusBadge = c.closed ? `<span class="text-[10px] bg-gray-200 text-gray-700 font-bold px-2 py-0.5 rounded">已結案 (${c.closedAt || ''})</span>` : `<span class="text-[10px] bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">輔導中</span>`;
-        
-        return `
-          <div class="py-3 px-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs">
-            <div>
-              <div class="flex items-center gap-2 mb-1">
-                <span class="font-extrabold text-gray-900 text-sm">${c.studentName}</span>
-                <span class="font-bold text-indigo-900 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200">${subName}</span>
-                ${statusBadge}
-              </div>
-              <div class="text-gray-500 flex flex-wrap gap-2">
-                ${semesters.map(sem => `<span>${sem}: <strong class="text-gray-800">${(c.scores && c.scores[sem]) || '未填'}</strong></span>`).join(' | ')}
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
   </script>
 </body>
 </html>
-
-

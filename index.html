@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -39,10 +37,10 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800 flex">
+<body class="bg-gray-100 min-h-screen text-gray-800 flex flex-col md:flex-row">
 
   <!-- 左側導覽列 -->
-  <aside class="w-64 bg-slate-800 text-white min-h-screen p-4 flex flex-col justify-between shrink-0">
+  <aside class="w-full md:w-64 bg-slate-800 text-white md:min-h-screen p-4 flex flex-col justify-between shrink-0">
     <div>
       <h1 class="text-xl font-bold mb-2 flex items-center gap-2">🏫 班級公告欄</h1>
       
@@ -50,15 +48,15 @@
         📢 每日聯絡簿與行事曆公告
       </div>
 
-      <nav class="space-y-2" id="sidebar-nav">
-        <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
-        <button onclick="switchTab('attendance')" id="btn-attendance" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">⏱️ 請假遲到</button>
-        <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
-        <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
-        <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
-        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
-        <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位</button>
-        <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
+      <nav class="flex overflow-x-auto gap-2 md:flex-col md:space-y-2 md:gap-0 pb-2 md:pb-0 scrollbar-hide" id="sidebar-nav">
+        <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
+        <button onclick="switchTab('attendance')" id="btn-attendance" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">⏱️ 請假遲到</button>
+        <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
+        <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
+        <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
+        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
+        <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位</button>
+        <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
     <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.28 (家長日曆解鎖版)</div>

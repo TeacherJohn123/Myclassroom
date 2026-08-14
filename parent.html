@@ -31,7 +31,7 @@
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">家長唯讀模組 v1.0 (安全防護版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">家長唯讀模組 v1.1 (高相容性安全版)</div>
   </aside>
 
   <main class="flex-1 p-6 overflow-y-auto">
@@ -98,5 +98,165 @@
   </main>
 
   <script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x
+    var firebaseConfig = {
+      apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
+      authDomain: "class-tools-49588.firebaseapp.com",
+      databaseURL: "https://class-tools-49588-default-rtdb.firebaseio.com",
+      projectId: "class-tools-49588",
+      storageBucket: "class-tools-49588.firebasestorage.app",
+      messagingSenderId: "126467689374",
+      appId: "1:126467689374:web:140f12f8830ab4eee9e48f",
+      measurementId: "G-GBLFFGWKR7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    var db = firebase.database();
+
+    // 取得網址參數
+    var urlParams = new URLSearchParams(window.location.search);
+    var classId = urlParams.get('class') || 'class1';
+    var dbPath = 'classroom_data_' + classId;
+
+    var appState = {};
+
+    window.onload = function() {
+      // 即時監聽雲端資料
+      db.ref(dbPath).on('value', function(snapshot) {
+        appState = snapshot.val() || {};
+        
+        setTodayDate();
+        renderHistoryList();
+        renderCalendarList();
+      });
+    };
+
+    // 🌟 已替換為 100% 支援舊設備的切換寫法
+    function switchTab(tabId) {
+      var tabs = document.querySelectorAll('.tab-content');
+      for (var i = 0; i < tabs.length; i++) {
+        tabs[i].classList.remove('active');
+      }
+      
+      var btns = document.querySelectorAll('.nav-btn');
+      for (var j = 0; j < btns.length; j++) {
+        btns[j].classList.remove('bg-slate-700');
+        btns[j].classList.remove('font-bold');
+        btns[j].classList.add('hover:bg-slate-700');
+      }
+
+      var targetTab = document.getElementById('tab-' + tabId);
+      if (targetTab) {
+        targetTab.classList.add('active');
+      }
+
+      var targetBtn = document.getElementById('btn-' + tabId);
+      if (targetBtn) {
+        targetBtn.classList.add('bg-slate-700');
+        targetBtn.classList.add('font-bold');
+      }
+    }
+
+    // ----------------- 聯絡簿讀取邏輯 -----------------
+    function setTodayDate() {
+      var today = new Date();
+      var dateStr = today.toISOString().split('T')[0];
+      if (!document.getElementById('cbDate').value) {
+        document.getElementById('cbDate').value = dateStr;
+      }
+      onDateChange();
+    }
+
+    function onDateChange() {
+      var currentDate = document.getElementById('cbDate').value;
+      var records = appState.contactBooks || [];
+      var currentRecord = records.find(function(r) { return r.date === currentDate; });
+      var displayDiv = document.getElementById('cbContentReadOnlyDisplay');
+
+      if (currentRecord) {
+        displayDiv.innerText = currentRecord.content;
+      } else {
+        displayDiv.innerText = "老師尚未發布該日的聯絡簿事項。";
+      }
+
+      checkTodayEvents();
+      loadDutyStudents();
+    }
+
+    function checkTodayEvents() {
+      var currentDate = document.getElementById('cbDate').value;
+      var events = appState.calendarEvents || [];
+      var matchedEvents = events.filter(function(e) { return e.date === currentDate; });
+      var eventsBox = document.getElementById('todayEventsBox');
+      var eventsList = document.getElementById('todayEventsList');
+
+      if (matchedEvents.length > 0) {
+        eventsList.innerHTML = matchedEvents.map(function(e) { return '<li>' + e.title + '</li>'; }).join('');
+        eventsBox.classList.remove('hidden');
+      } else {
+        eventsBox.classList.add('hidden');
+      }
+    }
+
+    function loadDutyStudents() {
+      var currentDate = document.getElementById('cbDate').value;
+      var dutyMap = appState.dutyRoster || {};
+      var dutyTypeMap = appState.dutyTypeRoster || {};
+      var assignedNames = dutyMap[currentDate] || [];
+      var displayEl = document.getElementById('dutyStudentsDisplay');
+
+      if (assignedNames.length > 0) {
+        var dateTypes = dutyTypeMap[currentDate] || {};
+        displayEl.innerHTML = assignedNames.map(function(name) {
+          var type = dateTypes[name] || 'normal';
+          if (type === 'late') return '<span class="inline-block bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-lg text-xl font-bold">⏰ ' + name + '</span>';
+          else if (type === 'beh') return '<span class="inline-block bg-rose-100 text-rose-950 border border-rose-300 px-3 py-1 rounded-lg text-xl font-bold">🚨 ' + name + '</span>';
+          else if (type === 'corridor') return '<span class="inline-block bg-purple-100 text-purple-950 border border-purple-300 px-3 py-1 rounded-lg text-xl font-bold">🏃 ' + name + '</span>';
+          else return '<span class="inline-block bg-sky-200 text-sky-950 px-3 py-1 rounded-lg text-xl font-bold">' + name + '</span>';
+        }).join('');
+      } else {
+        displayEl.innerHTML = '<span class="text-gray-400 text-sm font-normal">未安排值日生</span>';
+      }
+    }
+
+    function renderHistoryList() {
+      var listContainer = document.getElementById('cbHistoryList');
+      var records = appState.contactBooks || [];
+      if (records.length === 0) { listContainer.innerHTML = '<p class="text-gray-400 text-sm">目前沒有歷史紀錄</p>'; return; }
+
+      listContainer.innerHTML = records.map(function(item) {
+        return '<div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">' +
+                 '<div>' +
+                   '<span class="font-bold text-blue-600 text-sm">' + item.date + '</span>' +
+                   '<p class="text-xs text-gray-500 truncate max-w-md mt-0.5">' + item.content.replace(/\n/g, ' ') + '</p>' +
+                 '</div>' +
+                 '<button onclick="loadRecord(\\'' + item.date + '\\')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition">🔍 查看</button>' +
+               '</div>';
+      }).join('');
+    }
+
+    function loadRecord(date) {
+      document.getElementById('cbDate').value = date;
+      onDateChange();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ----------------- 行事曆讀取邏輯 -----------------
+    function renderCalendarList() {
+      var events = appState.calendarEvents || [];
+      document.getElementById('eventCount').innerText = '共 ' + events.length + ' 筆事件';
+      var listContainer = document.getElementById('calendarList');
+
+      if (events.length === 0) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">目前無行事曆事件。</p>'; return; }
+
+      listContainer.innerHTML = events.map(function(evt) {
+        return '<div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">' +
+                 '<div class="flex items-center gap-3">' +
+                   '<span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">' + evt.date + '</span>' +
+                   '<span class="font-bold text-gray-800 text-sm">' + evt.title + '</span>' +
+                 '</div>' +
+               '</div>';
+      }).join('');
+    }
+  </script>
+</body>
+</html>

@@ -6,7 +6,6 @@
   <title>班級經營工具包 (雲端同步版)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 引入 Firebase 核心 SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
@@ -39,7 +38,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 flex flex-col md:flex-row">
 
-  <!-- 左側導覽列 -->
   <aside class="w-full md:w-64 bg-slate-800 text-white md:min-h-screen p-4 flex flex-col justify-between shrink-0">
     <div>
       <h1 class="text-xl font-bold mb-2 flex items-center gap-2">🏫 班級公告欄</h1>
@@ -54,18 +52,19 @@
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
         <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
+        
+        <button onclick="switchTab('publications')" id="btn-publications" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">✍️ 專刊與繕寫</button>
+
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 班級座位</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.28 (家長日曆解鎖版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.30 (專刊與繕寫版)</div>
   </aside>
 
-  <!-- 主內容區 -->
   <main class="flex-1 p-6 overflow-y-auto">
     
-    <!-- 分頁 1：每日聯絡簿 -->
     <section id="tab-contactbook" class="tab-content active space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📖 每日聯絡簿系統</h2>
       
@@ -89,7 +88,6 @@
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <!-- 💡 修改點 2：當日值日生 改為 值日生 -->
                 <span class="font-bold text-lg flex items-center gap-1">🧹 值日生：</span>
                 <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition interactive-control">⚙️ 安排值日生</button>
               </div>
@@ -128,7 +126,6 @@
       </div>
     </section>
 
-    <!-- 分頁 2：請假遲到 -->
     <section id="tab-attendance" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">⏱️ 請假遲到管理與統計</h2>
@@ -229,7 +226,6 @@
       </div>
     </section>
 
-    <!-- 分頁 3：未完成工作 -->
     <section id="tab-todo" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📝 未完成工作清單追蹤</h2>
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -300,11 +296,117 @@
               <p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>
             </div>
           </div>
+          
+          <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📊 期末全班逾期天數總表</h3>
+              <button onclick="renderClassTodoStats()" class="text-xs text-indigo-600 hover:underline interactive-control font-bold">🔄 重新整理總表</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-sm text-gray-600 border-collapse">
+                <thead class="bg-indigo-50 text-indigo-900 text-xs uppercase font-bold border-b border-indigo-200">
+                  <tr>
+                    <th class="p-3">座號 / 姓名</th>
+                    <th class="p-3 text-center">📝 尚缺件數</th>
+                    <th class="p-3 text-center text-rose-700">🚨 累積總逾期天數</th>
+                  </tr>
+                </thead>
+                <tbody id="classTodoStatsTable" class="divide-y divide-gray-100 font-medium">
+                  <tr>
+                    <td colspan="3" class="p-4 text-center text-gray-400 text-sm">請點擊右上方重新整理以載入數據。</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <!-- 分頁 4：榮譽點數 -->
+    <section id="tab-publications" class="tab-content space-y-6">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-2xl font-bold text-slate-800">✍️ 專刊與繕寫優良紀錄</h2>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control flex flex-col">
+          <h3 class="font-bold text-lg text-blue-900 flex items-center gap-2">📰 文華專刊投稿紀錄</h3>
+          
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">學期：</label>
+              <select id="pubSemester" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/50 text-blue-900 border-blue-200">
+                <option value="五上">五上</option>
+                <option value="五下">五下</option>
+                <option value="六上">六上</option>
+                <option value="六下">六下</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-600 mb-1">次數：</label>
+              <select id="pubRound" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50/50 text-blue-900 border-blue-200">
+                <option value="第一次">第一次</option>
+                <option value="第二次">第二次</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">文章名稱：</label>
+            <input type="text" id="pubArticle" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="輸入投稿文章標題..." />
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">勾選入選名單 (可複選)：</label>
+            <div id="pubStudentCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-2 border rounded-lg bg-gray-50">
+              <p class="text-gray-400 text-xs col-span-full">請先至學生名單匯入學生。</p>
+            </div>
+          </div>
+          
+          <button onclick="savePublication()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition mt-auto">💾 儲存專刊入選名單</button>
+
+          <div class="mt-4 border-t pt-4">
+            <h4 class="text-sm font-bold text-gray-700 mb-2">📜 專刊入選歷程：</h4>
+            <div id="publicationList" class="divide-y divide-gray-100 max-h-60 overflow-y-auto pr-1">
+              <p class="text-gray-400 text-xs py-2">目前尚無專刊紀錄。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control flex flex-col">
+          <h3 class="font-bold text-lg text-emerald-900 flex items-center gap-2">🖋️ 繕寫優良紀錄</h3>
+          
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">繕寫優良項目 (預設與自訂標籤)：</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="writeCategory" class="flex-1 border rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="點選下方標籤或手動輸入..." />
+              <button onclick="addCustomWritingTag()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-xs transition border">➕ 新增專屬標籤</button>
+            </div>
+            <div id="writingTagsContainer" class="flex flex-wrap gap-1.5 text-xs">
+              </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">勾選優良名單 (可複選)：</label>
+            <div id="writeStudentCheckboxes" class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-48 overflow-y-auto p-2 border rounded-lg bg-gray-50">
+              <p class="text-gray-400 text-xs col-span-full">請先至學生名單匯入學生。</p>
+            </div>
+          </div>
+
+          <button onclick="saveExcellentWriting()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition mt-auto">✨ 儲存繕寫優良名單</button>
+
+          <div class="mt-4 border-t pt-4">
+            <h4 class="text-sm font-bold text-gray-700 mb-2">📜 繕寫優良歷程：</h4>
+            <div id="excellentWritingList" class="divide-y divide-gray-100 max-h-60 overflow-y-auto pr-1">
+              <p class="text-gray-400 text-xs py-2">目前尚無繕寫優良紀錄。</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
     <section id="tab-points" class="tab-content space-y-6">
       <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
       
@@ -461,7 +563,6 @@
         </div>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
-          <!-- 💡 修改點 3：全班積分與兌獎歷程 增加清除按鈕 -->
           <div class="flex items-center justify-between border-b pb-2">
             <h3 class="font-bold text-lg text-gray-800">📜 全班積分與兌獎歷程</h3>
             <button onclick="clearClassPointHistory()" class="text-xs text-red-500 hover:text-red-700 font-bold transition interactive-control">🗑️ 清除歷程</button>
@@ -480,7 +581,6 @@
       </div>
     </section>
 
-    <!-- 分頁 5：走廊奔跑 -->
     <section id="tab-corridor" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">🏃 走廊奔跑登記管理</h2>
@@ -502,8 +602,7 @@
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">選擇週次：</label>
             <select id="corridorWeekSelect" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-purple-50/50 text-purple-900 border-purple-200">
-              <!-- 動態產生 1-21 週 -->
-            </select>
+              </select>
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">選擇學生：</label>
@@ -553,7 +652,6 @@
       </div>
     </section>
 
-    <!-- 分頁 6：班級行事曆 -->
     <section id="tab-calendar" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">📅 班級行事曆管理</h2>
@@ -578,7 +676,6 @@
       </div>
     </section>
 
-    <!-- 分頁 8：班級座位 -->
     <section id="tab-seating" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">🪑 視覺化班級座位表</h2>
@@ -600,7 +697,6 @@
       </div>
     </section>
 
-    <!-- 分頁 9：學生名單 -->
     <section id="tab-students" class="tab-content space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">👨‍🎓 學生名單管理</h2>
@@ -625,7 +721,6 @@
 
   </main>
 
-  <!-- 值日生彈窗 Modal -->
   <div id="dutyModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800">🧹 安排當日值日生 (最多 2 位)</h3>
@@ -652,7 +747,6 @@
     </div>
   </div>
 
-  <!-- 學期結算統計報告彈窗 Modal -->
   <div id="reportModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-xl">
       <h3 id="reportModalTitle" class="font-bold text-xl text-gray-800 flex items-center gap-2">📊 學期結算統計報告</h3>
@@ -663,7 +757,6 @@
     </div>
   </div>
 
-  <!-- 日常生活省思彈窗 Modal -->
   <div id="behaviorModal" class="fixed inset-0 bg-black/50 hidden flex items-center justify-center p-4 z-50">
     <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-xl">
       <h3 class="font-bold text-xl text-gray-800 flex items-center gap-2">🚨 登記日常生活省思事件</h3>
@@ -703,7 +796,6 @@
     </div>
   </div>
 
-  <!-- 核心 JS 邏輯 -->
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
@@ -759,6 +851,9 @@
         renderCorridorStudentOptions();
         renderCorridorList();
         renderCorridorStatsTable();
+        
+        // 初始化新模組
+        initPublicationModule();
       });
     };
 
@@ -930,7 +1025,6 @@
       closeBehaviorModal();
     }
 
-    // 💡 新增：重置歷史紀錄功能
     function clearDutyHistory() {
       if (!confirm('⚠️ 警告：確定要清除「所有過去的值日生排班」與「點數抵銷」紀錄嗎？\n\n(這會讓所有學生的欠繳天數重新從頭計算，通常用於測試完畢後清空)')) return;
       appState.dutyRoster = {};
@@ -959,7 +1053,6 @@
       students.forEach(s => {
         const fullName = `${s.seatNo} ${s.name}`;
 
-        // 動態計算該學生在「今天之前」已經服役的懲罰天數
         const servedDaysExcludingToday = { late: 0, beh: 0, corridor: 0 };
         Object.keys(dutyRoster).forEach(date => {
           if (date === currentDate) return; 
@@ -973,20 +1066,16 @@
           }
         });
 
-        // 1. 遲到 (橘色) - 加入防呆雙重比對
         const lateCount = attLogs.filter(l => (l.studentId === s.id || l.studentName === fullName) && l.category && l.category.includes('遲到')).length;
         const totalLateDays = Math.floor(lateCount / 5);
         let pendingLateDays = totalLateDays - servedDaysExcludingToday.late;
 
-        // 2. 行為 (紅色) - 加入防呆雙重比對
         const totalBehDays = (behaviorDutyMap[s.id] || 0) + (behaviorDutyMap[fullName] || 0);
         let pendingBehDays = totalBehDays - servedDaysExcludingToday.beh;
 
-        // 3. 走廊 (紫色) - 加入防呆雙重比對
         const totalCorridorDays = corridorLogs.filter(l => l.studentId === s.id || l.studentName === fullName).reduce((sum, l) => sum + parseInt(l.count || 1), 0);
         let pendingCorridorDays = totalCorridorDays - servedDaysExcludingToday.corridor;
 
-        // 扣除點數兌換抵銷的優先順序 (遲到 -> 行為不當 -> 走廊奔跑)
         let remRedeemed = (dutyExemptionCredits[s.id] || 0) + (dutyExemptionCredits[fullName] || 0);
         
         if (remRedeemed > 0 && pendingLateDays > 0) {
@@ -1009,7 +1098,6 @@
         pendingBehDays = Math.max(0, pendingBehDays);
         pendingCorridorDays = Math.max(0, pendingCorridorDays);
 
-        // 獨立產生：橘色 + ⏰ (遲到)
         if (pendingLateDays > 0) {
           penaltyButtonsHTML.push(`
             <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-orange-50 border border-orange-300 text-orange-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
@@ -1018,8 +1106,6 @@
             </button>
           `);
         }
-
-        // 獨立產生：紅色 + 🚨 (行為不當)
         if (pendingBehDays > 0) {
           penaltyButtonsHTML.push(`
             <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-rose-50 border border-rose-300 text-rose-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
@@ -1028,8 +1114,6 @@
             </button>
           `);
         }
-
-        // 獨立產生：紫色 + 🏃 (走廊奔跑)
         if (pendingCorridorDays > 0) {
           penaltyButtonsHTML.push(`
             <button onclick="quickSelectPenaltyStudent('${fullName}')" class="bg-purple-50 border border-purple-300 text-purple-950 px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1 shadow-sm">
@@ -1081,7 +1165,6 @@
       selectedNames.forEach(fullName => {
         const student = students.find(s => `${s.seatNo} ${s.name}` === fullName);
         if (student) {
-          // 計算今天之前欠的
           const servedDaysExcludingToday = { late: 0, beh: 0, corridor: 0 };
           Object.keys(dutyRoster).forEach(date => {
             if (date === currentDate) return;
@@ -1179,6 +1262,7 @@
       renderTodoStudentCheckboxes();
       renderTodoTaskList();
       renderTodoFilterStudentOptions();
+      renderClassTodoStats();
     }
 
     function setTodoTitle(title) { document.getElementById('todoTitle').value = title; }
@@ -1220,6 +1304,7 @@
       renderTodoStudentCheckboxes();
       renderTodoTaskList();
       renderIndividualTodoStats();
+      renderClassTodoStats();
       alert('✨ 已成功新增未完成追蹤項目！');
     }
 
@@ -1290,6 +1375,9 @@
       if (task) {
         task.pendingStudentIds = task.pendingStudentIds.filter(id => id !== studentId);
         saveStateToCloud();
+        renderTodoTaskList();
+        renderIndividualTodoStats();
+        renderClassTodoStats();
       }
     }
 
@@ -1297,7 +1385,214 @@
       if (!confirm('確定要刪除這項未完成追蹤項目嗎？')) return;
       appState.todoTasks = (appState.todoTasks || []).filter(t => t.id !== taskId);
       saveStateToCloud();
+      renderTodoTaskList();
+      renderIndividualTodoStats();
+      renderClassTodoStats();
     }
+
+    function renderClassTodoStats() {
+      const students = appState.students || [];
+      const tasks = appState.todoTasks || [];
+      const tbody = document.getElementById('classTodoStatsTable');
+
+      if (students.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = students.map(s => {
+        const studentTasks = tasks.filter(t => t.pendingStudentIds.includes(s.id));
+        let totalOverdueDays = 0;
+        studentTasks.forEach(t => { totalOverdueDays += calculateOverdueDays(s.id, t.dueDate); });
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3 font-bold text-gray-800">${s.seatNo} ${s.name}</td>
+            <td class="p-3 text-center ${studentTasks.length > 0 ? 'font-bold text-indigo-700' : 'text-gray-400'}">${studentTasks.length} 件</td>
+            <td class="p-3 text-center ${totalOverdueDays > 0 ? 'font-black text-rose-600 text-base' : 'text-gray-400'}">${totalOverdueDays} 天</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // ----------------- 新增：專刊與繕寫優良邏輯 -----------------
+    function initPublicationModule() {
+      renderPubStudentCheckboxes();
+      renderWriteStudentCheckboxes();
+      renderWritingTags();
+      renderPublicationList();
+      renderExcellentWritingList();
+    }
+
+    // 核取方塊生成
+    function renderPubStudentCheckboxes() {
+      const students = appState.students || [];
+      const container = document.getElementById('pubStudentCheckboxes');
+      container.innerHTML = students.length === 0 ? '<p class="text-xs text-gray-400 col-span-full">請先至「學生名單」匯入學生。</p>' :
+        students.map(s => `<label class="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer hover:bg-white p-1 rounded"><input type="checkbox" value="${s.id}" class="pub-cb w-3.5 h-3.5 text-blue-600 rounded"><span>${s.seatNo} ${s.name}</span></label>`).join('');
+    }
+
+    function renderWriteStudentCheckboxes() {
+      const students = appState.students || [];
+      const container = document.getElementById('writeStudentCheckboxes');
+      container.innerHTML = students.length === 0 ? '<p class="text-xs text-gray-400 col-span-full">請先至「學生名單」匯入學生。</p>' :
+        students.map(s => `<label class="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer hover:bg-white p-1 rounded"><input type="checkbox" value="${s.id}" class="write-cb w-3.5 h-3.5 text-emerald-600 rounded"><span>${s.seatNo} ${s.name}</span></label>`).join('');
+    }
+
+    // 儲存文華專刊
+    function savePublication() {
+      const semester = document.getElementById('pubSemester').value;
+      const round = document.getElementById('pubRound').value;
+      const article = document.getElementById('pubArticle').value.trim();
+      const checkboxes = document.querySelectorAll('.pub-cb:checked');
+
+      if (!article) { alert('請輸入文章名稱！'); return; }
+      if (checkboxes.length === 0) { alert('請勾選入選學生！'); return; }
+
+      if (!appState.publications) appState.publications = [];
+      appState.publications.unshift({
+        id: 'pub_' + Date.now(),
+        semester, round, article,
+        selectedStudentIds: Array.from(checkboxes).map(cb => cb.value),
+        createdAt: new Date().toISOString().split('T')[0]
+      });
+
+      saveStateToCloud();
+      document.getElementById('pubArticle').value = '';
+      checkboxes.forEach(cb => cb.checked = false); // 清空勾選
+      renderPublicationList();
+      alert('✅ 已成功儲存專刊紀錄！');
+    }
+
+    function renderPublicationList() {
+      const pubs = appState.publications || [];
+      const students = appState.students || [];
+      const container = document.getElementById('publicationList');
+
+      if (pubs.length === 0) { container.innerHTML = '<p class="text-gray-400 text-xs py-2">目前尚無專刊紀錄。</p>'; return; }
+
+      container.innerHTML = pubs.map(p => {
+        const selectedStudents = students.filter(s => p.selectedStudentIds.includes(s.id));
+        return `<div class="p-3 bg-blue-50/40 border border-blue-100 rounded-lg mb-2">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <span class="text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-bold mr-1">${p.semester}</span>
+              <span class="text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-bold mr-1">${p.round}</span>
+              <span class="font-extrabold text-blue-900 text-sm block mt-1">📝 ${p.article}</span>
+            </div>
+            <button onclick="deletePublication('${p.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold text-gray-500 block mb-1">入選名單：</span>
+            <div class="flex flex-wrap gap-1">
+              ${selectedStudents.map(s => `<span class="bg-white border border-blue-200 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold">${s.seatNo} ${s.name}</span>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function deletePublication(id) {
+      if (!confirm('確定要刪除這筆專刊紀錄嗎？')) return;
+      appState.publications = appState.publications.filter(p => p.id !== id);
+      saveStateToCloud();
+      renderPublicationList();
+    }
+
+    // 自訂標籤邏輯
+    function renderWritingTags() {
+      // 若無設定，給予預設值
+      let tags = appState.writingTags;
+      if (!tags || tags.length === 0) {
+        tags = ['國習', '數習', '聯絡簿', '作文'];
+        appState.writingTags = tags; // 寫入 state
+      }
+
+      const container = document.getElementById('writingTagsContainer');
+      container.innerHTML = tags.map(tag => 
+        `<button onclick="setWritingCategory('${tag}')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded-full transition shadow-sm">${tag}</button>`
+      ).join('');
+    }
+
+    function setWritingCategory(tag) {
+      document.getElementById('writeCategory').value = tag;
+    }
+
+    function addCustomWritingTag() {
+      const inputEl = document.getElementById('writeCategory');
+      const newTag = inputEl.value.trim();
+      
+      if (!newTag) { alert('請先在輸入框輸入要新增的標籤名稱！'); return; }
+      
+      if (!appState.writingTags) appState.writingTags = ['國習', '數習', '聯絡簿', '作文'];
+      
+      if (appState.writingTags.includes(newTag)) {
+        alert('此標籤已經存在囉！'); return;
+      }
+
+      appState.writingTags.push(newTag);
+      saveStateToCloud();
+      renderWritingTags();
+      alert(`🏷️ 已成功加入專屬標籤：「${newTag}」`);
+    }
+
+    // 儲存繕寫優良
+    function saveExcellentWriting() {
+      const category = document.getElementById('writeCategory').value.trim();
+      const checkboxes = document.querySelectorAll('.write-cb:checked');
+
+      if (!category) { alert('請點選或輸入繕寫優良項目！'); return; }
+      if (checkboxes.length === 0) { alert('請勾選優良學生！'); return; }
+
+      if (!appState.excellentWritings) appState.excellentWritings = [];
+      appState.excellentWritings.unshift({
+        id: 'wr_' + Date.now(),
+        category,
+        selectedStudentIds: Array.from(checkboxes).map(cb => cb.value),
+        createdAt: new Date().toISOString().split('T')[0]
+      });
+
+      saveStateToCloud();
+      document.getElementById('writeCategory').value = '';
+      checkboxes.forEach(cb => cb.checked = false); // 清空勾選
+      renderExcellentWritingList();
+      alert('✨ 已成功儲存繕寫優良紀錄！');
+    }
+
+    function renderExcellentWritingList() {
+      const writes = appState.excellentWritings || [];
+      const students = appState.students || [];
+      const container = document.getElementById('excellentWritingList');
+
+      if (writes.length === 0) { container.innerHTML = '<p class="text-gray-400 text-xs py-2">目前尚無繕寫優良紀錄。</p>'; return; }
+
+      container.innerHTML = writes.map(w => {
+        const selectedStudents = students.filter(s => w.selectedStudentIds.includes(s.id));
+        return `<div class="p-3 bg-emerald-50/40 border border-emerald-100 rounded-lg mb-2">
+          <div class="flex justify-between items-start mb-2">
+            <div>
+              <span class="text-[10px] text-gray-400 font-mono mr-2">${w.createdAt}</span>
+              <span class="font-extrabold text-emerald-900 text-sm">🏅 ${w.category}</span>
+            </div>
+            <button onclick="deleteExcellentWriting('${w.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold text-gray-500 block mb-1">優良名單：</span>
+            <div class="flex flex-wrap gap-1">
+              ${selectedStudents.map(s => `<span class="bg-white border border-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded text-[10px] font-bold">${s.seatNo} ${s.name}</span>`).join('')}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function deleteExcellentWriting(id) {
+      if (!confirm('確定要刪除這筆繕寫優良紀錄嗎？')) return;
+      appState.excellentWritings = appState.excellentWritings.filter(w => w.id !== id);
+      saveStateToCloud();
+      renderExcellentWritingList();
+    }
+
 
     // ----------------- 行事曆邏輯 -----------------
     function importBatchCalendar() {
@@ -1420,7 +1715,6 @@
       grid.innerHTML = students.map(stu => `
         <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between shadow-sm hover:shadow transition">
           <div><span class="text-xs font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded mr-1.5">${stu.seatNo}</span><span class="font-bold text-gray-800 text-sm">${stu.name}</span></div>
-          <!-- 💡 修改點 1：學生名單增加編輯按鈕 -->
           <div class="flex items-center gap-1 interactive-control">
             <button onclick="editStudent('${stu.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 px-2 py-1 rounded transition">✏️ 編輯</button>
             <button onclick="deleteStudent('${stu.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
@@ -1631,7 +1925,6 @@
       const dutyTypeRoster = appState.dutyTypeRoster || {};
       const dutyExemptionCredits = appState.dutyExemptionCredits || {};
 
-      // 動態計算已服役天數
       const studentCleared = { late: 0, beh: 0, corridor: 0 };
       Object.keys(dutyRoster).forEach(date => {
         const assignedStudents = dutyRoster[date] || [];
@@ -1832,7 +2125,6 @@
         logs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="text-gray-400 mr-2 font-mono">${l.date}</span><span class="font-bold ${l.type === 'reward' ? 'text-amber-700' : 'text-gray-800'}">${l.reason}</span></div><span class="font-bold ${l.change.startsWith('+') ? 'text-indigo-600' : 'text-rose-600'}">${l.change} 分</span></div>`).join('');
     }
 
-    // 💡 新增功能 3：清除全班積分歷程
     function clearClassPointHistory() {
       if (!confirm('確定要清除所有「全班積分與兌獎歷程」嗎？\n（注意：此操作不會影響目前的總分，僅清除過往紀錄）')) return;
       appState.classPointLogs = [];

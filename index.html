@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.30 (專刊與繕寫版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.31 (專刊歷程優化版)</div>
   </aside>
 
   <main class="flex-1 p-6 overflow-y-auto">
@@ -353,8 +353,12 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-gray-600 mb-1">文章名稱：</label>
-            <input type="text" id="pubArticle" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="輸入投稿文章標題..." />
+            <label class="block text-xs font-bold text-gray-600 mb-1">文章名稱 (預設與自訂標籤)：</label>
+            <div class="flex gap-2 mb-2">
+              <input type="text" id="pubArticle" class="flex-1 border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="點選下方標籤或手動輸入..." />
+              <button onclick="addCustomPubTag()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-xs transition border">➕ 新增專屬標籤</button>
+            </div>
+            <div id="pubTagsContainer" class="flex flex-wrap gap-1.5 text-xs mb-2"></div>
           </div>
 
           <div>
@@ -368,7 +372,7 @@
 
           <div class="mt-4 border-t pt-4">
             <h4 class="text-sm font-bold text-gray-700 mb-2">📜 專刊入選歷程：</h4>
-            <div id="publicationList" class="divide-y divide-gray-100 max-h-60 overflow-y-auto pr-1">
+            <div id="publicationList" class="max-h-60 overflow-y-auto pr-1">
               <p class="text-gray-400 text-xs py-2">目前尚無專刊紀錄。</p>
             </div>
           </div>
@@ -377,14 +381,25 @@
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control flex flex-col">
           <h3 class="font-bold text-lg text-emerald-900 flex items-center gap-2">🖋️ 繕寫優良紀錄</h3>
           
+          <div class="grid grid-cols-2 gap-3 mb-2">
+            <div class="col-span-2">
+              <label class="block text-xs font-bold text-gray-600 mb-1">入選時間：</label>
+              <select id="writeSemester" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-emerald-500 outline-none bg-emerald-50/50 text-emerald-900 border-emerald-200">
+                <option value="五上">五上</option>
+                <option value="五下">五下</option>
+                <option value="六上">六上</option>
+                <option value="六下">六下</option>
+              </select>
+            </div>
+          </div>
+
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">繕寫優良項目 (預設與自訂標籤)：</label>
             <div class="flex gap-2 mb-2">
               <input type="text" id="writeCategory" class="flex-1 border rounded-lg p-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none" placeholder="點選下方標籤或手動輸入..." />
               <button onclick="addCustomWritingTag()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold px-3 py-2 rounded-lg text-xs transition border">➕ 新增專屬標籤</button>
             </div>
-            <div id="writingTagsContainer" class="flex flex-wrap gap-1.5 text-xs">
-              </div>
+            <div id="writingTagsContainer" class="flex flex-wrap gap-1.5 text-xs"></div>
           </div>
 
           <div>
@@ -852,7 +867,7 @@
         renderCorridorList();
         renderCorridorStatsTable();
         
-        // 初始化新模組
+        // 載入時初始化專刊與繕寫模組
         initPublicationModule();
       });
     };
@@ -1419,6 +1434,7 @@
     function initPublicationModule() {
       renderPubStudentCheckboxes();
       renderWriteStudentCheckboxes();
+      renderPubTags(); // 載入專刊文章標籤
       renderWritingTags();
       renderPublicationList();
       renderExcellentWritingList();
@@ -1439,6 +1455,38 @@
         students.map(s => `<label class="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer hover:bg-white p-1 rounded"><input type="checkbox" value="${s.id}" class="write-cb w-3.5 h-3.5 text-emerald-600 rounded"><span>${s.seatNo} ${s.name}</span></label>`).join('');
     }
 
+    // 專刊文章標籤設定
+    function renderPubTags() {
+      let tags = appState.pubTags;
+      if (!tags || tags.length === 0) {
+        tags = ['童詩', '遊記', '讀書心得', '活動紀實']; // 預設標籤
+        appState.pubTags = tags; 
+      }
+
+      const container = document.getElementById('pubTagsContainer');
+      container.innerHTML = tags.map(tag => 
+        `<button onclick="setPubArticle('${tag}')" class="bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-100 px-2.5 py-1 rounded-full transition shadow-sm">${tag}</button>`
+      ).join('');
+    }
+
+    function setPubArticle(tag) {
+      document.getElementById('pubArticle').value = tag;
+    }
+
+    function addCustomPubTag() {
+      const inputEl = document.getElementById('pubArticle');
+      const newTag = inputEl.value.trim();
+      
+      if (!newTag) { alert('請先在輸入框輸入要新增的標籤名稱！'); return; }
+      if (!appState.pubTags) appState.pubTags = ['童詩', '遊記', '讀書心得', '活動紀實'];
+      if (appState.pubTags.includes(newTag)) { alert('此標籤已經存在囉！'); return; }
+
+      appState.pubTags.push(newTag);
+      saveStateToCloud();
+      renderPubTags();
+      alert(`🏷️ 已成功加入專屬標籤：「${newTag}」`);
+    }
+
     // 儲存文華專刊
     function savePublication() {
       const semester = document.getElementById('pubSemester').value;
@@ -1446,7 +1494,7 @@
       const article = document.getElementById('pubArticle').value.trim();
       const checkboxes = document.querySelectorAll('.pub-cb:checked');
 
-      if (!article) { alert('請輸入文章名稱！'); return; }
+      if (!article) { alert('請點擊標籤或輸入文章名稱！'); return; }
       if (checkboxes.length === 0) { alert('請勾選入選學生！'); return; }
 
       if (!appState.publications) appState.publications = [];
@@ -1464,6 +1512,7 @@
       alert('✅ 已成功儲存專刊紀錄！');
     }
 
+    // 群組化渲染專刊歷史
     function renderPublicationList() {
       const pubs = appState.publications || [];
       const students = appState.students || [];
@@ -1471,25 +1520,34 @@
 
       if (pubs.length === 0) { container.innerHTML = '<p class="text-gray-400 text-xs py-2">目前尚無專刊紀錄。</p>'; return; }
 
-      container.innerHTML = pubs.map(p => {
-        const selectedStudents = students.filter(s => p.selectedStudentIds.includes(s.id));
-        return `<div class="p-3 bg-blue-50/40 border border-blue-100 rounded-lg mb-2">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <span class="text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-bold mr-1">${p.semester}</span>
-              <span class="text-[10px] bg-blue-200 text-blue-900 px-1.5 py-0.5 rounded font-bold mr-1">${p.round}</span>
-              <span class="font-extrabold text-blue-900 text-sm block mt-1">📝 ${p.article}</span>
-            </div>
-            <button onclick="deletePublication('${p.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
-          </div>
-          <div>
-            <span class="text-[10px] font-bold text-gray-500 block mb-1">入選名單：</span>
-            <div class="flex flex-wrap gap-1">
-              ${selectedStudents.map(s => `<span class="bg-white border border-blue-200 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold">${s.seatNo} ${s.name}</span>`).join('')}
-            </div>
-          </div>
-        </div>`;
-      }).join('');
+      // 依據學期與次數進行群組化 (Grouping)
+      const groupedPubs = {};
+      pubs.forEach(p => {
+        const key = `${p.semester} ${p.round}`; // 例如: "五上 第一次"
+        if (!groupedPubs[key]) groupedPubs[key] = [];
+        groupedPubs[key].push(p);
+      });
+
+      let htmlContent = '';
+      for (const [groupKey, items] of Object.entries(groupedPubs)) {
+        htmlContent += `<div class="mb-4">`;
+        htmlContent += `<h5 class="font-extrabold text-blue-900 bg-blue-100 px-2. py-1 rounded mb-2 text-xs flex items-center gap-1 border border-blue-200 shadow-sm">📌 ${groupKey} 入選名單</h5>`;
+        
+        items.forEach(p => {
+          const selectedStudents = students.filter(s => p.selectedStudentIds.includes(s.id));
+          htmlContent += `
+            <div class="p-3 bg-white border border-blue-100 rounded-lg mb-2 shadow-sm ml-2 relative">
+              <button onclick="deletePublication('${p.id}')" class="absolute top-2 right-2 text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
+              <span class="font-bold text-gray-800 text-sm block mb-1">📝 ${p.article}</span>
+              <div class="flex flex-wrap gap-1">
+                ${selectedStudents.map(s => `<span class="bg-blue-50 border border-blue-200 text-blue-800 px-1.5 py-0.5 rounded text-[10px] font-bold">${s.seatNo} ${s.name}</span>`).join('')}
+              </div>
+            </div>`;
+        });
+        htmlContent += `</div>`;
+      }
+
+      container.innerHTML = htmlContent;
     }
 
     function deletePublication(id) {
@@ -1499,9 +1557,8 @@
       renderPublicationList();
     }
 
-    // 自訂標籤邏輯
+    // 繕寫自訂標籤邏輯
     function renderWritingTags() {
-      // 若無設定，給予預設值
       let tags = appState.writingTags;
       if (!tags || tags.length === 0) {
         tags = ['國習', '數習', '聯絡簿', '作文'];
@@ -1523,12 +1580,8 @@
       const newTag = inputEl.value.trim();
       
       if (!newTag) { alert('請先在輸入框輸入要新增的標籤名稱！'); return; }
-      
       if (!appState.writingTags) appState.writingTags = ['國習', '數習', '聯絡簿', '作文'];
-      
-      if (appState.writingTags.includes(newTag)) {
-        alert('此標籤已經存在囉！'); return;
-      }
+      if (appState.writingTags.includes(newTag)) { alert('此標籤已經存在囉！'); return; }
 
       appState.writingTags.push(newTag);
       saveStateToCloud();
@@ -1538,6 +1591,7 @@
 
     // 儲存繕寫優良
     function saveExcellentWriting() {
+      const semester = document.getElementById('writeSemester').value; // 新增：擷取學期
       const category = document.getElementById('writeCategory').value.trim();
       const checkboxes = document.querySelectorAll('.write-cb:checked');
 
@@ -1547,6 +1601,7 @@
       if (!appState.excellentWritings) appState.excellentWritings = [];
       appState.excellentWritings.unshift({
         id: 'wr_' + Date.now(),
+        semester, // 紀錄學期
         category,
         selectedStudentIds: Array.from(checkboxes).map(cb => cb.value),
         createdAt: new Date().toISOString().split('T')[0]
@@ -1568,14 +1623,18 @@
 
       container.innerHTML = writes.map(w => {
         const selectedStudents = students.filter(s => w.selectedStudentIds.includes(s.id));
+        // 若舊資料沒有 semester，則不顯示，否則顯示該標籤
+        const semTag = w.semester ? `<span class="text-[10px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold mr-1 border border-emerald-300">${w.semester}</span>` : '';
+        
         return `<div class="p-3 bg-emerald-50/40 border border-emerald-100 rounded-lg mb-2">
           <div class="flex justify-between items-start mb-2">
-            <div>
-              <span class="text-[10px] text-gray-400 font-mono mr-2">${w.createdAt}</span>
+            <div class="flex items-center">
+              ${semTag}
               <span class="font-extrabold text-emerald-900 text-sm">🏅 ${w.category}</span>
             </div>
             <button onclick="deleteExcellentWriting('${w.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
           </div>
+          <div class="text-[10px] text-gray-400 font-mono mb-1.5">登記日期：${w.createdAt}</div>
           <div>
             <span class="text-[10px] font-bold text-gray-500 block mb-1">優良名單：</span>
             <div class="flex flex-wrap gap-1">

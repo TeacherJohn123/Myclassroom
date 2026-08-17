@@ -12,15 +12,8 @@
   <style>
     .tab-content { display: none; }
     .tab-content.active { display: block; }
-
-    .text-5xl-custom {
-      font-size: 2.5rem !important;
-      line-height: 1.4 !important;
-    }
-    textarea.auto-expand {
-      min-height: 120px;
-      resize: vertical;
-    }
+    .text-5xl-custom { font-size: 2.5rem !important; line-height: 1.4 !important; }
+    textarea.auto-expand { min-height: 120px; resize: vertical; }
 
     /* 📢 專屬公告模式樣式 (?mode=notice) */
     body.notice-readonly .interactive-control,
@@ -49,4 +42,120 @@
       <nav class="flex overflow-x-auto gap-2 md:flex-col md:space-y-2 md:gap-0 pb-2 md:pb-0 scrollbar-hide" id="sidebar-nav">
         <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
         <button onclick="switchTab('attendance')" id="btn-attendance" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">⏱️ 請假遲到</button>
-        <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未
+        <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
+        <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
+        <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
+        <button onclick="switchTab('publications')" id="btn-publications" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">✍️ 專刊與繕寫</button>
+        <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
+        <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位分配</button>
+        <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
+      </nav>
+    </div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.32 (座位分配進階版)</div>
+  </aside>
+
+  <main class="flex-1 p-6 overflow-y-auto">
+    <section id="tab-contactbook" class="tab-content active space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📖 每日聯絡簿系統</h2>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="flex flex-wrap gap-4 items-center mb-6 interactive-control">
+          <label class="font-bold text-gray-700 text-lg">日期選擇：</label>
+          <input type="date" id="cbDate" onchange="onDateChange()" class="border rounded-lg p-2.5 text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
+          <button onclick="setTodayDate()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-base font-bold transition">📅 套用今天日期</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div id="todayEventsBox" class="md:col-span-2 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden">
+            <div class="font-bold flex items-center gap-2 mb-2 text-xl"><span>📌 當日行事曆事件：</span></div>
+            <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
+          </div>
+          <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <span class="font-bold text-lg flex items-center gap-1">🧹 值日生：</span>
+                <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition interactive-control">⚙️ 安排值日生</button>
+              </div>
+              <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900 mb-3 flex flex-wrap gap-2">
+                <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
+              </div>
+            </div>
+            <button onclick="openBehaviorModal()" class="w-full bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold py-1.5 px-2 rounded-lg transition shadow-sm flex items-center justify-center gap-1 interactive-control">🚨 登記不當行為 (指定值日生)</button>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <label class="block font-bold text-gray-800 text-xl mb-2">聯絡事項與回家作業：</label>
+          <textarea id="cbContent" oninput="autoExpandTextarea(this)" class="auto-expand w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-4 focus:ring-blue-400 outline-none text-5xl-custom font-bold text-gray-900" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
+          <div id="cbContentReadOnlyDisplay" class="hidden text-5xl-custom font-bold text-gray-900 whitespace-pre-wrap p-4 bg-gray-50 border rounded-xl"></div>
+        </div>
+
+        <div class="flex justify-between items-center pt-2 interactive-control">
+          <button onclick="insertTemplate()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-3 rounded-xl text-base font-bold transition">📋 帶入預設範本</button>
+          <button onclick="saveContactBook()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-md transition">💾 儲存今日聯絡簿</button>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 interactive-control">
+        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">🗂️ 歷程紀錄選單</h3>
+        <div id="cbHistoryList" class="divide-y divide-gray-100"><p class="text-gray-400 text-sm">目前沒有歷史紀錄</p></div>
+      </div>
+    </section>
+
+    <section id="tab-attendance" class="tab-content space-y-6">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-2xl font-bold text-slate-800">⏱️ 請假遲到管理與統計</h2>
+        <div class="flex items-center gap-2 interactive-control">
+          <button onclick="triggerSemesterReset('attendance')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow transition flex items-center gap-1">🏁 學期結算 (出缺勤歸零)</button>
+          <div id="undoAttendanceContainer" class="hidden"><button onclick="undoSemesterReset('attendance')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg text-xs shadow transition">↩️ 恢復上一步</button></div>
+        </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
+          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📝 登記出缺勤 / 遲到</h3>
+          <div><label class="block text-xs font-bold text-gray-600 mb-1">日期：</label><input type="date" id="attDate" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 font-bold" /></div>
+          <div><label class="block text-xs font-bold text-gray-600 mb-1">選擇學生：</label><select id="attStudentSelect" class="w-full border rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"><option value="">-- 請選擇學生 --</option></select></div>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">類別：</label>
+            <select id="attCategorySelect" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-amber-50/50 text-amber-900 border-amber-200">
+              <option value="病假">🤒 病假</option><option value="事假">🏠 事假</option><option value="公假">🏆 公假</option><option value="喪假">🕯️ 喪假</option><option value="上學遲到">⏰ 上學遲到</option><option value="上課遲到">🔔 上課遲到</option>
+            </select>
+          </div>
+          <div><label class="block text-xs font-bold text-gray-600 mb-1">備註說明：</label><input type="text" id="attNote" class="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="例如：看牙醫、感冒發燒、公假代表..." /></div>
+          <button onclick="saveAttendanceRecord()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg text-sm shadow transition">💾 儲存出缺勤紀錄</button>
+        </div>
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <div class="flex items-center justify-between"><h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 當日紀錄總覽</h3><button onclick="renderAttendanceList()" class="text-xs text-blue-600 hover:underline interactive-control">重新整理</button></div>
+          <div id="attendanceList" class="divide-y divide-gray-100 max-h-[380px] overflow-y-auto pr-1"><p class="text-gray-400 text-sm py-2">該日期無出缺勤紀錄。</p></div>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📊 全班請假狀況統計大表</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-gray-600 border-collapse">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
+              <tr><th class="p-3">座號 / 姓名</th><th class="p-3 text-center text-rose-700">🤒 病假</th><th class="p-3 text-center text-amber-700">🏠 事假</th><th class="p-3 text-center text-blue-700">🏆 公假</th><th class="p-3 text-center text-gray-700">🕯️ 喪假</th><th class="p-3 text-center text-orange-600">⏰ 上學遲到</th><th class="p-3 text-center text-orange-600">🔔 上課遲到</th></tr>
+            </thead>
+            <tbody id="classAttendanceStatsTable" class="divide-y divide-gray-100 font-medium"><tr><td colspan="7" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🔍 個別學生請假統計與歷程查詢</h3>
+        <div class="interactive-control"><label class="block text-xs font-bold text-gray-600 mb-1">選擇要查詢的學生：</label><select id="filterAttStudentSelect" onchange="renderIndividualAttendanceStats()" class="w-full border rounded-lg p-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"><option value="">-- 請選擇學生 --</option></select></div>
+        <div id="individualAttStatsContainer" class="hidden space-y-4">
+          <div id="individualCategoryCards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2"></div>
+          <div class="border rounded-xl p-4 bg-gray-50"><h4 class="font-bold text-sm text-gray-700 mb-2">📜 詳細請假遲到歷程：</h4><div id="individualAttHistoryList" class="divide-y divide-gray-200 max-h-52 overflow-y-auto"></div></div>
+        </div>
+        <p id="individualAttPlaceholder" class="text-gray-400 text-sm py-2">請從上方選取學生查詢個別請假狀況。</p>
+      </div>
+    </section>
+
+    <section id="tab-todo" class="tab-content space-y-6">
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📝 未完成工作清單追蹤</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
+          <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 發起未完成作業/回條</h3>
+          <div>
+            <label class="block text-xs font-bold text-gray-600 mb-1">預設標籤快捷點選：</label>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <button onclick="setTodoTitle('視力檢查回條')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100 px-2 py-1 rounded">視力檢查回條</button>
+              <button onclick="setTodoTitle('國作業')" class="bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-

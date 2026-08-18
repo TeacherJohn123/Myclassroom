@@ -35,6 +35,21 @@
     body.notice-readonly .notice-view-tag {
       display: block !important;
     }
+
+    /* 🖨️ 專屬列印與匯出 PDF 樣式 */
+    @media print {
+      @page { size: landscape; margin: 10mm; }
+      body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      aside, nav, .interactive-control, .nav-btn { display: none !important; }
+      main { padding: 0 !important; margin: 0 !important; width: 100% !important; overflow: visible !important; }
+      .tab-content { display: none !important; }
+      #tab-schedule { display: block !important; } /* 強制只印出課表 */
+      .shadow-sm, .shadow-md { box-shadow: none !important; }
+      .border-gray-200 { border-color: #e5e7eb !important; }
+      select { appearance: none; -webkit-appearance: none; border: none; background: transparent; }
+      /* 隱藏列印時的調課設定區塊 */
+      #scheduleAlertEditor, #schTagsContainer, #schTeachersContainer { display: none !important; }
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen text-gray-800 flex">
@@ -60,7 +75,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.31 (修復課表版面錯位)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.0 (預約調課與列印升級版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -582,8 +597,11 @@
       <div class="flex justify-between items-center border-b pb-2">
         <h2 class="text-2xl font-bold text-slate-800">🏫 班級日課表</h2>
         <div class="flex gap-2 interactive-control">
+          <button onclick="printSchedule()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-lg text-xs shadow transition font-bold flex items-center gap-1">
+            📄 列印 / 匯出 PDF
+          </button>
           <button onclick="toggleScheduleAlertEdit()" class="bg-rose-100 text-rose-700 hover:bg-rose-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
-            🚨 設定調課提醒
+            🚨 預約調課設定
           </button>
           <button onclick="saveSchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-xs shadow transition font-bold">
             💾 儲存課表與設定
@@ -591,7 +609,7 @@
         </div>
       </div>
 
-      <!-- 醒目調課提醒橫幅 -->
+      <!-- 醒目調課提醒橫幅 (隨聯絡簿日期連動顯示) -->
       <div id="scheduleAlertDisplay" class="hidden bg-gradient-to-r from-rose-500 to-red-600 text-white p-4 rounded-xl shadow-md flex items-center justify-between">
         <div class="flex items-center gap-3">
           <span class="text-3xl">⚠️</span>
@@ -600,15 +618,21 @@
             <p id="scheduleAlertTextDisplay" class="text-sm font-bold opacity-90"></p>
           </div>
         </div>
-        <button onclick="clearScheduleAlert()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs font-bold transition interactive-control">關閉提醒</button>
       </div>
 
       <!-- 調課提醒編輯區 (預設隱藏) -->
       <div id="scheduleAlertEditor" class="hidden bg-rose-50 p-4 rounded-xl border-2 border-rose-200 interactive-control">
-        <label class="block text-sm font-bold text-rose-800 mb-2">輸入今日調課資訊：</label>
-        <div class="flex gap-2">
+        <div class="flex justify-between items-center mb-2">
+          <label class="block text-sm font-bold text-rose-800">預約未來調課提醒：</label>
+        </div>
+        <div class="flex gap-2 mb-4">
+          <input type="date" id="schAlertDate" class="border-rose-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-900">
           <input type="text" id="schAlertInput" class="flex-1 border-rose-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" placeholder="例如：今日第三節社會與第五節自然互調">
-          <button onclick="applyScheduleAlert()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow">發布提醒</button>
+          <button onclick="addScheduleAlert()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow whitespace-nowrap">➕ 新增預約</button>
+        </div>
+        <div class="border-t border-rose-200 pt-3">
+          <h4 class="text-xs font-bold text-rose-700 mb-2">📋 已預約的調課清單：</h4>
+          <div id="scheduleAlertList" class="space-y-1.5 max-h-32 overflow-y-auto pr-2"></div>
         </div>
       </div>
 
@@ -630,9 +654,9 @@
 
       <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <!-- 左側：標籤與科任教師設定 -->
-        <div class="lg:col-span-1 space-y-6 interactive-control">
+        <div class="lg:col-span-1 space-y-6 interactive-control" id="schSidebarTools">
           <!-- 科目標籤設定 -->
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200" id="schTagsContainerBlock">
             <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">🏷️ 自訂科目標籤</h3>
             <div id="schTagsContainer" class="flex flex-wrap gap-1.5 mb-3"></div>
             <div class="flex gap-1">
@@ -642,7 +666,7 @@
           </div>
 
           <!-- 科任教師設定 -->
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200" id="schTeachersContainerBlock">
             <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">👩‍🏫 科任教師名單</h3>
             <div id="schTeachersContainer" class="space-y-2 mb-3 max-h-64 overflow-y-auto pr-1"></div>
             <div class="space-y-1">
@@ -655,13 +679,12 @@
 
         <!-- 右側：課表網格 -->
         <div class="lg:col-span-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-          <!-- 加入表格最小寬度限制，避免在 iPad 螢幕上被過度壓縮導致斷字 -->
-          <table class="w-full min-w-[750px] border-collapse text-center text-sm">
+          <table class="w-full min-w-[750px] border-collapse text-center text-sm h-full">
             <thead>
               <tr class="bg-slate-100 text-slate-700 font-extrabold border-b-2 border-slate-300">
                 <th class="p-2 border w-[4%]">午別</th>
                 <th class="p-2 border w-[6%]">節次</th>
-                <th class="p-2 border w-[6%] text-amber-700">分鐘</th> <!-- 補回被遺漏的分鐘欄位 -->
+                <th class="p-2 border w-[6%] text-amber-700">分鐘</th>
                 <th class="p-2 border w-[14%]">時間</th>
                 <th class="p-2 border w-[14%]">星期一</th>
                 <th class="p-2 border w-[14%]">星期二</th>
@@ -675,10 +698,10 @@
             </tbody>
           </table>
 
-          <!-- 科任教師展示區 (供公告模式或列印檢視) -->
+          <!-- 科任教師展示區 -->
           <div class="mt-4 pt-4 border-t-2 border-gray-200">
-            <h4 class="text-blue-800 font-extrabold mb-2">※科任教師</h4>
-            <div id="schTeachersDisplay" class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-blue-900 font-bold">
+            <h4 class="text-blue-800 font-extrabold mb-2 text-lg">※科任教師</h4>
+            <div id="schTeachersDisplay" class="flex flex-wrap gap-x-6 gap-y-1 text-base text-blue-900 font-bold">
               <!-- JS 動態生成 -->
             </div>
           </div>
@@ -966,6 +989,9 @@
       autoExpandTextarea(textarea);
       checkTodayEvents();
       loadDutyStudents();
+
+      // ✨ 連動課表提醒
+      if(typeof renderSchedule === 'function') renderSchedule();
     }
 
     function onDateChange() {
@@ -986,6 +1012,9 @@
       autoExpandTextarea(textarea);
       checkTodayEvents();
       loadDutyStudents();
+
+      // ✨ 連動課表提醒
+      if(typeof renderSchedule === 'function') renderSchedule();
     }
 
     function updateHeaderDate() {
@@ -2317,7 +2346,7 @@
         { id: 't8', subject: "體育", name: "吳昱輝老師" },
         { id: 't9', subject: "英語", name: "許華蓁老師" }
       ],
-      alert: { active: false, text: "" },
+      alerts: [], // 改為陣列來儲存多筆未來的調課
       grid: {
         "r0_c0": "整潔工作", "r0_c1": "整潔工作", "r0_c2": "整潔工作", "r0_c3": "整潔工作", "r0_c4": "整潔工作",
         "r1_c0": "升旗", "r1_c1": "晨會", "r1_c2": "班級特色課程", "r1_c3": "班級特色課程", "r1_c4": "班級特色課程",
@@ -2351,22 +2380,31 @@
       if (!appState.schedule) return;
       const sch = appState.schedule;
       
-      // 1. 渲染提醒橫幅
+      // 相容舊資料格式
+      if (!Array.isArray(sch.alerts)) sch.alerts = [];
+
+      // 1. 渲染提醒橫幅 (連動聯絡簿日期)
       const alertDisplay = document.getElementById('scheduleAlertDisplay');
-      if (sch.alert && sch.alert.active) {
-        document.getElementById('scheduleAlertTextDisplay').innerText = sch.alert.text;
+      const currentDate = document.getElementById('cbDate').value || new Date().toISOString().split('T')[0];
+      const todayAlerts = sch.alerts.filter(a => a.date === currentDate);
+      
+      if (todayAlerts.length > 0) {
+        document.getElementById('scheduleAlertTextDisplay').innerText = todayAlerts.map(a => a.text).join(' ／ ');
         alertDisplay.classList.remove('hidden');
       } else {
         alertDisplay.classList.add('hidden');
       }
 
-      // 2. 渲染標題
+      // 2. 渲染已預約的調課清單
+      renderScheduleAlertsList();
+
+      // 3. 渲染標題
       document.getElementById('schSchoolName').value = sch.header.school;
       document.getElementById('schYear').value = sch.header.year;
       document.getElementById('schClassName').value = sch.header.className;
       document.getElementById('schHomeroom').value = sch.header.homeroom;
 
-      // 3. 渲染標籤
+      // 4. 渲染標籤
       const tagsContainer = document.getElementById('schTagsContainer');
       tagsContainer.innerHTML = sch.tags.map(tag => `
         <span class="bg-indigo-100 text-indigo-800 border border-indigo-200 px-2 py-1 rounded text-xs flex items-center gap-1">
@@ -2374,7 +2412,7 @@
         </span>
       `).join('');
 
-      // 4. 渲染科任教師清單
+      // 5. 渲染科任教師清單
       const teachersContainer = document.getElementById('schTeachersContainer');
       const teachersDisplay = document.getElementById('schTeachersDisplay');
       
@@ -2385,21 +2423,24 @@
         </div>
       `).join('');
 
-      teachersDisplay.innerHTML = sch.teachers.map(t => `<span class="mr-2">${t.subject}：${t.name}</span>`).join('');
+      teachersDisplay.innerHTML = sch.teachers.map(t => `<span class="mr-3 mb-1">${t.subject}：${t.name}</span>`).join('');
 
-      // 5. 渲染網格
+      // 6. 渲染網格
       const tbody = document.getElementById('scheduleGridBody');
       let gridHTML = '';
       let dataRowIdx = 0;
       
+      // 定義要顯示為綠色的指定科目
+      const greenSubjects = ['本土語言', '音樂', '視覺藝術', '創客ING', '社會', '健康', '自然科學', '體育', '英語'];
+
       scheduleRowsDef.forEach((def, index) => {
         let rowHTML = '<tr class="hover:bg-slate-50 border-b transition">';
         
         // 午別跨列邏輯
-        if (index === 0) { // 上午第一列
-          rowHTML += '<td rowspan="7" class="p-2 border border-slate-200 bg-white font-black tracking-widest" style="writing-mode: vertical-lr;">上午</td>';
-        } else if (index === 7) { // 下午第一列 (午休)
-          rowHTML += '<td rowspan="5" class="p-2 border border-slate-200 bg-white font-black tracking-widest" style="writing-mode: vertical-lr;">下午</td>';
+        if (index === 0) {
+          rowHTML += '<td rowspan="7" class="p-2 border border-slate-200 bg-white font-black tracking-widest text-lg" style="writing-mode: vertical-lr;">上午</td>';
+        } else if (index === 7) {
+          rowHTML += '<td rowspan="5" class="p-2 border border-slate-200 bg-white font-black tracking-widest text-lg" style="writing-mode: vertical-lr;">下午</td>';
         }
         
         // 判斷是否為課間活動或午休
@@ -2408,11 +2449,11 @@
             <td class="p-2 border border-slate-200"></td>
             <td class="p-2 border border-slate-200 text-amber-700 font-bold">${def.minutes}</td>
             <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
-            <td colspan="5" class="p-2 border border-slate-200 text-amber-900 tracking-[0.5em] text-base font-bold bg-amber-50/50">${def.label}</td>
+            <td colspan="5" class="p-2 border border-slate-200 text-amber-900 tracking-[0.5em] text-lg font-bold bg-amber-50/50">${def.label}</td>
           `;
         } else {
           rowHTML += `
-            <td class="p-2 border border-slate-200 font-bold text-gray-700">${def.period}</td>
+            <td class="p-2 border border-slate-200 font-bold text-gray-700 text-lg">${def.period}</td>
             <td class="p-2 border border-slate-200 text-amber-700 font-bold">${def.minutes}</td>
             <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
           `;
@@ -2420,15 +2461,19 @@
           for (let c = 0; c < 5; c++) {
             const cellKey = `r${dataRowIdx}_c${c}`;
             const cellValue = sch.grid[cellKey] || '';
-            const textColor = cellValue.includes('體育') || cellValue.includes('本土') || cellValue.includes('社會') || cellValue.includes('音樂') || cellValue.includes('自然') || cellValue.includes('創客') || cellValue.includes('健康') ? 'text-red-600' : 'text-gray-800';
             
+            // 判斷是否為指定的綠色科目
+            const isGreen = greenSubjects.some(sub => cellValue.includes(sub));
+            const textColor = isGreen ? 'text-emerald-600' : 'text-gray-800';
+            
+            // 加入 text-xl 和 h-full min-h-[3.5rem] 讓字體放大填滿
             rowHTML += `
               <td class="p-1 border border-slate-200 align-middle">
-                <select onchange="updateSchCell('${cellKey}', this.value)" class="w-full text-center p-1.5 text-sm font-extrabold bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
+                <select onchange="updateSchCell('${cellKey}', this.value)" class="w-full h-full min-h-[3.5rem] text-center p-1 text-xl font-black bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
                   <option value="" class="text-gray-500">--</option>
                   ${sch.tags.map(tag => `<option value="${tag}" ${tag === cellValue ? 'selected' : ''} class="text-gray-800">${tag}</option>`).join('')}
                 </select>
-                <div class="hidden notice-view-tag ${textColor} font-extrabold text-sm py-1">${cellValue || '--'}</div>
+                <div class="hidden notice-view-tag ${textColor} font-black text-xl py-1">${cellValue || '--'}</div>
               </td>
             `;
           }
@@ -2457,29 +2502,63 @@
       alert('✅ 課表與設定已成功儲存至雲端！');
     }
 
-    // --- 調課提醒邏輯 ---
+    function printSchedule() {
+      switchTab('schedule'); // 確保在課表分頁
+      setTimeout(() => {
+        window.print();
+      }, 300);
+    }
+
+    // --- 調課預約提醒邏輯 ---
     function toggleScheduleAlertEdit() {
       const editor = document.getElementById('scheduleAlertEditor');
       editor.classList.toggle('hidden');
-      if (!editor.classList.contains('hidden') && appState.schedule.alert.active) {
-        document.getElementById('schAlertInput').value = appState.schedule.alert.text;
+      if (!editor.classList.contains('hidden')) {
+        document.getElementById('schAlertDate').value = document.getElementById('cbDate').value || new Date().toISOString().split('T')[0];
       }
     }
 
-    function applyScheduleAlert() {
+    function addScheduleAlert() {
+      const date = document.getElementById('schAlertDate').value;
       const text = document.getElementById('schAlertInput').value.trim();
-      if (!text) { alert('請輸入調課提醒內容！'); return; }
-      appState.schedule.alert = { active: true, text: text };
+      if (!date || !text) { alert('請輸入調課日期與內容！'); return; }
+      
+      if (!Array.isArray(appState.schedule.alerts)) appState.schedule.alerts = [];
+      appState.schedule.alerts.push({ id: 'alt_' + Date.now(), date: date, text: text });
+      
       saveStateToCloud();
-      document.getElementById('scheduleAlertEditor').classList.add('hidden');
+      document.getElementById('schAlertInput').value = '';
       renderSchedule();
     }
 
-    function clearScheduleAlert() {
-      appState.schedule.alert = { active: false, text: "" };
-      document.getElementById('schAlertInput').value = '';
+    function removeScheduleAlert(id) {
+      if (!appState.schedule.alerts) return;
+      appState.schedule.alerts = appState.schedule.alerts.filter(a => a.id !== id);
       saveStateToCloud();
       renderSchedule();
+    }
+
+    function renderScheduleAlertsList() {
+      const list = document.getElementById('scheduleAlertList');
+      const alerts = appState.schedule.alerts || [];
+      
+      if (alerts.length === 0) {
+        list.innerHTML = '<span class="text-xs text-rose-400">目前沒有預約的調課提醒。</span>';
+        return;
+      }
+
+      // 依日期排序
+      alerts.sort((a, b) => a.date.localeCompare(b.date));
+      
+      list.innerHTML = alerts.map(a => `
+        <div class="flex justify-between items-center bg-white p-2 rounded border border-rose-100 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="font-mono font-bold text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded">${a.date}</span>
+            <span class="font-bold text-gray-700">${a.text}</span>
+          </div>
+          <button onclick="removeScheduleAlert('${a.id}')" class="text-rose-400 hover:text-rose-600 font-bold px-2 py-1">刪除</button>
+        </div>
+      `).join('');
     }
 
     // --- 標籤與科任教師邏輯 ---

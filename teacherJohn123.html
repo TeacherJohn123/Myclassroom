@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -75,7 +76,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.1 (課表版面最佳化)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.2 (課表置中與行事曆打勾)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -99,7 +100,8 @@
             <div class="font-bold flex items-center gap-2 mb-2 text-xl">
               <span>📌 當日行事曆事件：</span>
             </div>
-            <ul id="todayEventsList" class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"></ul>
+            <!-- 修改：取消了預設圓點，改用核取方塊的間距設定 -->
+            <ul id="todayEventsList" class="space-y-2 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
           <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
@@ -1051,10 +1053,27 @@
       const eventsList = document.getElementById('todayEventsList');
 
       if (matchedEvents.length > 0) {
-        eventsList.innerHTML = matchedEvents.map(e => `<li>${e.title}</li>`).join('');
+        // ✨ 修改：加入核取方塊與完成狀態的刪除線
+        eventsList.innerHTML = matchedEvents.map(e => `
+          <li class="flex items-center gap-3">
+            <input type="checkbox" ${e.completed ? 'checked' : ''} onchange="toggleEventCompletion('${e.id}', this.checked)" class="w-6 h-6 text-amber-600 rounded cursor-pointer interactive-control border-amber-400">
+            <span class="${e.completed ? 'line-through text-amber-700/50' : ''}">${e.title}</span>
+          </li>
+        `).join('');
         eventsBox.classList.remove('hidden');
       } else {
         eventsBox.classList.add('hidden');
+      }
+    }
+
+    // ✨ 新增：處理行事曆打勾完成狀態
+    function toggleEventCompletion(id, isCompleted) {
+      if (!appState.calendarEvents) return;
+      const evt = appState.calendarEvents.find(e => e.id === id);
+      if (evt) {
+        evt.completed = isCompleted;
+        saveStateToCloud();
+        checkTodayEvents();
       }
     }
 
@@ -1451,7 +1470,7 @@
             const date = parts[0];
             const title = parts.slice(1).join(' ');
             if (!appState.calendarEvents.some(e => e.date === date && e.title === title)) {
-              appState.calendarEvents.push({ id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), date, title });
+              appState.calendarEvents.push({ id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), date, title, completed: false });
               count++;
             }
           }
@@ -1475,7 +1494,7 @@
         <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
           <div class="flex items-center gap-3">
             <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
-            <span class="font-bold text-gray-800 text-sm">${evt.title}</span>
+            <span class="font-bold text-gray-800 text-sm ${evt.completed ? 'line-through text-gray-400' : ''}">${evt.title}</span>
           </div>
           <div class="flex items-center gap-2 interactive-control">
             <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-2.5 py-1 rounded transition">✏️ 編輯</button>
@@ -2221,7 +2240,7 @@
           gridHTML += `
             <div class="${bgClass} p-3 rounded-xl border shadow-sm flex flex-col justify-between text-center transition-all">
               <span class="text-[10px] text-gray-500 font-mono mb-1">${r+1}-${c+1}</span>
-              <select onchange="updateSeat('${seatKey}', this.value)" class="w-full border rounded-lg p-1.5 text-xs font-bold text-gray-800 bg-gray-50 outline-none interactive-control">
+              <select style="text-align-last: center;" onchange="updateSeat('${seatKey}', this.value)" class="w-full border rounded-lg p-1.5 text-xs font-bold text-gray-800 bg-gray-50 outline-none interactive-control text-center">
                 <option value="">-- 空 --</option>
                 <option value="X" ${isX ? 'selected' : ''}>❌ (走道/不排)</option>
                 ${students.map(s => {
@@ -2467,14 +2486,15 @@
             const isGreen = greenSubjects.some(sub => cellValue.includes(sub));
             const textColor = isGreen ? 'text-emerald-600' : 'text-gray-800';
             
-            // 加入 text-xl 和 h-full min-h-[3.5rem] 讓字體放大填滿
+            // ✨ 修改：加入 style="text-align-last: center;" 強制水平置中
             rowHTML += `
               <td class="p-1 border border-slate-200 align-middle">
-                <select onchange="updateSchCell('${cellKey}', this.value)" class="w-full h-full min-h-[3.5rem] text-center p-1 text-xl font-black bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
+                <select style="text-align-last: center;" onchange="updateSchCell('${cellKey}', this.value)" class="w-full h-full min-h-[3.5rem] text-center p-1 text-xl font-black bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
                   <option value="" class="text-gray-500">--</option>
                   ${sch.tags.map(tag => `<option value="${tag}" ${tag === cellValue ? 'selected' : ''} class="text-gray-800">${tag}</option>`).join('')}
                 </select>
-                <div class="hidden notice-view-tag ${textColor} font-black text-xl py-1">${cellValue || '--'}</div>
+                <!-- 給 notice-readonly 模式顯示用 -->
+                <div class="hidden notice-view-tag ${textColor} font-black text-xl py-1 w-full text-center flex justify-center items-center h-full">${cellValue || '--'}</div>
               </td>
             `;
           }

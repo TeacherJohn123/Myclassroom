@@ -75,7 +75,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.0 (預約調課與列印升級版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.1 (課表版面最佳化)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -652,61 +652,62 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <!-- 左側：標籤與科任教師設定 -->
-        <div class="lg:col-span-1 space-y-6 interactive-control" id="schSidebarTools">
-          <!-- 科目標籤設定 -->
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200" id="schTagsContainerBlock">
-            <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">🏷️ 自訂科目標籤</h3>
-            <div id="schTagsContainer" class="flex flex-wrap gap-1.5 mb-3"></div>
-            <div class="flex gap-1">
-              <input type="text" id="newSchTagInput" class="flex-1 border rounded p-1.5 text-xs outline-none" placeholder="新增科目 (如: 電腦)">
-              <button onclick="addScheduleTag()" class="bg-slate-700 hover:bg-slate-800 text-white px-2 rounded text-xs font-bold">新增</button>
-            </div>
-          </div>
+      <!-- 🌟 將原本左右分割的網格，改成上下排列 🌟 -->
 
-          <!-- 科任教師設定 -->
-          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200" id="schTeachersContainerBlock">
-            <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">👩‍🏫 科任教師名單</h3>
-            <div id="schTeachersContainer" class="space-y-2 mb-3 max-h-64 overflow-y-auto pr-1"></div>
-            <div class="space-y-1">
-              <input type="text" id="newTeacherSubj" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="科目 (如: 社會)">
-              <input type="text" id="newTeacherName" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="老師姓名 (如: 王大明老師)">
-              <button onclick="addScheduleTeacher()" class="w-full bg-slate-700 hover:bg-slate-800 text-white py-1.5 rounded text-xs font-bold mt-1">新增科任教師</button>
-            </div>
-          </div>
-        </div>
+      <!-- 上方：課表網格 (全寬) -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+        <table class="w-full min-w-[750px] border-collapse text-center text-sm h-full">
+          <thead>
+            <tr class="bg-slate-100 text-slate-700 font-extrabold border-b-2 border-slate-300">
+              <th class="p-2 border w-[4%]">午別</th>
+              <th class="p-2 border w-[6%]">節次</th>
+              <th class="p-2 border w-[6%] text-amber-700">分鐘</th>
+              <th class="p-2 border w-[14%]">時間</th>
+              <th class="p-2 border w-[14%]">星期一</th>
+              <th class="p-2 border w-[14%]">星期二</th>
+              <th class="p-2 border w-[14%]">星期三</th>
+              <th class="p-2 border w-[14%]">星期四</th>
+              <th class="p-2 border w-[14%]">星期五</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleGridBody" class="font-bold text-gray-800">
+            <!-- JS 動態生成 -->
+          </tbody>
+        </table>
 
-        <!-- 右側：課表網格 -->
-        <div class="lg:col-span-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-          <table class="w-full min-w-[750px] border-collapse text-center text-sm h-full">
-            <thead>
-              <tr class="bg-slate-100 text-slate-700 font-extrabold border-b-2 border-slate-300">
-                <th class="p-2 border w-[4%]">午別</th>
-                <th class="p-2 border w-[6%]">節次</th>
-                <th class="p-2 border w-[6%] text-amber-700">分鐘</th>
-                <th class="p-2 border w-[14%]">時間</th>
-                <th class="p-2 border w-[14%]">星期一</th>
-                <th class="p-2 border w-[14%]">星期二</th>
-                <th class="p-2 border w-[14%]">星期三</th>
-                <th class="p-2 border w-[14%]">星期四</th>
-                <th class="p-2 border w-[14%]">星期五</th>
-              </tr>
-            </thead>
-            <tbody id="scheduleGridBody" class="font-bold text-gray-800">
-              <!-- JS 動態生成 -->
-            </tbody>
-          </table>
-
-          <!-- 科任教師展示區 -->
-          <div class="mt-4 pt-4 border-t-2 border-gray-200">
-            <h4 class="text-blue-800 font-extrabold mb-2 text-lg">※科任教師</h4>
-            <div id="schTeachersDisplay" class="flex flex-wrap gap-x-6 gap-y-1 text-base text-blue-900 font-bold">
-              <!-- JS 動態生成 -->
-            </div>
+        <!-- 科任教師展示區 -->
+        <div class="mt-4 pt-4 border-t-2 border-gray-200">
+          <h4 class="text-blue-800 font-extrabold mb-2 text-lg">※科任教師</h4>
+          <div id="schTeachersDisplay" class="flex flex-wrap gap-x-6 gap-y-1 text-base text-blue-900 font-bold">
+            <!-- JS 動態生成 -->
           </div>
         </div>
       </div>
+
+      <!-- 下方：標籤與科任教師設定 (兩欄並排) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 interactive-control" id="schSidebarTools">
+        <!-- 科目標籤設定 -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200" id="schTagsContainerBlock">
+          <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">🏷️ 自訂科目標籤</h3>
+          <div id="schTagsContainer" class="flex flex-wrap gap-1.5 mb-3"></div>
+          <div class="flex gap-1">
+            <input type="text" id="newSchTagInput" class="flex-1 border rounded p-1.5 text-xs outline-none" placeholder="新增科目 (如: 電腦)">
+            <button onclick="addScheduleTag()" class="bg-slate-700 hover:bg-slate-800 text-white px-2 rounded text-xs font-bold">新增</button>
+          </div>
+        </div>
+
+        <!-- 科任教師設定 -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200" id="schTeachersContainerBlock">
+          <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">👩‍🏫 科任教師名單</h3>
+          <div id="schTeachersContainer" class="space-y-2 mb-3 max-h-48 overflow-y-auto pr-1"></div>
+          <div class="space-y-1">
+            <input type="text" id="newTeacherSubj" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="科目 (如: 社會)">
+            <input type="text" id="newTeacherName" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="老師姓名 (如: 王大明老師)">
+            <button onclick="addScheduleTeacher()" class="w-full bg-slate-700 hover:bg-slate-800 text-white py-1.5 rounded text-xs font-bold mt-1">新增科任教師</button>
+          </div>
+        </div>
+      </div>
+      
     </section>
 
     <!-- 分頁 8：座位分配 (升級版) -->

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -56,11 +55,12 @@
         <button onclick="switchTab('points')" id="btn-points" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏆 榮譽點數</button>
         <button onclick="switchTab('corridor')" id="btn-corridor" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏃 走廊奔跑</button>
         <button onclick="switchTab('calendar')" id="btn-calendar" class="nav-btn w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📅 班級行事曆</button>
+        <button onclick="switchTab('schedule')" id="btn-schedule" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🏫 班級課表</button>
         <button onclick="switchTab('seating')" id="btn-seating" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">🪑 座位分配</button>
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.29 (座位分配升級版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.30 (課表系統升級版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -577,6 +577,113 @@
       </div>
     </section>
 
+    <!-- 分頁 7：班級課表 -->
+    <section id="tab-schedule" class="tab-content space-y-6">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h2 class="text-2xl font-bold text-slate-800">🏫 班級日課表</h2>
+        <div class="flex gap-2 interactive-control">
+          <button onclick="toggleScheduleAlertEdit()" class="bg-rose-100 text-rose-700 hover:bg-rose-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
+            🚨 設定調課提醒
+          </button>
+          <button onclick="saveSchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-xs shadow transition font-bold">
+            💾 儲存課表與設定
+          </button>
+        </div>
+      </div>
+
+      <!-- 醒目調課提醒橫幅 -->
+      <div id="scheduleAlertDisplay" class="hidden bg-gradient-to-r from-rose-500 to-red-600 text-white p-4 rounded-xl shadow-md flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-3xl">⚠️</span>
+          <div>
+            <h4 class="font-extrabold text-lg">臨時調課提醒</h4>
+            <p id="scheduleAlertTextDisplay" class="text-sm font-bold opacity-90"></p>
+          </div>
+        </div>
+        <button onclick="clearScheduleAlert()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-xs font-bold transition interactive-control">關閉提醒</button>
+      </div>
+
+      <!-- 調課提醒編輯區 (預設隱藏) -->
+      <div id="scheduleAlertEditor" class="hidden bg-rose-50 p-4 rounded-xl border-2 border-rose-200 interactive-control">
+        <label class="block text-sm font-bold text-rose-800 mb-2">輸入今日調課資訊：</label>
+        <div class="flex gap-2">
+          <input type="text" id="schAlertInput" class="flex-1 border-rose-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" placeholder="例如：今日第三節社會與第五節自然互調">
+          <button onclick="applyScheduleAlert()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow">發布提醒</button>
+        </div>
+      </div>
+
+      <!-- 課表標題與基本資料 -->
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center space-y-3">
+        <div class="flex justify-center items-center gap-2 text-xl font-bold text-gray-800">
+          <input type="text" id="schSchoolName" class="text-center border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-auto" placeholder="學校名稱" value="高雄市鳳山區文華國民小學">
+          <input type="text" id="schYear" class="text-center border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-16" placeholder="學年度" value="115">
+          <span>學年度日課表</span>
+        </div>
+        <div class="flex justify-center items-center gap-4 text-lg font-bold text-gray-700">
+          <input type="text" id="schClassName" class="text-center border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-32" placeholder="班級名稱" value="五年一班">
+          <div class="flex items-center gap-1">
+            <span>導師：</span>
+            <input type="text" id="schHomeroom" class="text-center border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-28" placeholder="導師姓名" value="陳奕任老師">
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- 左側：標籤與科任教師設定 -->
+        <div class="lg:col-span-1 space-y-6 interactive-control">
+          <!-- 科目標籤設定 -->
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">🏷️ 自訂科目標籤</h3>
+            <div id="schTagsContainer" class="flex flex-wrap gap-1.5 mb-3"></div>
+            <div class="flex gap-1">
+              <input type="text" id="newSchTagInput" class="flex-1 border rounded p-1.5 text-xs outline-none" placeholder="新增科目 (如: 電腦)">
+              <button onclick="addScheduleTag()" class="bg-slate-700 hover:bg-slate-800 text-white px-2 rounded text-xs font-bold">新增</button>
+            </div>
+          </div>
+
+          <!-- 科任教師設定 -->
+          <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+            <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">👩‍🏫 科任教師名單</h3>
+            <div id="schTeachersContainer" class="space-y-2 mb-3 max-h-64 overflow-y-auto pr-1"></div>
+            <div class="space-y-1">
+              <input type="text" id="newTeacherSubj" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="科目 (如: 社會)">
+              <input type="text" id="newTeacherName" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="老師姓名 (如: 王大明老師)">
+              <button onclick="addScheduleTeacher()" class="w-full bg-slate-700 hover:bg-slate-800 text-white py-1.5 rounded text-xs font-bold mt-1">新增科任教師</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右側：課表網格 -->
+        <div class="lg:col-span-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+          <table class="w-full min-w-[600px] border-collapse text-center text-sm">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700 font-extrabold border-b-2 border-slate-300">
+                <th class="p-2 border">午別</th>
+                <th class="p-2 border">節次</th>
+                <th class="p-2 border">時間</th>
+                <th class="p-2 border w-[15%]">星期一</th>
+                <th class="p-2 border w-[15%]">星期二</th>
+                <th class="p-2 border w-[15%]">星期三</th>
+                <th class="p-2 border w-[15%]">星期四</th>
+                <th class="p-2 border w-[15%]">星期五</th>
+              </tr>
+            </thead>
+            <tbody id="scheduleGridBody" class="font-bold text-gray-800">
+              <!-- JS 動態生成 -->
+            </tbody>
+          </table>
+
+          <!-- 科任教師展示區 (供公告模式或列印檢視) -->
+          <div class="mt-4 pt-4 border-t-2 border-gray-200">
+            <h4 class="text-blue-800 font-extrabold mb-2">※科任教師</h4>
+            <div id="schTeachersDisplay" class="flex flex-wrap gap-x-6 gap-y-1 text-sm text-blue-900 font-bold">
+              <!-- JS 動態生成 -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- 分頁 8：座位分配 (升級版) -->
     <section id="tab-seating" class="tab-content space-y-6">
       <div class="flex flex-col md:flex-row justify-between md:items-center border-b pb-3 gap-3">
@@ -744,7 +851,7 @@
 
     let appState = {};
     let backupState = null;
-    let currentSeatingTag = '班級座位'; // 用來記錄當前編輯的座位標籤
+    let currentSeatingTag = '班級座位';
     const isNoticeMode = urlParams.get('mode') === 'notice';
 
     window.onload = function() {
@@ -763,12 +870,17 @@
       db.ref(dbPath).on('value', (snapshot) => {
         appState = snapshot.val() || {};
         
-        // --- 初始化座位分配所需的狀態 ---
+        // 初始化座位分配狀態
         if (!appState.seatingTags) {
           appState.seatingTags = ['班級座位', '自然教室座位', '音樂教室座位', '遊覽車座位', '畢旅遊覽車座位'];
         }
         if (!appState.savedSeating) {
           appState.savedSeating = {};
+        }
+
+        // 初始化課表狀態
+        if (!appState.schedule) {
+          appState.schedule = JSON.parse(JSON.stringify(defaultScheduleTemplate));
         }
         
         setTodayDate();
@@ -791,6 +903,9 @@
         renderCorridorStudentOptions();
         renderCorridorList();
         renderCorridorStatsTable();
+
+        // 課表渲染
+        renderSchedule();
       });
     };
 
@@ -2002,10 +2117,9 @@
       if (savedData) {
         document.getElementById('seatRows').value = savedData.rows;
         document.getElementById('seatCols').value = savedData.cols;
-        // 深拷貝，以免直接修改到已存檔的狀態
+        // 深拷貝
         appState.seatingMap = savedData.map ? JSON.parse(JSON.stringify(savedData.map)) : {};
       } else {
-        // 如果這個標籤從來沒存過，就清空 map 讓他是一張全新的表
         appState.seatingMap = {};
       }
       renderSeatingChart();
@@ -2034,7 +2148,6 @@
       if (newTags !== null && newTags.trim() !== "") {
         appState.seatingTags = newTags.split(",").map(t => t.trim()).filter(t => t);
         
-        // 如果當前正在使用的標籤被刪除了，自動切換回清單的第一個
         if (!appState.seatingTags.includes(currentSeatingTag)) {
           currentSeatingTag = appState.seatingTags[0] || '班級座位';
         }
@@ -2047,7 +2160,6 @@
     }
 
     function generateSeatingGrid() {
-      // 點擊產生網格時，保留目前的座位資料，僅擴增/縮小範圍
       renderSeatingChart();
     }
 
@@ -2063,7 +2175,6 @@
         return;
       }
 
-      // 取得已經排好的人的 ID (排除 X 以及空位)
       const assignedStudentIds = Object.values(seatingMap).filter(id => id !== "X" && id !== "");
 
       let gridHTML = `<div class="grid gap-3 w-max mx-auto" style="grid-template-columns: repeat(${cols}, minmax(110px, 1fr));">`;
@@ -2072,7 +2183,6 @@
           const seatKey = `${r}_${c}`;
           const currentStudentId = seatingMap[seatKey] || "";
           
-          // 判斷是否為「❌無人座位(走道)」
           const isX = (currentStudentId === "X");
           const bgClass = isX ? "bg-gray-300 border-gray-400 opacity-60" : "bg-white border-gray-200";
 
@@ -2084,9 +2194,7 @@
                 <option value="X" ${isX ? 'selected' : ''}>❌ (走道/不排)</option>
                 ${students.map(s => {
                   const isCurrent = (s.id === currentStudentId);
-                  // 判斷該學生是否已經坐在其他位子上
                   const isSeatedElsewhere = assignedStudentIds.includes(s.id) && !isCurrent;
-                  // 加上標記，讓老師知道這個學生已經在網格中
                   const labelSuffix = isSeatedElsewhere ? ' (已排)' : '';
                   return `<option value="${s.id}" ${isCurrent ? 'selected' : ''}>${s.seatNo} ${s.name}${labelSuffix}</option>`;
                 }).join('')}
@@ -2102,14 +2210,11 @@
     function updateSeat(seatKey, studentId) {
       if (!appState.seatingMap) appState.seatingMap = {};
 
-      // 紀錄目標座位原本坐的學生
       const originalStudentInTargetSeat = appState.seatingMap[seatKey];
 
-      // 如果選取的不是「空」也不是「走道」
       if (studentId !== "" && studentId !== "X") {
         let oldSeatKey = null;
         
-        // 尋找這個被選取的學生原本坐在哪個位置
         for (let key in appState.seatingMap) {
           if (appState.seatingMap[key] === studentId && key !== seatKey) {
             oldSeatKey = key;
@@ -2119,23 +2224,19 @@
 
         if (oldSeatKey) {
           if (originalStudentInTargetSeat && originalStudentInTargetSeat !== "X") {
-            // 【互換邏輯】：如果目標座位原本有人，就把原本的人移到該學生的舊座位
             appState.seatingMap[oldSeatKey] = originalStudentInTargetSeat;
           } else {
-            // 【移位邏輯】：如果目標座位原本是空的或走道，就直接清空舊座位
             delete appState.seatingMap[oldSeatKey];
           }
         }
       }
 
-      // 更新目標座位為新選取的學生 (或空/走道)
       if (studentId === "") {
         delete appState.seatingMap[seatKey];
       } else {
         appState.seatingMap[seatKey] = studentId;
       }
       
-      // 重新渲染網格
       renderSeatingChart(); 
     }
 
@@ -2151,10 +2252,7 @@
       const rows = parseInt(document.getElementById('seatRows').value) || 5;
       const cols = parseInt(document.getElementById('seatCols').value) || 6;
 
-      // 1. 找出已經有座位的學生 ID
       const assignedStudentIds = Object.values(appState.seatingMap).filter(id => id !== "X" && id !== "");
-
-      // 2. 篩選出「尚未安排座位」的學生
       let unassignedStudents = students.filter(s => !assignedStudentIds.includes(s.id));
 
       if (unassignedStudents.length === 0) {
@@ -2162,7 +2260,6 @@
         return;
       }
 
-      // 3. 找出目前網格中真正的「空位」（不包含 X 走道，也不包含已經有人的位置）
       let emptySeats = [];
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
@@ -2178,13 +2275,11 @@
         return;
       }
 
-      // 4. 將未安排的學生陣列打亂 (Fisher-Yates Shuffle 洗牌演算法)
       for (let i = unassignedStudents.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [unassignedStudents[i], unassignedStudents[j]] = [unassignedStudents[j], unassignedStudents[i]];
       }
 
-      // 5. 將打亂後的學生依序填入空位中
       let assignedCount = 0;
       for (let i = 0; i < unassignedStudents.length; i++) {
         if (i < emptySeats.length) {
@@ -2192,12 +2287,10 @@
           appState.seatingMap[seatKey] = unassignedStudents[i].id;
           assignedCount++;
         } else {
-          // 如果學生比空位還多，裝滿空位就停止
           break;
         }
       }
 
-      // 6. 重新渲染畫面
       renderSeatingChart();
       
       if (unassignedStudents.length > emptySeats.length) {
@@ -2206,7 +2299,220 @@
         alert(`🎲 成功！已將 ${assignedCount} 位尚未入座的學生隨機分配至空位中。\n(請記得點擊「儲存座位表」以防資料遺失)`);
       }
     }
+
+    // ----------------- 班級課表邏輯 -----------------
+    const defaultScheduleTemplate = {
+      header: { school: "高雄市鳳山區文華國民小學", year: "115", className: "五年一班", homeroom: "陳奕任老師" },
+      tags: ["國語", "數學", "社會", "自然科學", "視覺藝術", "音樂", "體育", "英語", "本土語言", "健康", "創客ING", "班會", "綜合", "彈性", "整潔工作", "升旗", "晨會", "故事列車", "班級特色課程", "教師進修", "共同空堂"],
+      teachers: [
+        { id: 't1', subject: "本土語言", name: "楊季珍老師" },
+        { id: 't2', subject: "音樂", name: "蘇千雯老師" },
+        { id: 't3', subject: "視覺藝術", name: "謝佳子老師" },
+        { id: 't4', subject: "創客ING", name: "賴巧怡老師" },
+        { id: 't5', subject: "社會", name: "陳俊宏老師" },
+        { id: 't6', subject: "健康", name: "林俐欣老師" },
+        { id: 't7', subject: "自然科學", name: "余安麗老師" },
+        { id: 't8', subject: "體育", name: "吳昱輝老師" },
+        { id: 't9', subject: "英語", name: "許華蓁老師" }
+      ],
+      alert: { active: false, text: "" },
+      grid: {
+        "r0_c0": "整潔工作", "r0_c1": "整潔工作", "r0_c2": "整潔工作", "r0_c3": "整潔工作", "r0_c4": "整潔工作",
+        "r1_c0": "升旗", "r1_c1": "晨會", "r1_c2": "班級特色課程", "r1_c3": "班級特色課程", "r1_c4": "班級特色課程",
+        "r2_c0": "本土語言", "r2_c1": "", "r2_c2": "體育", "r2_c3": "", "r2_c4": "",
+        "r3_c0": "", "r3_c1": "", "r3_c2": "", "r3_c3": "", "r3_c4": "體育",
+        "r4_c0": "視覺藝術", "r4_c1": "社會", "r4_c2": "英語", "r4_c3": "社會", "r4_c4": "",
+        "r5_c0": "視覺藝術", "r5_c1": "", "r5_c2": "", "r5_c3": "社會", "r5_c4": "",
+        "r6_c0": "", "r6_c1": "自然科學", "r6_c2": "教師進修", "r6_c3": "", "r6_c4": "英語",
+        "r7_c0": "創客ING", "r7_c1": "自然科學", "r7_c2": "教師進修", "r7_c3": "音樂", "r7_c4": "自然科學",
+        "r8_c0": "整潔工作", "r8_c1": "整潔工作", "r8_c2": "教師進修", "r8_c3": "整潔工作", "r8_c4": "整潔工作",
+        "r9_c0": "", "r9_c1": "健康", "r9_c2": "教師進修", "r9_c3": "", "r9_c4": ""
+      }
+    };
+
+    const scheduleRowsDef = [
+      { type: 'am', period: '', time: '7:45~8:00', minutes: 15 },
+      { type: 'am', period: '', time: '8:00~8:35', minutes: 30 },
+      { type: 'am', period: '1', time: '8:40~9:20', minutes: 40 },
+      { type: 'am', period: '2', time: '9:30~10:10', minutes: 40 },
+      { type: 'break', label: '課 間 活 動', time: '10:10~10:30', minutes: 20 },
+      { type: 'am', period: '3', time: '10:30~11:10', minutes: 40 },
+      { type: 'am', period: '4', time: '11:20~12:00', minutes: 40 },
+      { type: 'lunch', label: '營養午餐及午休時間', time: '12:00~13:10', minutes: 70 },
+      { type: 'pm', period: '5', time: '13:20~14:00', minutes: 40 },
+      { type: 'pm', period: '6', time: '14:10~14:50', minutes: 40 },
+      { type: 'pm', period: '', time: '14:50~15:05', minutes: 15 },
+      { type: 'pm', period: '7', time: '15:05~15:45', minutes: 40 }
+    ];
+
+    function renderSchedule() {
+      if (!appState.schedule) return;
+      const sch = appState.schedule;
+      
+      // 1. 渲染提醒橫幅
+      const alertDisplay = document.getElementById('scheduleAlertDisplay');
+      if (sch.alert && sch.alert.active) {
+        document.getElementById('scheduleAlertTextDisplay').innerText = sch.alert.text;
+        alertDisplay.classList.remove('hidden');
+      } else {
+        alertDisplay.classList.add('hidden');
+      }
+
+      // 2. 渲染標題
+      document.getElementById('schSchoolName').value = sch.header.school;
+      document.getElementById('schYear').value = sch.header.year;
+      document.getElementById('schClassName').value = sch.header.className;
+      document.getElementById('schHomeroom').value = sch.header.homeroom;
+
+      // 3. 渲染標籤
+      const tagsContainer = document.getElementById('schTagsContainer');
+      tagsContainer.innerHTML = sch.tags.map(tag => `
+        <span class="bg-indigo-100 text-indigo-800 border border-indigo-200 px-2 py-1 rounded text-xs flex items-center gap-1">
+          ${tag} <button onclick="removeScheduleTag('${tag}')" class="text-indigo-400 hover:text-red-500 font-bold ml-1 interactive-control">✕</button>
+        </span>
+      `).join('');
+
+      // 4. 渲染科任教師清單
+      const teachersContainer = document.getElementById('schTeachersContainer');
+      const teachersDisplay = document.getElementById('schTeachersDisplay');
+      
+      teachersContainer.innerHTML = sch.teachers.map(t => `
+        <div class="flex justify-between items-center text-xs bg-gray-50 border p-1.5 rounded">
+          <span class="font-bold text-gray-700">${t.subject}：<span class="text-blue-700">${t.name}</span></span>
+          <button onclick="removeScheduleTeacher('${t.id}')" class="text-gray-400 hover:text-red-500">✕</button>
+        </div>
+      `).join('');
+
+      teachersDisplay.innerHTML = sch.teachers.map(t => `<span>${t.subject}：${t.name}</span>`).join('');
+
+      // 5. 渲染網格
+      const tbody = document.getElementById('scheduleGridBody');
+      let gridHTML = '';
+      let amCount = 0, pmCount = 0, dataRowIdx = 0;
+      
+      scheduleRowsDef.forEach((def) => {
+        if (def.type === 'break' || def.type === 'lunch') {
+          gridHTML += `
+            <tr class="bg-amber-50/50 border-b">
+              <td class="p-2 border border-slate-200 text-gray-400"></td>
+              <td class="p-2 border border-slate-200">${def.minutes}</td>
+              <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
+              <td colspan="5" class="p-2 border border-slate-200 text-amber-900 tracking-[0.5em] text-base">${def.label}</td>
+            </tr>
+          `;
+        } else {
+          // 動態計算上/下午的 rowspan
+          let periodLabel = def.type === 'am' ? (amCount === 0 ? '<td rowspan="6" class="p-2 border border-slate-200">上午</td>' : '') : (pmCount === 0 ? '<td rowspan="4" class="p-2 border border-slate-200">下午</td>' : '');
+          if (def.type === 'am') amCount++;
+          if (def.type === 'pm') pmCount++;
+
+          let rowCellsHTML = '';
+          for (let c = 0; c < 5; c++) {
+            const cellKey = `r${dataRowIdx}_c${c}`;
+            const cellValue = sch.grid[cellKey] || '';
+            const textColor = cellValue.includes('體育') || cellValue.includes('本土') || cellValue.includes('社會') || cellValue.includes('音樂') || cellValue.includes('自然') || cellValue.includes('創客') || cellValue.includes('健康') ? 'text-red-600' : 'text-gray-800';
+            
+            rowCellsHTML += `
+              <td class="p-1 border border-slate-200 align-middle">
+                <select onchange="updateSchCell('${cellKey}', this.value)" class="w-full text-center p-1.5 text-sm font-extrabold bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
+                  <option value="" class="text-gray-500">--</option>
+                  ${sch.tags.map(tag => `<option value="${tag}" ${tag === cellValue ? 'selected' : ''} class="text-gray-800">${tag}</option>`).join('')}
+                </select>
+                <!-- 給 notice-readonly 模式顯示用 -->
+                <div class="hidden notice-view-tag ${textColor} font-extrabold text-sm py-1">${cellValue || '--'}</div>
+              </td>
+            `;
+          }
+
+          gridHTML += `
+            <tr class="hover:bg-slate-50 border-b transition">
+              ${periodLabel}
+              <td class="p-2 border border-slate-200">${def.period}</td>
+              <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
+              ${rowCellsHTML}
+            </tr>
+          `;
+          dataRowIdx++;
+        }
+      });
+      tbody.innerHTML = gridHTML;
+    }
+
+    function updateSchCell(key, value) {
+      if (!appState.schedule) return;
+      appState.schedule.grid[key] = value;
+      renderSchedule(); // 重新套用文字顏色
+    }
+
+    function saveSchedule() {
+      if (!appState.schedule) return;
+      appState.schedule.header.school = document.getElementById('schSchoolName').value;
+      appState.schedule.header.year = document.getElementById('schYear').value;
+      appState.schedule.header.className = document.getElementById('schClassName').value;
+      appState.schedule.header.homeroom = document.getElementById('schHomeroom').value;
+      saveStateToCloud();
+      alert('✅ 課表與設定已成功儲存至雲端！');
+    }
+
+    // --- 調課提醒邏輯 ---
+    function toggleScheduleAlertEdit() {
+      const editor = document.getElementById('scheduleAlertEditor');
+      editor.classList.toggle('hidden');
+      if (!editor.classList.contains('hidden') && appState.schedule.alert.active) {
+        document.getElementById('schAlertInput').value = appState.schedule.alert.text;
+      }
+    }
+
+    function applyScheduleAlert() {
+      const text = document.getElementById('schAlertInput').value.trim();
+      if (!text) { alert('請輸入調課提醒內容！'); return; }
+      appState.schedule.alert = { active: true, text: text };
+      saveStateToCloud();
+      document.getElementById('scheduleAlertEditor').classList.add('hidden');
+      renderSchedule();
+    }
+
+    function clearScheduleAlert() {
+      appState.schedule.alert = { active: false, text: "" };
+      document.getElementById('schAlertInput').value = '';
+      saveStateToCloud();
+      renderSchedule();
+    }
+
+    // --- 標籤與科任教師邏輯 ---
+    function addScheduleTag() {
+      const val = document.getElementById('newSchTagInput').value.trim();
+      if (!val) return;
+      if (!appState.schedule.tags.includes(val)) {
+        appState.schedule.tags.push(val);
+        document.getElementById('newSchTagInput').value = '';
+        renderSchedule();
+      } else {
+        alert('此標籤已存在！');
+      }
+    }
+
+    function removeScheduleTag(tag) {
+      if (!confirm(`確定要刪除「${tag}」標籤嗎？`)) return;
+      appState.schedule.tags = appState.schedule.tags.filter(t => t !== tag);
+      renderSchedule();
+    }
+
+    function addScheduleTeacher() {
+      const subj = document.getElementById('newTeacherSubj').value.trim();
+      const name = document.getElementById('newTeacherName').value.trim();
+      if (!subj || !name) { alert('請填寫完整科目與老師姓名！'); return; }
+      appState.schedule.teachers.push({ id: 't_' + Date.now(), subject: subj, name: name });
+      document.getElementById('newTeacherSubj').value = '';
+      document.getElementById('newTeacherName').value = '';
+      renderSchedule();
+    }
+
+    function removeScheduleTeacher(id) {
+      if (!confirm('確定要移除這位科任老師嗎？')) return;
+      appState.schedule.teachers = appState.schedule.teachers.filter(t => t.id !== id);
+      renderSchedule();
+    }
   </script>
 </body>
 </html>
- 

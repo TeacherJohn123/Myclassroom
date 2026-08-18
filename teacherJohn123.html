@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.30 (課表系統升級版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.31 (修復課表版面錯位)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -655,17 +655,19 @@
 
         <!-- 右側：課表網格 -->
         <div class="lg:col-span-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
-          <table class="w-full min-w-[600px] border-collapse text-center text-sm">
+          <!-- 加入表格最小寬度限制，避免在 iPad 螢幕上被過度壓縮導致斷字 -->
+          <table class="w-full min-w-[750px] border-collapse text-center text-sm">
             <thead>
               <tr class="bg-slate-100 text-slate-700 font-extrabold border-b-2 border-slate-300">
-                <th class="p-2 border">午別</th>
-                <th class="p-2 border">節次</th>
-                <th class="p-2 border">時間</th>
-                <th class="p-2 border w-[15%]">星期一</th>
-                <th class="p-2 border w-[15%]">星期二</th>
-                <th class="p-2 border w-[15%]">星期三</th>
-                <th class="p-2 border w-[15%]">星期四</th>
-                <th class="p-2 border w-[15%]">星期五</th>
+                <th class="p-2 border w-[4%]">午別</th>
+                <th class="p-2 border w-[6%]">節次</th>
+                <th class="p-2 border w-[6%] text-amber-700">分鐘</th> <!-- 補回被遺漏的分鐘欄位 -->
+                <th class="p-2 border w-[14%]">時間</th>
+                <th class="p-2 border w-[14%]">星期一</th>
+                <th class="p-2 border w-[14%]">星期二</th>
+                <th class="p-2 border w-[14%]">星期三</th>
+                <th class="p-2 border w-[14%]">星期四</th>
+                <th class="p-2 border w-[14%]">星期五</th>
               </tr>
             </thead>
             <tbody id="scheduleGridBody" class="font-bold text-gray-800">
@@ -2331,18 +2333,18 @@
     };
 
     const scheduleRowsDef = [
-      { type: 'am', period: '', time: '7:45~8:00', minutes: 15 },
-      { type: 'am', period: '', time: '8:00~8:35', minutes: 30 },
-      { type: 'am', period: '1', time: '8:40~9:20', minutes: 40 },
-      { type: 'am', period: '2', time: '9:30~10:10', minutes: 40 },
-      { type: 'break', label: '課 間 活 動', time: '10:10~10:30', minutes: 20 },
-      { type: 'am', period: '3', time: '10:30~11:10', minutes: 40 },
-      { type: 'am', period: '4', time: '11:20~12:00', minutes: 40 },
-      { type: 'lunch', label: '營養午餐及午休時間', time: '12:00~13:10', minutes: 70 },
-      { type: 'pm', period: '5', time: '13:20~14:00', minutes: 40 },
-      { type: 'pm', period: '6', time: '14:10~14:50', minutes: 40 },
-      { type: 'pm', period: '', time: '14:50~15:05', minutes: 15 },
-      { type: 'pm', period: '7', time: '15:05~15:45', minutes: 40 }
+      { type: 'am', period: '', minutes: 15, time: '7:45~8:00' },
+      { type: 'am', period: '', minutes: 30, time: '8:00~8:35' },
+      { type: 'am', period: '1', minutes: 40, time: '8:40~9:20' },
+      { type: 'am', period: '2', minutes: 40, time: '9:30~10:10' },
+      { type: 'am_break', label: '課 間 活 動', minutes: 20, time: '10:10~10:30' },
+      { type: 'am', period: '3', minutes: 40, time: '10:30~11:10' },
+      { type: 'am', period: '4', minutes: 40, time: '11:20~12:00' },
+      { type: 'pm_lunch', label: '營 養 午 餐 及 午 休 時 間', minutes: 70, time: '12:00~13:10' },
+      { type: 'pm', period: '5', minutes: 40, time: '13:20~14:00' },
+      { type: 'pm', period: '6', minutes: 40, time: '14:10~14:50' },
+      { type: 'pm', period: '', minutes: 15, time: '14:50~15:05' },
+      { type: 'pm', period: '7', minutes: 40, time: '15:05~15:45' }
     ];
 
     function renderSchedule() {
@@ -2383,57 +2385,58 @@
         </div>
       `).join('');
 
-      teachersDisplay.innerHTML = sch.teachers.map(t => `<span>${t.subject}：${t.name}</span>`).join('');
+      teachersDisplay.innerHTML = sch.teachers.map(t => `<span class="mr-2">${t.subject}：${t.name}</span>`).join('');
 
       // 5. 渲染網格
       const tbody = document.getElementById('scheduleGridBody');
       let gridHTML = '';
-      let amCount = 0, pmCount = 0, dataRowIdx = 0;
+      let dataRowIdx = 0;
       
-      scheduleRowsDef.forEach((def) => {
-        if (def.type === 'break' || def.type === 'lunch') {
-          gridHTML += `
-            <tr class="bg-amber-50/50 border-b">
-              <td class="p-2 border border-slate-200 text-gray-400"></td>
-              <td class="p-2 border border-slate-200">${def.minutes}</td>
-              <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
-              <td colspan="5" class="p-2 border border-slate-200 text-amber-900 tracking-[0.5em] text-base">${def.label}</td>
-            </tr>
+      scheduleRowsDef.forEach((def, index) => {
+        let rowHTML = '<tr class="hover:bg-slate-50 border-b transition">';
+        
+        // 午別跨列邏輯
+        if (index === 0) { // 上午第一列
+          rowHTML += '<td rowspan="7" class="p-2 border border-slate-200 bg-white font-black tracking-widest" style="writing-mode: vertical-lr;">上午</td>';
+        } else if (index === 7) { // 下午第一列 (午休)
+          rowHTML += '<td rowspan="5" class="p-2 border border-slate-200 bg-white font-black tracking-widest" style="writing-mode: vertical-lr;">下午</td>';
+        }
+        
+        // 判斷是否為課間活動或午休
+        if (def.type === 'am_break' || def.type === 'pm_lunch') {
+          rowHTML += `
+            <td class="p-2 border border-slate-200"></td>
+            <td class="p-2 border border-slate-200 text-amber-700 font-bold">${def.minutes}</td>
+            <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
+            <td colspan="5" class="p-2 border border-slate-200 text-amber-900 tracking-[0.5em] text-base font-bold bg-amber-50/50">${def.label}</td>
           `;
         } else {
-          // 動態計算上/下午的 rowspan
-          let periodLabel = def.type === 'am' ? (amCount === 0 ? '<td rowspan="6" class="p-2 border border-slate-200">上午</td>' : '') : (pmCount === 0 ? '<td rowspan="4" class="p-2 border border-slate-200">下午</td>' : '');
-          if (def.type === 'am') amCount++;
-          if (def.type === 'pm') pmCount++;
-
-          let rowCellsHTML = '';
+          rowHTML += `
+            <td class="p-2 border border-slate-200 font-bold text-gray-700">${def.period}</td>
+            <td class="p-2 border border-slate-200 text-amber-700 font-bold">${def.minutes}</td>
+            <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
+          `;
+          
           for (let c = 0; c < 5; c++) {
             const cellKey = `r${dataRowIdx}_c${c}`;
             const cellValue = sch.grid[cellKey] || '';
             const textColor = cellValue.includes('體育') || cellValue.includes('本土') || cellValue.includes('社會') || cellValue.includes('音樂') || cellValue.includes('自然') || cellValue.includes('創客') || cellValue.includes('健康') ? 'text-red-600' : 'text-gray-800';
             
-            rowCellsHTML += `
+            rowHTML += `
               <td class="p-1 border border-slate-200 align-middle">
                 <select onchange="updateSchCell('${cellKey}', this.value)" class="w-full text-center p-1.5 text-sm font-extrabold bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
                   <option value="" class="text-gray-500">--</option>
                   ${sch.tags.map(tag => `<option value="${tag}" ${tag === cellValue ? 'selected' : ''} class="text-gray-800">${tag}</option>`).join('')}
                 </select>
-                <!-- 給 notice-readonly 模式顯示用 -->
                 <div class="hidden notice-view-tag ${textColor} font-extrabold text-sm py-1">${cellValue || '--'}</div>
               </td>
             `;
           }
-
-          gridHTML += `
-            <tr class="hover:bg-slate-50 border-b transition">
-              ${periodLabel}
-              <td class="p-2 border border-slate-200">${def.period}</td>
-              <td class="p-2 border border-slate-200 text-xs text-gray-500 font-mono leading-tight whitespace-pre-wrap">${def.time.replace('~', '~\n')}</td>
-              ${rowCellsHTML}
-            </tr>
-          `;
           dataRowIdx++;
         }
+        
+        rowHTML += '</tr>';
+        gridHTML += rowHTML;
       });
       tbody.innerHTML = gridHTML;
     }
@@ -2441,7 +2444,7 @@
     function updateSchCell(key, value) {
       if (!appState.schedule) return;
       appState.schedule.grid[key] = value;
-      renderSchedule(); // 重新套用文字顏色
+      renderSchedule(); 
     }
 
     function saveSchedule() {

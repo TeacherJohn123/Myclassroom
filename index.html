@@ -301,7 +301,6 @@
 
         <div
           id="calendarList"
-          class="divide-y divide-gray-100"
         >
 
           <p class="text-gray-400 text-sm py-2">
@@ -1188,12 +1187,6 @@
           "🔍 查看";
 
 
-        /* -------------------------------------------------------
-           重點：
-           不再使用 onclick="loadRecord(...)"
-           改用 addEventListener
-        ------------------------------------------------------- */
-
         button.addEventListener(
           "click",
           function(recordDate) {
@@ -1261,9 +1254,8 @@
 
 
     /* =========================================================
-       行事曆
+       行事曆 (依月份收合版)
     ========================================================== */
-
     function renderCalendarList() {
 
       var events =
@@ -1273,158 +1265,157 @@
         ? appState.calendarEvents
         : [];
 
-
       var countEl =
         document.getElementById(
           "eventCount"
         );
-
 
       var listContainer =
         document.getElementById(
           "calendarList"
         );
 
-
       if (!countEl || !listContainer) {
         return;
       }
-
 
       countEl.textContent =
         "共 " +
         events.length +
         " 筆事件";
 
-
       /* -------------------------------------------------------
          沒有事件
       ------------------------------------------------------- */
-
       if (
         events.length === 0
       ) {
-
         listContainer.innerHTML =
           '<p class="text-gray-400 text-sm py-2">目前無行事曆事件。</p>';
-
         return;
-
       }
 
-
       /* -------------------------------------------------------
-         排序
+         1. 排序所有事件
       ------------------------------------------------------- */
-
       var sortedEvents =
         events.slice().sort(
           function(a, b) {
-
-            var dateA =
-              a && a.date
-                ? a.date
-                : "";
-
-            var dateB =
-              b && b.date
-                ? b.date
-                : "";
-
-
-            return dateA.localeCompare(
-              dateB
-            );
-
+            var dateA = a && a.date ? a.date : "";
+            var dateB = b && b.date ? b.date : "";
+            return dateA.localeCompare(dateB);
           }
         );
 
+      /* -------------------------------------------------------
+         2. 將事件依據「月份 (YYYY-MM)」進行分組
+      ------------------------------------------------------- */
+      var groupedEvents = {};
+      
+      for (var i = 0; i < sortedEvents.length; i++) {
+        var evt = sortedEvents[i];
+        var dateStr = evt.date || ""; // 格式應為 "YYYY-MM-DD"
+        var monthKey = "未分類";
+
+        if (dateStr.length >= 7) {
+          monthKey = dateStr.substring(0, 7); // 擷取 "YYYY-MM"
+        }
+
+        if (!groupedEvents[monthKey]) {
+          groupedEvents[monthKey] = [];
+        }
+        groupedEvents[monthKey].push(evt);
+      }
 
       listContainer.innerHTML = "";
 
-
       /* -------------------------------------------------------
-         建立事件
+         3. 渲染收合選單與事件
       ------------------------------------------------------- */
+      var monthKeys = Object.keys(groupedEvents).sort(); // 確保月份按順序排列
 
-      for (
-        var i = 0;
-        i < sortedEvents.length;
-        i++
-      ) {
+      for (var m = 0; m < monthKeys.length; m++) {
+        var currentMonthKey = monthKeys[m];
+        var monthEvents = groupedEvents[currentMonthKey];
 
-        var evt =
-          sortedEvents[i];
+        // 外層群組容器
+        var groupDiv = document.createElement("div");
+        groupDiv.className = "mb-4 border border-gray-200 rounded-xl overflow-hidden shadow-sm";
 
+        // ================= 月份標題按鈕 =================
+        var headerBtn = document.createElement("button");
+        headerBtn.type = "button";
+        headerBtn.className = "w-full flex justify-between items-center bg-slate-50 px-4 py-3 hover:bg-slate-100 transition-colors focus:outline-none";
 
-        var row =
-          document.createElement(
-            "div"
-          );
+        var headerText = document.createElement("span");
+        headerText.className = "font-bold text-slate-700 text-lg flex items-center gap-2";
+        
+        // 格式化顯示名稱 (將 "2026-09" 轉為 "2026年 09月")
+        var displayMonth = currentMonthKey;
+        if (currentMonthKey.indexOf("-") !== -1) {
+          var parts = currentMonthKey.split("-");
+          displayMonth = parts[0] + "年 " + parts[1] + "月";
+        }
+        headerText.textContent = "📂 " + displayMonth + " (" + monthEvents.length + " 筆)";
 
+        var toggleIcon = document.createElement("span");
+        toggleIcon.className = "text-slate-400 transform transition-transform duration-200";
+        toggleIcon.textContent = "▼";
 
-        row.className =
-          "calendar-event py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 hover:bg-gray-50 px-2 rounded";
+        headerBtn.appendChild(headerText);
+        headerBtn.appendChild(toggleIcon);
 
+        // ================= 事件清單容器 =================
+        var eventsContainer = document.createElement("div");
+        // 預設將清單隱藏 (使用 Tailwind 的 hidden)
+        eventsContainer.className = "hidden bg-white divide-y divide-gray-100 px-2";
 
-        var left =
-          document.createElement(
-            "div"
-          );
+        // 綁定收合/展開動作 (利用閉包保留各別容器的參照)
+        (function(btn, container, icon) {
+          btn.addEventListener("click", function() {
+            var isHidden = container.classList.contains("hidden");
+            if (isHidden) {
+              container.classList.remove("hidden");
+              icon.style.transform = "rotate(180deg)"; // 展開時箭頭朝上
+            } else {
+              container.classList.add("hidden");
+              icon.style.transform = "rotate(0deg)"; // 收合時箭頭朝下
+            }
+          });
+        })(headerBtn, eventsContainer, toggleIcon);
 
+        // ================= 渲染該月內的每一筆事件 =================
+        for (var e = 0; e < monthEvents.length; e++) {
+          var evt = monthEvents[e];
+          
+          var row = document.createElement("div");
+          row.className = "calendar-event py-3 flex flex-col md:flex-row md:justify-between md:items-center gap-2 hover:bg-amber-50 px-2 my-1 rounded transition-colors";
 
-        left.className =
-          "flex items-center gap-3";
+          var left = document.createElement("div");
+          left.className = "flex items-center gap-3";
 
+          var dateBadge = document.createElement("span");
+          dateBadge.className = "font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded border border-amber-200 text-sm shrink-0";
+          // 行事曆列表內只顯示 "MM-DD" 即可，因為外層已有年份與月份
+          var shortDate = evt.date ? evt.date.substring(5) : "未設定";
+          dateBadge.textContent = shortDate;
 
-        var date =
-          document.createElement(
-            "span"
-          );
+          var title = document.createElement("span");
+          title.className = "font-bold text-gray-800 text-base";
+          title.textContent = evt.title || "未命名事件";
 
+          left.appendChild(dateBadge);
+          left.appendChild(title);
+          row.appendChild(left);
+          
+          eventsContainer.appendChild(row);
+        }
 
-        date.className =
-          "font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-sm";
-
-
-        date.textContent =
-          evt.date || "未設定日期";
-
-
-        var title =
-          document.createElement(
-            "span"
-          );
-
-
-        title.className =
-          "font-bold text-gray-800 text-base";
-
-
-        title.textContent =
-          evt.title || "未命名事件";
-
-
-        left.appendChild(
-          date
-        );
-
-        left.appendChild(
-          title
-        );
-
-
-        row.appendChild(
-          left
-        );
-
-
-        listContainer.appendChild(
-          row
-        );
-
+        // 組裝 DOM
+        groupDiv.appendChild(headerBtn);
+        groupDiv.appendChild(eventsContainer);
+        listContainer.appendChild(groupDiv);
       }
-
     }
 
 

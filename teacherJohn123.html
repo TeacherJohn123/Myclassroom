@@ -895,6 +895,7 @@
     let backupState = null;
     let currentSeatingTag = '班級座位';
     const isNoticeMode = urlParams.get('mode') === 'notice';
+    let expandedMonths = new Set();
 
     window.onload = function() {
       if (isNoticeMode) {
@@ -1541,20 +1542,69 @@
       document.getElementById('eventCount').innerText = `共 ${events.length} 筆事件`;
       const listContainer = document.getElementById('calendarList');
 
-      if (events.length === 0) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>'; return; }
+      if (events.length === 0) { 
+        // 恢復無資料時的預設樣式
+        listContainer.className = "divide-y divide-gray-100";
+        listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>'; 
+        return; 
+      }
 
-      listContainer.innerHTML = events.map(evt => `
-        <div class="py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center hover:bg-gray-50 px-2 rounded gap-2">
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
-            <span class="font-bold text-gray-800 text-sm ${evt.completed ? 'line-through text-gray-400' : ''}">${evt.title}</span>
-          </div>
-          <div class="flex items-center justify-end gap-2 interactive-control">
-            <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-3 py-1.5 sm:px-2.5 sm:py-1 rounded transition">✏️ 編輯</button>
-            <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-2 sm:p-1">✕</button>
-          </div>
-        </div>
-      `).join('');
+      // 變更外層容器樣式以適合區塊式的收合面板間距
+      listContainer.className = "space-y-3";
+
+      // 1. 將事件按 YYYY-MM 月分進行群組化
+      const groupedEvents = {};
+      events.forEach(evt => {
+        const monthStr = evt.date.substring(0, 7); 
+        if (!groupedEvents[monthStr]) groupedEvents[monthStr] = [];
+        groupedEvents[monthStr].push(evt);
+      });
+
+      // 2. 取得排序後的月分清單 (預設遞增，由舊到新)
+      const sortedMonths = Object.keys(groupedEvents).sort();
+
+      // 若尚未有任何展開紀錄，預設展開第一個月份
+      if (expandedMonths.size === 0 && sortedMonths.length > 0) {
+        expandedMonths.add(sortedMonths[0]);
+      }
+
+      // 3. 渲染收合面板結構
+      listContainer.innerHTML = sortedMonths.map(monthStr => {
+        const monthEvents = groupedEvents[monthStr];
+        // 判斷該月分是否應為展開狀態
+        const isOpen = expandedMonths.has(monthStr) ? 'open' : '';
+        
+        return `
+          <details ${isOpen} 
+            ontoggle="if(this.open) expandedMonths.add('${monthStr}'); else expandedMonths.delete('${monthStr}');" 
+            class="border border-gray-200 rounded-xl bg-white overflow-hidden group shadow-sm">
+            
+            <summary class="bg-slate-50 hover:bg-slate-100 cursor-pointer p-3 font-bold text-slate-800 list-none flex justify-between items-center transition select-none [&::-webkit-details-marker]:hidden">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">🗓️</span>
+                <span>${monthStr.replace('-', ' 年 ')} 月</span>
+                <span class="text-xs bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full">${monthEvents.length} 筆</span>
+              </div>
+              <span class="text-slate-400 group-open:rotate-180 transition-transform duration-300">▼</span>
+            </summary>
+            
+            <div class="divide-y divide-gray-100 p-1 bg-white">
+              ${monthEvents.map(evt => `
+                <div class="py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center hover:bg-gray-50 px-3 rounded gap-2">
+                  <div class="flex items-center gap-3">
+                    <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
+                    <span class="font-bold text-gray-800 text-sm ${evt.completed ? 'line-through text-gray-400' : ''}">${evt.title}</span>
+                  </div>
+                  <div class="flex items-center justify-end gap-2 interactive-control">
+                    <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-3 py-1.5 sm:px-2.5 sm:py-1 rounded transition">✏️ 編輯</button>
+                    <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-2 sm:p-1">✕</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        `;
+      }).join('');
     }
 
     function editCalendarEvent(id) {

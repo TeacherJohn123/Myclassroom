@@ -94,7 +94,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.5 (功能擴充版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v6.0 (完整功能版)</div>
   </aside>
 
   <!-- 主內容區 -->
@@ -193,7 +193,7 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">類別：</label>
-            <select id="attCategorySelect" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-amber-50/50 text-amber-900 border-amber-200">
+            <select id="attCategorySelect" onchange="onAttCategoryChange()" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-amber-50/50 text-amber-900 border-amber-200">
               <option value="病假">🤒 病假</option>
               <option value="事假">🏠 事假</option>
               <option value="公假">🏆 公假</option>
@@ -201,6 +201,10 @@
               <option value="上學遲到">⏰ 上學遲到</option>
               <option value="上課遲到">🔔 上課遲到</option>
             </select>
+          </div>
+          <div id="attDaysContainer">
+            <label class="block text-xs font-bold text-gray-600 mb-1">請假天數：</label>
+            <input type="number" id="attDays" value="1" step="0.1" min="0.1" class="w-full border rounded-lg p-2.5 text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
           </div>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">備註說明：</label>
@@ -1024,8 +1028,6 @@
         appState.classPointLogs = ensureArray(appState.classPointLogs);
         appState.rewards = ensureArray(appState.rewards);
         appState.classRewards = ensureArray(appState.classRewards);
-        
-        // ✨ 新增防護：專刊與繕寫優良紀錄
         appState.pubRecords = ensureArray(appState.pubRecords);
         appState.hwRecords = ensureArray(appState.hwRecords);
 
@@ -1039,7 +1041,6 @@
         if (!appState.savedSeating) appState.savedSeating = {};
         if (!appState.schedule) appState.schedule = JSON.parse(JSON.stringify(defaultScheduleTemplate));
         
-        // ✨ 新增初始化：專刊與繕寫優良標籤預設值
         if (!appState.pubTags || appState.pubTags.length === 0) appState.pubTags = ['童詩', '遊記', '讀書心得', '活動紀實'];
         if (!appState.hwTags || appState.hwTags.length === 0) appState.hwTags = ['國習', '數習', '聯絡簿', '作文'];
 
@@ -1065,7 +1066,6 @@
 
         renderSchedule();
 
-        // ✨ 載入並渲染專刊與繕寫優良紀錄模組
         initPublicationModule();
       });
     };
@@ -1718,7 +1718,7 @@
       saveStateToCloud();
       document.getElementById('batchStudentInput').value = '';
       alert(`🎉 成功匯入 ${count} 位學生！`);
-      renderPubHwStudentCheckboxes(); // 更新專刊名單
+      renderPubHwStudentCheckboxes();
     }
 
     function renderStudentGrid() {
@@ -1759,21 +1759,21 @@
       
       saveStateToCloud();
       alert('✅ 學生資料修改成功！');
-      renderPubHwStudentCheckboxes(); // 更新專刊名單
+      renderPubHwStudentCheckboxes(); 
     }
 
     function deleteStudent(id) {
       if (!confirm('確定要刪除這位學生嗎？')) return;
       appState.students = (appState.students || []).filter(s => s.id !== id);
       saveStateToCloud();
-      renderPubHwStudentCheckboxes(); // 更新專刊名單
+      renderPubHwStudentCheckboxes(); 
     }
 
     function clearStudents() {
       if (!confirm('確定要清空所有學生資料嗎？')) return;
       appState.students = [];
       saveStateToCloud();
-      renderPubHwStudentCheckboxes(); // 更新專刊名單
+      renderPubHwStudentCheckboxes(); 
     }
 
     // ----------------- 走廊奔跑登記邏輯 -----------------
@@ -2167,13 +2167,13 @@
         reportHTML += students.map(s => {
           const fullName = `${s.seatNo} ${s.name}`;
           const sLogs = logs.filter(l => l.studentId === s.id || l.studentName === fullName);
-          const sick = sLogs.filter(l => l.category === '病假').length;
-          const personal = sLogs.filter(l => l.category === '事假').length;
-          const official = sLogs.filter(l => l.category === '公假').length;
-          const funeral = sLogs.filter(l => l.category === '喪假').length;
+          const sick = sLogs.filter(l => l.category === '病假').reduce((sum, l) => sum + (parseFloat(l.days) || 1), 0);
+          const personal = sLogs.filter(l => l.category === '事假').reduce((sum, l) => sum + (parseFloat(l.days) || 1), 0);
+          const official = sLogs.filter(l => l.category === '公假').reduce((sum, l) => sum + (parseFloat(l.days) || 1), 0);
+          const funeral = sLogs.filter(l => l.category === '喪假').reduce((sum, l) => sum + (parseFloat(l.days) || 1), 0);
           const schoolLate = sLogs.filter(l => l.category === '上學遲到').length;
           const classLate = sLogs.filter(l => l.category === '上課遲到').length;
-          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${fullName}</span><span class="text-gray-600">病假: ${sick} ｜ 事假: ${personal} ｜ 公假: ${official} ｜ 喪假: ${funeral} ｜ 上學遲到: ${schoolLate} ｜ 上課遲到: ${classLate}</span></div>`;
+          return `<div class="py-1.5 flex justify-between items-center text-xs"><span class="font-bold text-gray-800">${fullName}</span><span class="text-gray-600">病假: ${sick}天 ｜ 事假: ${personal}天 ｜ 公假: ${official}天 ｜ 喪假: ${funeral}天 ｜ 上學遲到: ${schoolLate}次 ｜ 上課遲到: ${classLate}次</span></div>`;
         }).join('');
 
         appState.attendanceLogs = [];
@@ -2225,8 +2225,19 @@
     function initAttendanceModule() {
       if (!document.getElementById('attDate').value) document.getElementById('attDate').value = new Date().toISOString().split('T')[0];
       renderAttendanceStudentOptions();
+      onAttCategoryChange();
       renderAttendanceList();
       renderClassAttendanceStats();
+    }
+
+    function onAttCategoryChange() {
+      const category = document.getElementById('attCategorySelect').value;
+      const container = document.getElementById('attDaysContainer');
+      if (category.includes('遲到')) {
+        container.classList.add('hidden');
+      } else {
+        container.classList.remove('hidden');
+      }
     }
 
     function renderAttendanceStudentOptions() {
@@ -2250,6 +2261,7 @@
       const date = document.getElementById('attDate').value;
       const studentId = document.getElementById('attStudentSelect').value;
       const category = document.getElementById('attCategorySelect').value;
+      const days = parseFloat(document.getElementById('attDays').value) || 1;
       const note = document.getElementById('attNote').value.trim();
 
       if (!date || !studentId) { alert('請選取有效的日期與學生！'); return; }
@@ -2257,7 +2269,7 @@
       if (!student) return;
 
       if (!appState.attendanceLogs) appState.attendanceLogs = [];
-      appState.attendanceLogs.unshift({ id: 'att_' + Date.now(), date, studentId: student.id, studentName: `${student.seatNo} ${student.name}`, category, note });
+      appState.attendanceLogs.unshift({ id: 'att_' + Date.now(), date, studentId: student.id, studentName: `${student.seatNo} ${student.name}`, category, days, note });
       saveStateToCloud();
       document.getElementById('attNote').value = '';
       alert(`✅ 已儲存 ${student.name} 的「${category}」紀錄！`);
@@ -2268,7 +2280,10 @@
       const logs = (appState.attendanceLogs || []).filter(l => l.date === currentDate);
       const listContainer = document.getElementById('attendanceList');
       listContainer.innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-3">當天無請假/遲到紀錄。</p>' :
-        logs.map(l => `<div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded"><div><div class="flex items-center gap-2 mb-0.5"><span class="font-bold text-gray-800 text-sm">${l.studentName}</span><span class="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">${l.category}</span></div>${l.note ? `<p class="text-xs text-gray-500">備註：${l.note}</p>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-xs text-gray-400 hover:text-red-500 p-2 sm:p-1 interactive-control">✕</button></div>`).join('');
+        logs.map(l => {
+          const daysText = l.category.includes('遲到') ? '' : ` (${l.days || 1}天)`;
+          return `<div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded"><div><div class="flex items-center gap-2 mb-0.5"><span class="font-bold text-gray-800 text-sm">${l.studentName}</span><span class="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">${l.category}${daysText}</span></div>${l.note ? `<p class="text-xs text-gray-500">備註：${l.note}</p>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-xs text-gray-400 hover:text-red-500 p-2 sm:p-1 interactive-control">✕</button></div>`;
+        }).join('');
     }
 
     function deleteAttendanceRecord(id) {
@@ -2283,10 +2298,19 @@
       const tbody = document.getElementById('classAttendanceStatsTable');
       if (students.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="p-4 text-center text-gray-400 text-sm">尚未建立學生資料。</td></tr>'; return; }
 
+      const calcTotal = (sLogs, cat) => sLogs.filter(l => l.category === cat).reduce((sum, l) => sum + (parseFloat(l.days) || 1), 0);
+
       tbody.innerHTML = students.map(s => {
         const fullName = `${s.seatNo} ${s.name}`;
         const studentLogs = logs.filter(l => l.studentId === s.id || l.studentName === fullName);
-        const c = { 病假: studentLogs.filter(l => l.category === '病假').length, 事假: studentLogs.filter(l => l.category === '事假').length, 公假: studentLogs.filter(l => l.category === '公假').length, 喪假: studentLogs.filter(l => l.category === '喪假').length, 上學遲到: studentLogs.filter(l => l.category === '上學遲到').length, 上課遲到: studentLogs.filter(l => l.category === '上課遲到').length };
+        const c = { 
+          病假: calcTotal(studentLogs, '病假'), 
+          事假: calcTotal(studentLogs, '事假'), 
+          公假: calcTotal(studentLogs, '公假'), 
+          喪假: calcTotal(studentLogs, '喪假'), 
+          上學遲到: studentLogs.filter(l => l.category === '上學遲到').length, 
+          上課遲到: studentLogs.filter(l => l.category === '上課遲到').length 
+        };
         return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800 whitespace-nowrap">${fullName}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
       }).join('');
     }
@@ -2304,12 +2328,22 @@
       
       const categories = ['病假', '事假', '公假', '喪假', '上學遲到', '上課遲到'];
       document.getElementById('individualCategoryCards').innerHTML = categories.map(cat => {
-        const count = studentLogs.filter(l => l.category === cat).length;
-        return `<div class="p-3 rounded-lg border text-center ${count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100 opacity-60'}"><span class="text-xs text-gray-500 font-bold block">${cat}</span><span class="text-xl font-extrabold ${count > 0 ? 'text-amber-800' : 'text-gray-400'}">${count} <span class="text-xs font-normal">次</span></span></div>`;
+        let count = 0;
+        let unit = '次';
+        if (cat.includes('遲到')) {
+          count = studentLogs.filter(l => l.category === cat).length;
+        } else {
+          count = studentLogs.filter(l => l.category === cat).reduce((sum, l) => sum + (parseFloat(l.days) || 1), 0);
+          unit = '天';
+        }
+        return `<div class="p-3 rounded-lg border text-center ${count > 0 ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-100 opacity-60'}"><span class="text-xs text-gray-500 font-bold block">${cat}</span><span class="text-xl font-extrabold ${count > 0 ? 'text-amber-800' : 'text-gray-400'}">${count} <span class="text-xs font-normal">${unit}</span></span></div>`;
       }).join('');
 
       document.getElementById('individualAttHistoryList').innerHTML = studentLogs.length === 0 ? '<p class="text-gray-400 text-xs py-3">該生尚無任何請假與遲到紀錄。</p>' :
-        studentLogs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span><span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}</span>${l.note ? `<span class="text-gray-600">${l.note}</span>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500 interactive-control p-1">✕</button></div>`).join('');
+        studentLogs.map(l => {
+          const daysText = l.category.includes('遲到') ? '' : ` (${l.days || 1}天)`;
+          return `<div class="py-2 flex justify-between items-center text-xs"><div><span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span><span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}${daysText}</span>${l.note ? `<span class="text-gray-600">${l.note}</span>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500 interactive-control p-1">✕</button></div>`;
+        }).join('');
     }
 
     // ----------------- 班級座位表邏輯 (升級版) -----------------
@@ -2328,7 +2362,6 @@
       if (savedData) {
         document.getElementById('seatRows').value = savedData.rows;
         document.getElementById('seatCols').value = savedData.cols;
-        // 深拷貝
         appState.seatingMap = savedData.map ? JSON.parse(JSON.stringify(savedData.map)) : {};
       } else {
         appState.seatingMap = {};
@@ -2757,7 +2790,7 @@
       renderSchedule();
     }
 
-    // ----------------- ✨ 全新：專刊與繕寫優良紀錄邏輯 -----------------
+    // ----------------- 專刊與繕寫優良紀錄邏輯 -----------------
     function initPublicationModule() {
       renderPubHwStudentCheckboxes();
       renderPubTags();

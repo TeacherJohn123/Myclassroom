@@ -99,7 +99,6 @@
             <div class="font-bold flex items-center gap-2 mb-2 text-xl">
               <span>📌 當日行事曆事件：</span>
             </div>
-            <!-- 修改：加入核取方塊的間距設定 -->
             <ul id="todayEventsList" class="space-y-2 text-amber-900 font-extrabold text-2xl"></ul>
           </div>
 
@@ -1343,7 +1342,7 @@
       }
     }
 
-    // ----------------- 未完成工作清單邏輯 -----------------
+    // ----------------- 未完成工作清單邏輯 (包含防呆修復) -----------------
     function initTodoModule() {
       document.getElementById('todoDueDate').value = new Date().toISOString().split('T')[0];
       renderTodoStudentCheckboxes();
@@ -1425,7 +1424,9 @@
       if (!student) return;
 
       document.getElementById('indTodoStudentName').innerText = `${student.seatNo} ${student.name}`;
-      const studentTasks = tasks.filter(t => t.pendingStudentIds.includes(studentId));
+      
+      // 【修正】：加入 (t.pendingStudentIds || []) 防護，避免陣列消失導致崩潰
+      const studentTasks = tasks.filter(t => (t.pendingStudentIds || []).includes(studentId));
       let totalOverdueDays = 0;
       const listContainer = document.getElementById('indTodoList');
 
@@ -1450,7 +1451,9 @@
       if (tasks.length === 0) { container.innerHTML = '<p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>'; return; }
 
       container.innerHTML = tasks.map(t => {
-        const pendingStudents = students.filter(s => t.pendingStudentIds.includes(s.id));
+        // 【修正】：加入 safePendingIds 防護
+        const safePendingIds = t.pendingStudentIds || [];
+        const pendingStudents = students.filter(s => safePendingIds.includes(s.id));
         return `<div class="p-4 bg-gray-50 border rounded-xl space-y-3 shadow-sm"><div class="flex justify-between items-start border-b pb-2"><div><span class="font-extrabold text-base text-indigo-900">${t.title}</span>${t.note ? `<span class="text-xs text-gray-500 ml-2 bg-gray-200 px-2 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-xs text-gray-400 font-mono mt-0.5">截止日期：${t.dueDate}</div></div><button onclick="deleteTodoTask('${t.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">刪除項目 ✕</button></div><div><span class="text-xs font-bold text-gray-600 mb-2 block">未繳交學生名單 (${pendingStudents.length} 人)：</span>${pendingStudents.length === 0 ? '<p class="text-xs text-emerald-600 font-bold">全班已全數繳交完成！🎉</p>' : `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${pendingStudents.map(s => { const overdueDays = calculateOverdueDays(s.id, t.dueDate); return `<div class="p-2 bg-white border rounded-lg flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}</div><button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div>`; }).join('')}</div>`}</div></div>`;
       }).join('');
     }
@@ -1458,7 +1461,8 @@
     function markStudentSubmitted(taskId, studentId) {
       const task = (appState.todoTasks || []).find(t => t.id === taskId);
       if (task) {
-        task.pendingStudentIds = task.pendingStudentIds.filter(id => id !== studentId);
+        // 【修正】：確保重新寫入時陣列存在
+        task.pendingStudentIds = (task.pendingStudentIds || []).filter(id => id !== studentId);
         saveStateToCloud();
       }
     }

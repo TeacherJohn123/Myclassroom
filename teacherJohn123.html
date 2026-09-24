@@ -25,7 +25,7 @@
 
     /* 📢 專屬公告模式樣式 (?mode=notice) */
     body.notice-readonly .interactive-control,
-    body.notice-readonly button:not(.nav-btn),
+    body.notice-readonly button:not(.nav-btn):not(.mobile-menu-btn),
     body.notice-readonly input,
     body.notice-readonly textarea,
     body.notice-readonly select,
@@ -39,8 +39,8 @@
     /* 🖨️ 專屬列印與匯出 PDF 樣式 */
     @media print {
       @page { size: landscape; margin: 10mm; }
-      body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      aside, nav, .interactive-control, .nav-btn { display: none !important; }
+      body { background-color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; display: block !important; }
+      aside, nav, header, .interactive-control, .nav-btn, #sidebarOverlay { display: none !important; }
       main { padding: 0 !important; margin: 0 !important; width: 100% !important; overflow: visible !important; }
       .tab-content { display: none !important; }
       #tab-schedule { display: block !important; } /* 強制只印出課表 */
@@ -52,18 +52,36 @@
     }
   </style>
 </head>
-<body class="bg-gray-100 min-h-screen text-gray-800 flex">
+<body class="bg-gray-100 min-h-screen text-gray-800 flex flex-col md:flex-row">
 
-  <!-- 左側導覽列 -->
-  <aside class="w-64 bg-slate-800 text-white min-h-screen p-4 flex flex-col justify-between shrink-0">
+  <!-- 手機版上方導覽列 (僅在小螢幕顯示) -->
+  <header class="md:hidden bg-slate-800 text-white p-3 flex justify-between items-center shadow-md z-30 relative shrink-0">
+    <h1 class="text-lg font-bold flex items-center gap-2">🏫 班級公告欄</h1>
+    <button onclick="toggleSidebar()" class="mobile-menu-btn p-2 bg-slate-700 hover:bg-slate-600 rounded-lg focus:outline-none transition">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+      </svg>
+    </button>
+  </header>
+
+  <!-- 側邊欄遮罩 (手機版展開時顯示) -->
+  <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden transition-opacity"></div>
+
+  <!-- 左側導覽列 (支援手機版側滑抽屜) -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-800 text-white min-h-screen p-4 flex flex-col justify-between shrink-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out">
     <div>
-      <h1 class="text-xl font-bold mb-2 flex items-center gap-2">🏫 班級公告欄</h1>
+      <div class="flex justify-between items-center mb-2">
+        <h1 class="text-xl font-bold hidden md:flex items-center gap-2">🏫 班級公告欄</h1>
+        <button onclick="toggleSidebar()" class="mobile-menu-btn md:hidden text-slate-400 hover:text-white p-1">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+      </div>
       
       <div class="notice-view-tag hidden bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs px-2.5 py-1 rounded mb-4 font-bold">
         📢 每日聯絡簿與行事曆公告
       </div>
 
-      <nav class="space-y-2" id="sidebar-nav">
+      <nav class="space-y-2 mt-4 md:mt-0" id="sidebar-nav">
         <button onclick="switchTab('contactbook')" id="btn-contactbook" class="nav-btn w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2">📖 每日聯絡簿</button>
         <button onclick="switchTab('attendance')" id="btn-attendance" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">⏱️ 請假遲到</button>
         <button onclick="switchTab('todo')" id="btn-todo" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">📝 未完成工作</button>
@@ -75,40 +93,40 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.3 (完整最終版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v5.4 (手機版優化)</div>
   </aside>
 
   <!-- 主內容區 -->
-  <main class="flex-1 p-6 overflow-y-auto">
+  <main class="flex-1 p-3 md:p-6 overflow-y-auto w-full overflow-x-hidden">
     
     <!-- 分頁 1：每日聯絡簿 -->
-    <section id="tab-contactbook" class="tab-content active space-y-6">
-      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📖 每日聯絡簿系統</h2>
+    <section id="tab-contactbook" class="tab-content active space-y-4 md:space-y-6">
+      <h2 class="text-xl md:text-2xl font-bold border-b pb-2 text-slate-800">📖 每日聯絡簿系統</h2>
       
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-        <div class="flex flex-wrap gap-4 items-center mb-6 interactive-control">
-          <label class="font-bold text-gray-700 text-lg">日期選擇：</label>
-          <input type="date" id="cbDate" onchange="onDateChange()" class="border rounded-lg p-2.5 text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
-          <button onclick="setTodayDate()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-base font-bold transition">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-center mb-4 md:mb-6 interactive-control">
+          <label class="font-bold text-gray-700 text-base md:text-lg whitespace-nowrap">日期選擇：</label>
+          <input type="date" id="cbDate" onchange="onDateChange()" class="w-full sm:w-auto border rounded-lg p-2 md:p-2.5 text-base md:text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50" />
+          <button onclick="setTodayDate()" class="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 md:py-2.5 rounded-lg text-sm md:text-base font-bold transition">
             📅 套用今天日期
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div id="todayEventsBox" class="md:col-span-2 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden">
-            <div class="font-bold flex items-center gap-2 mb-2 text-xl">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4 md:mb-6">
+          <div id="todayEventsBox" class="lg:col-span-2 p-3 md:p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden">
+            <div class="font-bold flex items-center gap-2 mb-2 text-lg md:text-xl">
               <span>📌 當日行事曆事件：</span>
             </div>
-            <ul id="todayEventsList" class="space-y-2 text-amber-900 font-extrabold text-2xl"></ul>
+            <ul id="todayEventsList" class="space-y-2 text-amber-900 font-extrabold text-xl md:text-2xl"></ul>
           </div>
 
-          <div class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
+          <div class="lg:col-span-1 p-3 md:p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-2">
-                <span class="font-bold text-lg flex items-center gap-1">🧹 值日生：</span>
-                <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition interactive-control">⚙️ 安排值日生</button>
+                <span class="font-bold text-base md:text-lg flex items-center gap-1">🧹 值日生：</span>
+                <button onclick="openDutyPicker()" class="text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded transition interactive-control whitespace-nowrap">⚙️ 安排</button>
               </div>
-              <div id="dutyStudentsDisplay" class="text-2xl font-extrabold text-sky-900 mb-3 flex flex-wrap gap-2">
+              <div id="dutyStudentsDisplay" class="text-lg md:text-2xl font-extrabold text-sky-900 mb-3 flex flex-wrap gap-2">
                 <span class="text-gray-400 text-sm font-normal">未安排值日生</span>
               </div>
             </div>
@@ -119,24 +137,24 @@
           </div>
         </div>
 
-        <div class="mb-6">
-          <label class="block font-bold text-gray-800 text-xl mb-2">聯絡事項與回家作業：</label>
-          <textarea id="cbContent" oninput="autoExpandTextarea(this)" class="auto-expand w-full border-2 border-gray-300 rounded-xl p-4 focus:ring-4 focus:ring-blue-400 outline-none text-5xl-custom font-bold text-gray-900" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
-          <div id="cbContentReadOnlyDisplay" class="hidden text-5xl-custom font-bold text-gray-900 whitespace-pre-wrap p-4 bg-gray-50 border rounded-xl"></div>
+        <div class="mb-4 md:mb-6">
+          <label class="block font-bold text-gray-800 text-lg md:text-xl mb-2">聯絡事項與回家作業：</label>
+          <textarea id="cbContent" oninput="autoExpandTextarea(this)" class="auto-expand w-full border-2 border-gray-300 rounded-xl p-3 md:p-4 focus:ring-4 focus:ring-blue-400 outline-none text-2xl sm:text-5xl-custom font-bold text-gray-900" placeholder="點擊帶入預設範本，或直接在此輸入..."></textarea>
+          <div id="cbContentReadOnlyDisplay" class="hidden text-2xl sm:text-5xl-custom font-bold text-gray-900 whitespace-pre-wrap p-3 md:p-4 bg-gray-50 border rounded-xl"></div>
         </div>
 
-        <div class="flex justify-between items-center pt-2 interactive-control">
-          <button onclick="insertTemplate()" class="bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-3 rounded-xl text-base font-bold transition">
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-3 pt-2 interactive-control">
+          <button onclick="insertTemplate()" class="w-full sm:w-auto bg-gray-100 hover:bg-gray-200 text-gray-800 px-5 py-2.5 md:py-3 rounded-xl text-sm md:text-base font-bold transition">
             📋 帶入預設範本
           </button>
-          <button onclick="saveContactBook()" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-xl text-lg font-bold shadow-md transition">
+          <button onclick="saveContactBook()" class="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white px-8 py-2.5 md:py-3 rounded-xl text-base md:text-lg font-bold shadow-md transition">
             💾 儲存今日聯絡簿
           </button>
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 interactive-control">
-        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">🗂️ 歷程紀錄選單</h3>
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 interactive-control">
+        <h3 class="font-bold text-base md:text-lg mb-3 md:mb-4 text-gray-800 flex items-center gap-2">🗂️ 歷程紀錄選單</h3>
         <div id="cbHistoryList" class="divide-y divide-gray-100">
           <p class="text-gray-400 text-sm">目前沒有歷史紀錄</p>
         </div>
@@ -144,12 +162,12 @@
     </section>
 
     <!-- 分頁 2：請假遲到 -->
-    <section id="tab-attendance" class="tab-content space-y-6">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-2xl font-bold text-slate-800">⏱️ 請假遲到管理與統計</h2>
+    <section id="tab-attendance" class="tab-content space-y-4 md:space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b pb-2 gap-3">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">⏱️ 請假遲到管理與統計</h2>
         <div class="flex items-center gap-2 interactive-control">
-          <button onclick="triggerSemesterReset('attendance')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow transition flex items-center gap-1">
-            🏁 學期結算 (出缺勤歸零)
+          <button onclick="triggerSemesterReset('attendance')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 md:px-4 py-2 rounded-lg text-xs shadow transition flex items-center gap-1">
+            🏁 學期結算歸零
           </button>
           <div id="undoAttendanceContainer" class="hidden">
             <button onclick="undoSemesterReset('attendance')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg text-xs shadow transition">
@@ -159,8 +177,8 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📝 登記出缺勤 / 遲到</h3>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">日期：</label>
@@ -190,7 +208,7 @@
           <button onclick="saveAttendanceRecord()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3 rounded-lg text-sm shadow transition">💾 儲存出缺勤紀錄</button>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <div class="flex items-center justify-between">
             <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 當日紀錄總覽</h3>
             <button onclick="renderAttendanceList()" class="text-xs text-blue-600 hover:underline interactive-control">重新整理</button>
@@ -201,10 +219,10 @@
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📊 全班請假狀況統計大表</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-gray-600 border-collapse">
+        <div class="overflow-x-auto pb-2">
+          <table class="w-full min-w-[600px] text-left text-sm text-gray-600 border-collapse">
             <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
               <tr>
                 <th class="p-3">座號 / 姓名</th>
@@ -225,7 +243,7 @@
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🔍 個別學生請假統計與歷程查詢</h3>
         <div class="interactive-control">
           <label class="block text-xs font-bold text-gray-600 mb-1">選擇要查詢的學生：</label>
@@ -245,10 +263,10 @@
     </section>
 
     <!-- 分頁 3：未完成工作 -->
-    <section id="tab-todo" class="tab-content space-y-6">
-      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">📝 未完成工作清單追蹤</h2>
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
+    <section id="tab-todo" class="tab-content space-y-4 md:space-y-6">
+      <h2 class="text-xl md:text-2xl font-bold border-b pb-2 text-slate-800">📝 未完成工作清單追蹤</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div class="lg:col-span-1 bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 發起未完成作業/回條</h3>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">預設標籤快捷點選：</label>
@@ -284,8 +302,8 @@
           <button onclick="createTodoTask()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-lg text-sm shadow transition">✨ 建立未完成追蹤項目</button>
         </div>
 
-        <div class="lg:col-span-2 space-y-6">
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <div class="lg:col-span-2 space-y-4 md:space-y-6">
+          <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
             <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">🔍 個別學生未完成與逾期天數統計</h3>
             <div class="interactive-control">
               <label class="block text-xs font-bold text-gray-600 mb-1">選擇要查詢的學生：</label>
@@ -309,7 +327,7 @@
             <p id="individualTodoPlaceholder" class="text-gray-400 text-sm py-2">請從上方選取學生查詢各項未繳項目與逾期天數。</p>
           </div>
 
-          <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+          <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
             <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 全班追蹤中未完成項目</h3>
             <div id="todoTasksContainer" class="space-y-4 max-h-[450px] overflow-y-auto pr-1">
               <p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>
@@ -320,42 +338,42 @@
     </section>
 
     <!-- 分頁 4：榮譽點數 -->
-    <section id="tab-points" class="tab-content space-y-6">
-      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
+    <section id="tab-points" class="tab-content space-y-4 md:space-y-6">
+      <h2 class="text-xl md:text-2xl font-bold border-b pb-2 text-slate-800">🏆 榮譽點數管理</h2>
       
-      <div class="bg-sky-50 border-2 border-sky-200 p-6 rounded-2xl shadow-sm space-y-3 interactive-control">
+      <div class="bg-sky-50 border-2 border-sky-200 p-4 md:p-6 rounded-2xl shadow-sm space-y-3 interactive-control">
         <h3 class="text-lg font-extrabold text-sky-900 flex items-center gap-2">✨ 點數兌換抵銷當值日生</h3>
         <p class="text-xs text-sky-700 font-bold">因遲到、違規事項或走廊奔跑被罰當值日生的學生，可使用累積點數兌換抵銷值日生天數！</p>
-        <div class="flex flex-wrap gap-3 items-center">
-          <select id="redeemStudentSelect" class="border rounded-lg p-2 text-sm bg-white font-medium outline-none flex-1 min-w-[200px]">
+        <div class="flex flex-col sm:flex-row flex-wrap gap-3 sm:items-center">
+          <select id="redeemStudentSelect" class="w-full sm:w-auto border rounded-lg p-2 text-sm bg-white font-medium outline-none flex-1 min-w-[200px]">
             <option value="">-- 請選擇學生 --</option>
           </select>
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1.5 justify-between w-full sm:w-auto">
             <span class="text-xs font-bold text-gray-700">扣除點數：</span>
             <input type="number" id="redeemCost" value="30" min="1" class="border rounded-lg p-2 text-sm bg-white font-bold w-20 text-center outline-none" />
           </div>
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center gap-1.5 justify-between w-full sm:w-auto">
             <span class="text-xs font-bold text-gray-700">抵銷天數 (n 天)：</span>
             <input type="number" id="redeemDays" value="1" min="1" class="border rounded-lg p-2 text-sm bg-white font-bold w-20 text-center outline-none" />
           </div>
-          <button onclick="redeemDutyExemption()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換抵銷天數</button>
+          <button onclick="redeemDutyExemption()" class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2.5 sm:py-2 rounded-lg text-sm shadow transition">🎫 扣點兌換抵銷天數</button>
         </div>
       </div>
 
-      <div class="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 text-white p-6 rounded-2xl shadow-md flex flex-wrap items-center justify-between gap-4">
+      <div class="bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-800 text-white p-4 md:p-6 rounded-2xl shadow-md flex flex-col sm:flex-row flex-wrap items-start sm:items-center justify-between gap-4">
         <div>
           <span class="text-xs font-bold text-indigo-200 tracking-wider uppercase">Class Honor Points</span>
-          <h3 class="text-2xl font-extrabold flex items-center gap-2 mt-0.5">🌟 全班榮譽累積分數</h3>
+          <h3 class="text-xl md:text-2xl font-extrabold flex items-center gap-2 mt-0.5">🌟 全班榮譽累積分數</h3>
           <p class="text-xs text-indigo-300 mt-1">累積全班努力表現，可解鎖全班專屬獎勵！</p>
         </div>
-        <div class="bg-white/10 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20 text-center shrink-0">
+        <div class="w-full sm:w-auto bg-white/10 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20 text-center shrink-0">
           <span class="text-xs text-indigo-200 font-bold block">當前全班總分</span>
           <span id="classTotalPointsDisplay" class="text-4xl font-black text-amber-300">0 <span class="text-sm font-bold text-white">分</span></span>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-5 interactive-control">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-5 interactive-control">
           <div class="space-y-3 pb-4 border-b">
             <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">👤 個人加分紀錄</h3>
             <div>
@@ -383,7 +401,7 @@
                 <button onclick="applyPointChange(3)" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-sm transition shadow">+3 分</button>
               </div>
               <div class="flex gap-2 pt-1">
-                <input type="number" id="customPointInput" value="1" min="1" class="border rounded-lg p-2 text-sm font-bold w-24 text-center outline-none bg-gray-50" placeholder="分數" />
+                <input type="number" id="customPointInput" value="1" min="1" class="border rounded-lg p-2 text-sm font-bold w-20 sm:w-24 text-center outline-none bg-gray-50" placeholder="分數" />
                 <button onclick="applyCustomPoint(1)" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 rounded-lg text-xs transition shadow">✨ 自訂加分</button>
                 <button onclick="applyCustomPoint(-1)" class="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 rounded-lg text-xs transition shadow">📉 自訂減分</button>
               </div>
@@ -420,7 +438,7 @@
           </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <div class="flex items-center justify-between border-b pb-2">
             <h3 class="font-bold text-lg text-gray-800">🎁 兌獎設定與兌換</h3>
             <div class="flex gap-1 bg-gray-100 p-1 rounded-lg text-xs font-bold">
@@ -459,8 +477,8 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
           <div class="flex items-center justify-between">
             <h3 class="font-bold text-lg text-gray-800">🔍 個人加分紀錄查詢</h3>
           </div>
@@ -475,7 +493,7 @@
           </div>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-3">
           <div class="flex items-center justify-between border-b pb-2">
             <h3 class="font-bold text-lg text-gray-800">📜 全班積分與兌獎歷程</h3>
             <button onclick="clearClassPointHistory()" class="text-xs text-red-500 hover:text-red-700 font-bold transition interactive-control">🗑️ 清除歷程</button>
@@ -486,7 +504,7 @@
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 class="font-bold text-lg mb-4 text-gray-800">📊 學生目前個人累積點數</h3>
         <div id="pointRosterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2">
           <p class="text-gray-400 text-sm col-span-full">尚未建立學生資料。</p>
@@ -495,12 +513,12 @@
     </section>
 
     <!-- 分頁 5：走廊奔跑 -->
-    <section id="tab-corridor" class="tab-content space-y-6">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-2xl font-bold text-slate-800">🏃 走廊奔跑登記管理</h2>
+    <section id="tab-corridor" class="tab-content space-y-4 md:space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b pb-2 gap-3">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">🏃 走廊奔跑登記管理</h2>
         <div class="flex items-center gap-2 interactive-control">
-          <button onclick="triggerSemesterReset('corridor')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-lg text-xs shadow transition flex items-center gap-1">
-            🏁 學期結算 (奔跑紀錄歸零)
+          <button onclick="triggerSemesterReset('corridor')" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 md:px-4 py-2 rounded-lg text-xs shadow transition flex items-center gap-1">
+            🏁 學期結算歸零
           </button>
           <div id="undoCorridorContainer" class="hidden">
             <button onclick="undoSemesterReset('corridor')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold px-3 py-2 rounded-lg text-xs shadow transition">
@@ -510,8 +528,8 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
           <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">➕ 登記走廊奔跑違規</h3>
           <div>
             <label class="block text-xs font-bold text-gray-600 mb-1">選擇週次：</label>
@@ -536,7 +554,7 @@
           <button onclick="saveCorridorRecord()" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-lg text-sm shadow transition">💾 儲存走廊奔跑紀錄</button>
         </div>
 
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+        <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
           <div class="flex items-center justify-between">
             <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📋 走廊奔跑違規紀錄清單</h3>
             <button onclick="renderCorridorList()" class="text-xs text-blue-600 hover:underline interactive-control">重新整理</button>
@@ -547,10 +565,10 @@
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📊 學生走廊奔跑累積次數統計表</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-gray-600 border-collapse">
+        <div class="overflow-x-auto pb-2">
+          <table class="w-full min-w-[300px] text-left text-sm text-gray-600 border-collapse">
             <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-bold border-b border-slate-200">
               <tr>
                 <th class="p-3">座號 / 姓名</th>
@@ -568,13 +586,13 @@
     </section>
 
     <!-- 分頁 6：班級行事曆 -->
-    <section id="tab-calendar" class="tab-content space-y-6">
+    <section id="tab-calendar" class="tab-content space-y-4 md:space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-2xl font-bold text-slate-800">📅 班級行事曆管理</h2>
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">📅 班級行事曆管理</h2>
         <span id="eventCount" class="text-sm bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full">共 0 筆事件</span>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📥 批次匯入 / 新增行事曆</h3>
         <p class="text-xs text-gray-500">提示：請輸入「日期 行事內容」，每行一筆（例如：`2026-08-04 班會課與健檢`）。</p>
         <textarea id="batchCalendarInput" rows="5" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="2026-08-04 開學大掃除&#10;2026-08-05 第一單元小考"></textarea>
@@ -584,7 +602,7 @@
         </div>
       </div>
 
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 class="font-bold text-lg mb-4 text-gray-800">📋 所有行程清單<span class="hide-in-notice">（可各別修改日期或事件內容）</span></h3>
         <div id="calendarList" class="divide-y divide-gray-100">
           <p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>
@@ -593,18 +611,18 @@
     </section>
 
     <!-- 分頁 7：班級課表 -->
-    <section id="tab-schedule" class="tab-content space-y-6">
-      <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-2xl font-bold text-slate-800">🏫 班級日課表</h2>
-        <div class="flex gap-2 interactive-control">
-          <button onclick="printSchedule()" class="bg-sky-600 hover:bg-sky-700 text-white px-4 py-1.5 rounded-lg text-xs shadow transition font-bold flex items-center gap-1">
+    <section id="tab-schedule" class="tab-content space-y-4 md:space-y-6">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b pb-2 gap-3">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">🏫 班級日課表</h2>
+        <div class="flex flex-wrap gap-2 interactive-control">
+          <button onclick="printSchedule()" class="bg-sky-600 hover:bg-sky-700 text-white px-3 md:px-4 py-1.5 rounded-lg text-xs shadow transition font-bold flex items-center gap-1">
             📄 列印 / 匯出 PDF
           </button>
           <button onclick="toggleScheduleAlertEdit()" class="bg-rose-100 text-rose-700 hover:bg-rose-200 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1">
             🚨 預約調課設定
           </button>
-          <button onclick="saveSchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-1.5 rounded-lg text-xs shadow transition font-bold">
-            💾 儲存課表與設定
+          <button onclick="saveSchedule()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 md:px-4 py-1.5 rounded-lg text-xs shadow transition font-bold">
+            💾 儲存課表
           </button>
         </div>
       </div>
@@ -625,10 +643,10 @@
         <div class="flex justify-between items-center mb-2">
           <label class="block text-sm font-bold text-rose-800">預約未來調課提醒：</label>
         </div>
-        <div class="flex gap-2 mb-4">
-          <input type="date" id="schAlertDate" class="border-rose-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-900">
-          <input type="text" id="schAlertInput" class="flex-1 border-rose-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" placeholder="例如：今日第三節社會與第五節自然互調">
-          <button onclick="addScheduleAlert()" class="bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow whitespace-nowrap">➕ 新增預約</button>
+        <div class="flex flex-col sm:flex-row gap-2 mb-4">
+          <input type="date" id="schAlertDate" class="w-full sm:w-auto border-rose-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500 font-bold text-rose-900">
+          <input type="text" id="schAlertInput" class="w-full sm:flex-1 border-rose-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-rose-500" placeholder="例如：今日第三節社會與第五節自然互調">
+          <button onclick="addScheduleAlert()" class="w-full sm:w-auto bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg text-sm font-bold transition shadow whitespace-nowrap">➕ 新增預約</button>
         </div>
         <div class="border-t border-rose-200 pt-3">
           <h4 class="text-xs font-bold text-rose-700 mb-2">📋 已預約的調課清單：</h4>
@@ -637,13 +655,13 @@
       </div>
 
       <!-- 課表標題與基本資料 -->
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 text-center space-y-3">
-        <div class="flex justify-center items-center gap-2 text-xl font-bold text-gray-800">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 text-center space-y-3 overflow-x-auto pb-2">
+        <div class="flex justify-center items-center gap-2 text-xl font-bold text-gray-800 min-w-[400px]">
           <input type="text" id="schSchoolName" class="text-center border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-auto" placeholder="學校名稱" value="高雄市鳳山區文華國民小學">
           <input type="text" id="schYear" class="text-center border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-16" placeholder="學年度" value="115">
           <span>學年度日課表</span>
         </div>
-        <div class="flex justify-center items-center gap-4 text-lg font-bold text-gray-700">
+        <div class="flex justify-center items-center gap-4 text-lg font-bold text-gray-700 min-w-[400px]">
           <input type="text" id="schClassName" class="text-center border-b-2 border-transparent hover:border-gray-300 focus:border-blue-500 outline-none w-32" placeholder="班級名稱" value="五年一班">
           <div class="flex items-center gap-1">
             <span>導師：</span>
@@ -653,7 +671,7 @@
       </div>
 
       <!-- 上方：課表網格 (全寬) -->
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
+      <div class="bg-white p-2 md:p-4 rounded-xl shadow-sm border border-gray-200 overflow-x-auto pb-2">
         <table class="w-full min-w-[750px] border-collapse text-center text-sm h-full">
           <thead>
             <tr class="bg-slate-100 text-slate-700 font-extrabold border-b-2 border-slate-300">
@@ -683,14 +701,14 @@
       </div>
 
       <!-- 下方：標籤與科任教師設定 (兩欄並排) -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 interactive-control" id="schSidebarTools">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 interactive-control" id="schSidebarTools">
         <!-- 科目標籤設定 -->
         <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200" id="schTagsContainerBlock">
           <h3 class="font-bold text-gray-800 border-b pb-2 mb-3">🏷️ 自訂科目標籤</h3>
           <div id="schTagsContainer" class="flex flex-wrap gap-1.5 mb-3"></div>
           <div class="flex gap-1">
             <input type="text" id="newSchTagInput" class="flex-1 border rounded p-1.5 text-xs outline-none" placeholder="新增科目 (如: 電腦)">
-            <button onclick="addScheduleTag()" class="bg-slate-700 hover:bg-slate-800 text-white px-2 rounded text-xs font-bold">新增</button>
+            <button onclick="addScheduleTag()" class="bg-slate-700 hover:bg-slate-800 text-white px-3 rounded text-xs font-bold">新增</button>
           </div>
         </div>
 
@@ -701,7 +719,7 @@
           <div class="space-y-1">
             <input type="text" id="newTeacherSubj" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="科目 (如: 社會)">
             <input type="text" id="newTeacherName" class="w-full border rounded p-1.5 text-xs outline-none" placeholder="老師姓名 (如: 王大明老師)">
-            <button onclick="addScheduleTeacher()" class="w-full bg-slate-700 hover:bg-slate-800 text-white py-1.5 rounded text-xs font-bold mt-1">新增科任教師</button>
+            <button onclick="addScheduleTeacher()" class="w-full bg-slate-700 hover:bg-slate-800 text-white py-2 rounded text-xs font-bold mt-1">新增科任教師</button>
           </div>
         </div>
       </div>
@@ -709,54 +727,54 @@
     </section>
 
     <!-- 分頁 8：座位分配 (升級版) -->
-    <section id="tab-seating" class="tab-content space-y-6">
-      <div class="flex flex-col md:flex-row justify-between md:items-center border-b pb-3 gap-3">
-        <h2 class="text-2xl font-bold text-slate-800">🪑 座位分配</h2>
+    <section id="tab-seating" class="tab-content space-y-4 md:space-y-6">
+      <div class="flex flex-col xl:flex-row justify-between xl:items-center border-b pb-3 gap-3">
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">🪑 座位分配</h2>
         
-        <div class="flex flex-wrap items-center gap-3 interactive-control">
+        <div class="flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 interactive-control">
           <!-- 標籤選擇區 -->
-          <div class="flex items-center gap-2">
-            <select id="seatingTagSelect" onchange="changeSeatingTag(this.value)" class="border border-indigo-200 rounded-lg p-1.5 text-sm font-bold bg-indigo-50 text-indigo-900 outline-none"></select>
-            <button onclick="editSeatingTags()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold transition">⚙️ 編輯標籤</button>
+          <div class="flex items-center gap-2 w-full sm:w-auto">
+            <select id="seatingTagSelect" onchange="changeSeatingTag(this.value)" class="flex-1 sm:flex-none border border-indigo-200 rounded-lg p-1.5 text-sm font-bold bg-indigo-50 text-indigo-900 outline-none"></select>
+            <button onclick="editSeatingTags()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap">⚙️ 編輯標籤</button>
           </div>
           
-          <div class="hidden md:block h-6 w-px bg-gray-300 mx-1"></div>
+          <div class="hidden sm:block h-6 w-px bg-gray-300 mx-1"></div>
           
           <!-- 網格與儲存區 -->
-          <div class="flex items-center gap-1.5 text-sm font-bold">
+          <div class="flex flex-wrap items-center gap-1.5 text-sm font-bold w-full sm:w-auto">
             <span class="text-gray-600">行：</span>
             <input type="number" id="seatRows" value="5" min="1" max="15" class="w-12 border rounded p-1 text-center font-bold outline-none" />
             <span class="text-gray-600">列：</span>
             <input type="number" id="seatCols" value="6" min="1" max="15" class="w-12 border rounded p-1 text-center font-bold outline-none" />
             <button onclick="generateSeatingGrid()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-xs shadow transition font-bold whitespace-nowrap">🔄 產生網格</button>
-            <button onclick="randomizeRemainingSeats()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs shadow transition font-bold whitespace-nowrap">🎲 隨機填滿空位</button>
+            <button onclick="randomizeRemainingSeats()" class="bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs shadow transition font-bold whitespace-nowrap">🎲 隨機空位</button>
           </div>
-          <button onclick="saveCurrentSeating()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs shadow transition font-bold whitespace-nowrap">💾 儲存座位表</button>
+          <button onclick="saveCurrentSeating()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg text-xs shadow transition font-bold whitespace-nowrap">💾 儲存座位表</button>
         </div>
       </div>
       
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
         <div class="mb-4 text-xs text-gray-500 bg-gray-50 p-3 rounded-lg border">
           <ul class="list-disc list-inside space-y-1">
             <li>請點擊上方「產生網格」來調整座位表的行、列大小。</li>
             <li>點擊各格子的下拉選單即可安排學生。若選擇已有座位的學生，系統會自動互換或移位。</li>
             <li>選取 <strong class="text-gray-700">「❌ (走道/不排)」</strong> 可以將該座位設為<span class="bg-gray-200 px-1 rounded">灰色</span>的無人走道，方便排成非對稱或遊覽車陣型。</li>
-            <li>點擊上方 <strong class="text-amber-600">「🎲 隨機填滿空位」</strong> 按鈕，系統會自動將還未入座的學生隨機分配至剩下的空位中。</li>
+            <li>點擊上方 <strong class="text-amber-600">「🎲 隨機空位」</strong> 按鈕，系統會自動將還未入座的學生隨機分配至剩下的空位中。</li>
           </ul>
         </div>
-        <div id="seatingChartContainer" class="overflow-x-auto p-4 bg-slate-50 border rounded-xl">
+        <div id="seatingChartContainer" class="overflow-x-auto p-2 md:p-4 bg-slate-50 border rounded-xl pb-4">
           <p class="text-gray-400 text-sm text-center py-6">載入中或尚未建立座位表...</p>
         </div>
       </div>
     </section>
 
     <!-- 分頁 9：學生名單 -->
-    <section id="tab-students" class="tab-content space-y-6">
+    <section id="tab-students" class="tab-content space-y-4 md:space-y-6">
       <div class="flex justify-between items-center border-b pb-2">
-        <h2 class="text-2xl font-bold text-slate-800">👨‍🎓 學生名單管理</h2>
+        <h2 class="text-xl md:text-2xl font-bold text-slate-800">👨‍🎓 學生名單管理</h2>
         <span id="studentCount" class="text-sm bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-full">共 0 位學生</span>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200 space-y-4 interactive-control">
         <h3 class="font-bold text-lg text-gray-800 flex items-center gap-2">📥 快速批次匯入名單</h3>
         <p class="text-xs text-gray-500">提示：可直接從 Excel/備忘錄複製貼上，每行一位學生（例如：`01 張小明`）。</p>
         <textarea id="batchStudentInput" rows="5" class="w-full border rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-500 outline-none" placeholder="01 王小明&#10;02 李小華&#10;03 陳大天"></textarea>
@@ -765,9 +783,9 @@
           <button onclick="importBatchStudents()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold text-sm shadow transition">✨ 解析並匯入名單</button>
         </div>
       </div>
-      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
         <h3 class="font-bold text-lg mb-4 text-gray-800">📋 目前班級名冊</h3>
-        <div id="studentGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+        <div id="studentGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           <p class="text-gray-400 text-sm col-span-full">尚未匯入學生資料，請在上方貼入名單並點擊匯入。</p>
         </div>
       </div>
@@ -894,7 +912,7 @@
       db.ref(dbPath).on('value', (snapshot) => {
         appState = snapshot.val() || {};
         
-        // 【修正 1】Firebase 陣列防護：自動將被 Firebase 轉為物件的資料還原為陣列
+        // Firebase 陣列防護：自動將被 Firebase 轉為物件的資料還原為陣列
         const ensureArray = (data) => (Array.isArray(data) ? data : (data ? Object.values(data) : []));
         appState.students = ensureArray(appState.students);
         appState.seatingTags = ensureArray(appState.seatingTags);
@@ -939,7 +957,7 @@
         initAttendanceModule();
         initTodoModule();
         
-        // 【修正 2】座位分配渲染：強制載入當前標籤的存檔資料
+        // 座位分配渲染：強制載入當前標籤的存檔資料
         renderSeatingTagSelect();
         changeSeatingTag(currentSeatingTag); 
         
@@ -951,6 +969,14 @@
         renderSchedule();
       });
     };
+
+    // --- 響應式手機版選單控制 ---
+    function toggleSidebar() {
+      const sidebar = document.getElementById('sidebar');
+      const overlay = document.getElementById('sidebarOverlay');
+      sidebar.classList.toggle('-translate-x-full');
+      overlay.classList.toggle('hidden');
+    }
 
     function saveStateToCloud() {
       db.ref(dbPath).set(appState);
@@ -969,6 +995,16 @@
       const targetBtn = document.getElementById('btn-' + tabId);
       if (targetBtn) {
         targetBtn.classList.add('bg-slate-700', 'font-bold');
+      }
+
+      // 手機版：點擊標籤後自動收起側邊欄
+      if (window.innerWidth < 768) {
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (!sidebar.classList.contains('-translate-x-full')) {
+          sidebar.classList.add('-translate-x-full');
+          overlay.classList.add('hidden');
+        }
       }
     }
 
@@ -1103,10 +1139,10 @@
         const dateTypes = dutyTypeMap[currentDate] || {};
         displayEl.innerHTML = assignedNames.map(name => {
           const type = dateTypes[name] || 'normal';
-          if (type === 'late') return `<span class="inline-block bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-lg text-xl font-bold">⏰ ${name}</span>`;
-          if (type === 'beh') return `<span class="inline-block bg-rose-100 text-rose-950 border border-rose-300 px-3 py-1 rounded-lg text-xl font-bold">🚨 ${name}</span>`;
-          if (type === 'corridor') return `<span class="inline-block bg-purple-100 text-purple-950 border border-purple-300 px-3 py-1 rounded-lg text-xl font-bold">🏃 ${name}</span>`;
-          return `<span class="inline-block bg-sky-200 text-sky-950 px-3 py-1 rounded-lg text-xl font-bold">${name}</span>`;
+          if (type === 'late') return `<span class="inline-block bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 rounded-lg text-lg md:text-xl font-bold">⏰ ${name}</span>`;
+          if (type === 'beh') return `<span class="inline-block bg-rose-100 text-rose-950 border border-rose-300 px-3 py-1 rounded-lg text-lg md:text-xl font-bold">🚨 ${name}</span>`;
+          if (type === 'corridor') return `<span class="inline-block bg-purple-100 text-purple-950 border border-purple-300 px-3 py-1 rounded-lg text-lg md:text-xl font-bold">🏃 ${name}</span>`;
+          return `<span class="inline-block bg-sky-200 text-sky-950 px-3 py-1 rounded-lg text-lg md:text-xl font-bold">${name}</span>`;
         }).join('');
       } else {
         displayEl.innerHTML = '<span class="text-gray-400 text-sm font-normal">未安排值日生</span>';
@@ -1322,9 +1358,9 @@
         <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
           <div>
             <span class="font-bold text-blue-600 text-sm">${item.date}</span>
-            <p class="text-xs text-gray-500 truncate max-w-md mt-0.5">${item.content.replace(/\n/g, ' ')}</p>
+            <p class="text-xs text-gray-500 truncate max-w-xs md:max-w-md mt-0.5">${item.content.replace(/\n/g, ' ')}</p>
           </div>
-          <button onclick="loadRecord('${item.date}')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition">🔍 查看/編輯</button>
+          <button onclick="loadRecord('${item.date}')" class="text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition whitespace-nowrap">🔍 編輯</button>
         </div>
       `).join('');
     }
@@ -1425,7 +1461,6 @@
 
       document.getElementById('indTodoStudentName').innerText = `${student.seatNo} ${student.name}`;
       
-      // 【修正】：加入 (t.pendingStudentIds || []) 防護，避免陣列消失導致崩潰
       const studentTasks = tasks.filter(t => (t.pendingStudentIds || []).includes(studentId));
       let totalOverdueDays = 0;
       const listContainer = document.getElementById('indTodoList');
@@ -1437,7 +1472,7 @@
         listContainer.innerHTML = studentTasks.map(t => {
           const overdue = calculateOverdueDays(studentId, t.dueDate);
           totalOverdueDays += overdue;
-          return `<div class="py-2.5 px-2 flex items-center justify-between text-xs"><div><span class="font-bold text-indigo-900">${t.title}</span>${t.note ? `<span class="text-[10px] text-gray-500 ml-1.5 bg-gray-200 px-1.5 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-[10px] text-gray-400 mt-0.5">截止：${t.dueDate}</div></div><div class="flex items-center gap-2"><span class="font-bold ${overdue > 0 ? 'text-rose-600' : 'text-gray-400'}">${overdue > 0 ? `逾期 ${overdue} 天` : '未逾期'}</span><button onclick="markStudentSubmitted('${t.id}', '${studentId}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div></div>`;
+          return `<div class="py-2.5 px-2 flex flex-col sm:flex-row gap-2 sm:items-center justify-between text-xs"><div><span class="font-bold text-indigo-900">${t.title}</span>${t.note ? `<span class="text-[10px] text-gray-500 ml-1.5 bg-gray-200 px-1.5 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-[10px] text-gray-400 mt-0.5">截止：${t.dueDate}</div></div><div class="flex items-center justify-between w-full sm:w-auto gap-2"><span class="font-bold ${overdue > 0 ? 'text-rose-600' : 'text-gray-400'}">${overdue > 0 ? `逾期 ${overdue} 天` : '未逾期'}</span><button onclick="markStudentSubmitted('${t.id}', '${studentId}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-3 py-1.5 sm:px-2 sm:py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div></div>`;
         }).join('');
         document.getElementById('indTodoTotalOverdue').innerText = `${totalOverdueDays} 天`;
       }
@@ -1451,17 +1486,15 @@
       if (tasks.length === 0) { container.innerHTML = '<p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>'; return; }
 
       container.innerHTML = tasks.map(t => {
-        // 【修正】：加入 safePendingIds 防護
         const safePendingIds = t.pendingStudentIds || [];
         const pendingStudents = students.filter(s => safePendingIds.includes(s.id));
-        return `<div class="p-4 bg-gray-50 border rounded-xl space-y-3 shadow-sm"><div class="flex justify-between items-start border-b pb-2"><div><span class="font-extrabold text-base text-indigo-900">${t.title}</span>${t.note ? `<span class="text-xs text-gray-500 ml-2 bg-gray-200 px-2 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-xs text-gray-400 font-mono mt-0.5">截止日期：${t.dueDate}</div></div><button onclick="deleteTodoTask('${t.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">刪除項目 ✕</button></div><div><span class="text-xs font-bold text-gray-600 mb-2 block">未繳交學生名單 (${pendingStudents.length} 人)：</span>${pendingStudents.length === 0 ? '<p class="text-xs text-emerald-600 font-bold">全班已全數繳交完成！🎉</p>' : `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${pendingStudents.map(s => { const overdueDays = calculateOverdueDays(s.id, t.dueDate); return `<div class="p-2 bg-white border rounded-lg flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}</div><button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div>`; }).join('')}</div>`}</div></div>`;
+        return `<div class="p-4 bg-gray-50 border rounded-xl space-y-3 shadow-sm"><div class="flex justify-between items-start border-b pb-2"><div><span class="font-extrabold text-base text-indigo-900">${t.title}</span>${t.note ? `<span class="text-xs text-gray-500 ml-2 bg-gray-200 px-2 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-xs text-gray-400 font-mono mt-0.5">截止日期：${t.dueDate}</div></div><button onclick="deleteTodoTask('${t.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">刪除項目 ✕</button></div><div><span class="text-xs font-bold text-gray-600 mb-2 block">未繳交學生名單 (${pendingStudents.length} 人)：</span>${pendingStudents.length === 0 ? '<p class="text-xs text-emerald-600 font-bold">全班已全數繳交完成！🎉</p>' : `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${pendingStudents.map(s => { const overdueDays = calculateOverdueDays(s.id, t.dueDate); return `<div class="p-2.5 sm:p-2 bg-white border rounded-lg flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}</div><button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-3 py-1.5 sm:px-2 sm:py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div>`; }).join('')}</div>`}</div></div>`;
       }).join('');
     }
 
     function markStudentSubmitted(taskId, studentId) {
       const task = (appState.todoTasks || []).find(t => t.id === taskId);
       if (task) {
-        // 【修正】：確保重新寫入時陣列存在
         task.pendingStudentIds = (task.pendingStudentIds || []).filter(id => id !== studentId);
         saveStateToCloud();
       }
@@ -1490,7 +1523,6 @@
             const date = parts[0];
             const title = parts.slice(1).join(' ');
             if (!appState.calendarEvents.some(e => e.date === date && e.title === title)) {
-              // ✨ 加入 completed 初始值
               appState.calendarEvents.push({ id: 'evt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4), date, title, completed: false });
               count++;
             }
@@ -1512,14 +1544,14 @@
       if (events.length === 0) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>'; return; }
 
       listContainer.innerHTML = events.map(evt => `
-        <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
+        <div class="py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center hover:bg-gray-50 px-2 rounded gap-2">
           <div class="flex items-center gap-3">
             <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
             <span class="font-bold text-gray-800 text-sm ${evt.completed ? 'line-through text-gray-400' : ''}">${evt.title}</span>
           </div>
-          <div class="flex items-center gap-2 interactive-control">
-            <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-2.5 py-1 rounded transition">✏️ 編輯</button>
-            <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+          <div class="flex items-center justify-end gap-2 interactive-control">
+            <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-3 py-1.5 sm:px-2.5 sm:py-1 rounded transition">✏️ 編輯</button>
+            <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-2 sm:p-1">✕</button>
           </div>
         </div>
       `).join('');
@@ -1597,7 +1629,7 @@
           <div><span class="text-xs font-bold bg-slate-200 text-slate-700 px-1.5 py-0.5 rounded mr-1.5">${stu.seatNo}</span><span class="font-bold text-gray-800 text-sm">${stu.name}</span></div>
           <div class="flex items-center gap-1 interactive-control">
             <button onclick="editStudent('${stu.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 px-2 py-1 rounded transition">✏️ 編輯</button>
-            <button onclick="deleteStudent('${stu.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+            <button onclick="deleteStudent('${stu.id}')" class="text-xs text-gray-400 hover:text-red-500 p-2 sm:p-1">✕</button>
           </div>
         </div>
       `).join('');
@@ -1707,7 +1739,7 @@
             ${l.note ? `<p class="text-gray-500 mt-0.5">備註：${l.note}</p>` : ''}
             <span class="text-[10px] text-gray-400">登記日期：${l.createdAt}</span>
           </div>
-          <button onclick="deleteCorridorRecord('${l.id}')" class="text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
+          <button onclick="deleteCorridorRecord('${l.id}')" class="text-gray-400 hover:text-red-500 p-2 sm:p-1 interactive-control">✕</button>
         </div>
       `).join('');
     }
@@ -1933,11 +1965,11 @@
     function renderRewardList() {
       const indRewards = appState.rewards || [];
       document.getElementById('rewardListIndividual').innerHTML = indRewards.length === 0 ? '<p class="text-gray-400 text-xs py-2">尚無個人獎品品項。</p>' :
-        indRewards.map(r => `<div class="p-2.5 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${r.name}</span><div class="text-[11px] text-gray-500">需要：<span class="font-bold text-indigo-600">${r.cost}</span> 點 ｜ 庫存：${r.stock !== null ? r.stock : '無限'}</div></div><div class="flex items-center gap-1 interactive-control"><button onclick="claimReward('${r.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎁 兌獎</button><button onclick="deleteReward('${r.id}', 'individual')" class="text-gray-400 hover:text-red-500 p-1">✕</button></div></div>`).join('');
+        indRewards.map(r => `<div class="p-2.5 bg-indigo-50/50 rounded-lg border border-indigo-100 flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${r.name}</span><div class="text-[11px] text-gray-500">需要：<span class="font-bold text-indigo-600">${r.cost}</span> 點 ｜ 庫存：${r.stock !== null ? r.stock : '無限'}</div></div><div class="flex items-center gap-1 interactive-control"><button onclick="claimReward('${r.id}')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 sm:px-2.5 sm:py-1 rounded transition text-[11px]">🎁 兌獎</button><button onclick="deleteReward('${r.id}', 'individual')" class="text-gray-400 hover:text-red-500 p-2 sm:p-1">✕</button></div></div>`).join('');
 
       const classRewards = appState.classRewards || [];
       document.getElementById('rewardListClass').innerHTML = classRewards.length === 0 ? '<p class="text-gray-400 text-xs py-2">尚無全班獎勵品項。</p>' :
-        classRewards.map(r => `<div class="p-2.5 bg-amber-50/60 rounded-lg border border-amber-100 flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${r.name}</span><div class="text-[11px] text-gray-500">需要全班總分：<span class="font-bold text-amber-700">${r.cost}</span> 分</div></div><div class="flex items-center gap-1 interactive-control"><button onclick="claimClassReward('${r.id}')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-2.5 py-1 rounded transition text-[11px]">🎉 兌換全班獎勵</button><button onclick="deleteReward('${r.id}', 'class')" class="text-gray-400 hover:text-red-500 p-1">✕</button></div></div>`).join('');
+        classRewards.map(r => `<div class="p-2.5 bg-amber-50/60 rounded-lg border border-amber-100 flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${r.name}</span><div class="text-[11px] text-gray-500">需要全班總分：<span class="font-bold text-amber-700">${r.cost}</span> 分</div></div><div class="flex items-center gap-1 interactive-control"><button onclick="claimClassReward('${r.id}')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold px-3 py-1.5 sm:px-2.5 sm:py-1 rounded transition text-[11px]">🎉 兌換</button><button onclick="deleteReward('${r.id}', 'class')" class="text-gray-400 hover:text-red-500 p-2 sm:p-1">✕</button></div></div>`).join('');
     }
 
     function claimReward(rewardId) {
@@ -2129,7 +2161,7 @@
       const logs = (appState.attendanceLogs || []).filter(l => l.date === currentDate);
       const listContainer = document.getElementById('attendanceList');
       listContainer.innerHTML = logs.length === 0 ? '<p class="text-gray-400 text-sm py-3">當天無請假/遲到紀錄。</p>' :
-        logs.map(l => `<div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded"><div><div class="flex items-center gap-2 mb-0.5"><span class="font-bold text-gray-800 text-sm">${l.studentName}</span><span class="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">${l.category}</span></div>${l.note ? `<p class="text-xs text-gray-500">備註：${l.note}</p>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button></div>`).join('');
+        logs.map(l => `<div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded"><div><div class="flex items-center gap-2 mb-0.5"><span class="font-bold text-gray-800 text-sm">${l.studentName}</span><span class="text-xs font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full">${l.category}</span></div>${l.note ? `<p class="text-xs text-gray-500">備註：${l.note}</p>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-xs text-gray-400 hover:text-red-500 p-2 sm:p-1 interactive-control">✕</button></div>`).join('');
     }
 
     function deleteAttendanceRecord(id) {
@@ -2148,7 +2180,7 @@
         const fullName = `${s.seatNo} ${s.name}`;
         const studentLogs = logs.filter(l => l.studentId === s.id || l.studentName === fullName);
         const c = { 病假: studentLogs.filter(l => l.category === '病假').length, 事假: studentLogs.filter(l => l.category === '事假').length, 公假: studentLogs.filter(l => l.category === '公假').length, 喪假: studentLogs.filter(l => l.category === '喪假').length, 上學遲到: studentLogs.filter(l => l.category === '上學遲到').length, 上課遲到: studentLogs.filter(l => l.category === '上課遲到').length };
-        return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800">${fullName}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
+        return `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold text-gray-800 whitespace-nowrap">${fullName}</td><td class="p-3 text-center ${c.病假 > 0 ? 'font-bold text-rose-600' : 'text-gray-300'}">${c.病假}</td><td class="p-3 text-center ${c.事假 > 0 ? 'font-bold text-amber-600' : 'text-gray-300'}">${c.事假}</td><td class="p-3 text-center ${c.公假 > 0 ? 'font-bold text-blue-600' : 'text-gray-300'}">${c.公假}</td><td class="p-3 text-center ${c.喪假 > 0 ? 'font-bold text-gray-700' : 'text-gray-300'}">${c.喪假}</td><td class="p-3 text-center ${c.上學遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上學遲到}</td><td class="p-3 text-center ${c.上課遲到 > 0 ? 'font-bold text-orange-600' : 'text-gray-300'}">${c.上課遲到}</td></tr>`;
       }).join('');
     }
 
@@ -2170,7 +2202,7 @@
       }).join('');
 
       document.getElementById('individualAttHistoryList').innerHTML = studentLogs.length === 0 ? '<p class="text-gray-400 text-xs py-3">該生尚無任何請假與遲到紀錄。</p>' :
-        studentLogs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span><span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}</span>${l.note ? `<span class="text-gray-600">${l.note}</span>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500 interactive-control">✕</button></div>`).join('');
+        studentLogs.map(l => `<div class="py-2 flex justify-between items-center text-xs"><div><span class="font-bold text-gray-700 mr-2 font-mono">${l.date}</span><span class="font-bold bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full mr-2">${l.category}</span>${l.note ? `<span class="text-gray-600">${l.note}</span>` : ''}</div><button onclick="deleteAttendanceRecord('${l.id}')" class="text-gray-400 hover:text-red-500 interactive-control p-1">✕</button></div>`).join('');
     }
 
     // ----------------- 班級座位表邏輯 (升級版) -----------------
@@ -2249,7 +2281,7 @@
 
       const assignedStudentIds = Object.values(seatingMap).filter(id => id !== "X" && id !== "");
 
-      let gridHTML = `<div class="grid gap-3 w-max mx-auto" style="grid-template-columns: repeat(${cols}, minmax(110px, 1fr));">`;
+      let gridHTML = `<div class="grid gap-2 sm:gap-3 w-max mx-auto" style="grid-template-columns: repeat(${cols}, minmax(90px, 1fr));">`;
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const seatKey = `${r}_${c}`;
@@ -2259,9 +2291,9 @@
           const bgClass = isX ? "bg-gray-300 border-gray-400 opacity-60" : "bg-white border-gray-200";
 
           gridHTML += `
-            <div class="${bgClass} p-3 rounded-xl border shadow-sm flex flex-col justify-between text-center transition-all">
+            <div class="${bgClass} p-2 sm:p-3 rounded-xl border shadow-sm flex flex-col justify-between text-center transition-all">
               <span class="text-[10px] text-gray-500 font-mono mb-1">${r+1}-${c+1}</span>
-              <select style="text-align-last: center;" onchange="updateSeat('${seatKey}', this.value)" class="w-full border rounded-lg p-1.5 text-xs font-bold text-gray-800 bg-gray-50 outline-none interactive-control text-center">
+              <select style="text-align-last: center;" onchange="updateSeat('${seatKey}', this.value)" class="w-full border rounded-lg p-1 sm:p-1.5 text-xs font-bold text-gray-800 bg-gray-50 outline-none interactive-control text-center">
                 <option value="">-- 空 --</option>
                 <option value="X" ${isX ? 'selected' : ''}>❌ (走道/不排)</option>
                 ${students.map(s => {
@@ -2459,7 +2491,7 @@
       teachersContainer.innerHTML = sch.teachers.map(t => `
         <div class="flex justify-between items-center text-xs bg-gray-50 border p-1.5 rounded">
           <span class="font-bold text-gray-700">${t.subject}：<span class="text-blue-700">${t.name}</span></span>
-          <button onclick="removeScheduleTeacher('${t.id}')" class="text-gray-400 hover:text-red-500">✕</button>
+          <button onclick="removeScheduleTeacher('${t.id}')" class="text-gray-400 hover:text-red-500 p-1">✕</button>
         </div>
       `).join('');
 
@@ -2521,7 +2553,7 @@
             // 加入 text-xl 和 h-full min-h-[3.5rem] 讓字體放大填滿，並套用背景色
             rowHTML += `
               <td class="p-1 border border-slate-200 align-middle ${tdBgColor}">
-                <select style="text-align-last: center;" onchange="updateSchCell('${cellKey}', this.value)" class="w-full h-full min-h-[3.5rem] text-center p-1 text-xl font-black bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
+                <select style="text-align-last: center;" onchange="updateSchCell('${cellKey}', this.value)" class="w-full h-full min-h-[3.5rem] text-center p-1 text-base sm:text-xl font-black bg-transparent outline-none appearance-none hover:bg-gray-50 cursor-pointer ${textColor} interactive-control">
                   <option value="" class="text-gray-500">--</option>
                   ${sch.tags.map(tag => `<option value="${tag}" ${tag === cellValue ? 'selected' : ''} class="text-gray-800">${tag}</option>`).join('')}
                 </select>

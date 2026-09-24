@@ -895,8 +895,27 @@
       db.ref(dbPath).on('value', (snapshot) => {
         appState = snapshot.val() || {};
         
+        // 【修正 1】Firebase 陣列防護：自動將被 Firebase 轉為物件的資料還原為陣列
+        const ensureArray = (data) => (Array.isArray(data) ? data : (data ? Object.values(data) : []));
+        appState.students = ensureArray(appState.students);
+        appState.seatingTags = ensureArray(appState.seatingTags);
+        appState.calendarEvents = ensureArray(appState.calendarEvents);
+        appState.contactBooks = ensureArray(appState.contactBooks);
+        appState.todoTasks = ensureArray(appState.todoTasks);
+        appState.attendanceLogs = ensureArray(appState.attendanceLogs);
+        appState.corridorLogs = ensureArray(appState.corridorLogs);
+        appState.pointLogs = ensureArray(appState.pointLogs);
+        appState.classPointLogs = ensureArray(appState.classPointLogs);
+        appState.rewards = ensureArray(appState.rewards);
+        appState.classRewards = ensureArray(appState.classRewards);
+        if (appState.schedule) {
+          appState.schedule.teachers = ensureArray(appState.schedule.teachers);
+          appState.schedule.tags = ensureArray(appState.schedule.tags);
+          appState.schedule.alerts = ensureArray(appState.schedule.alerts);
+        }
+
         // 初始化座位分配狀態
-        if (!appState.seatingTags) {
+        if (!appState.seatingTags || appState.seatingTags.length === 0) {
           appState.seatingTags = ['班級座位', '自然教室座位', '音樂教室座位', '遊覽車座位', '畢旅遊覽車座位'];
         }
         if (!appState.savedSeating) {
@@ -921,9 +940,9 @@
         initAttendanceModule();
         initTodoModule();
         
-        // 座位分配渲染
+        // 【修正 2】座位分配渲染：強制載入當前標籤的存檔資料
         renderSeatingTagSelect();
-        renderSeatingChart();
+        changeSeatingTag(currentSeatingTag); 
         
         renderCorridorStudentOptions();
         renderCorridorList();

@@ -2407,7 +2407,7 @@
       renderSeatingChart();
     }
 
-    function renderSeatingChart() {
+   function renderSeatingChart() {
       const container = document.getElementById('seatingChartContainer');
       const rows = parseInt(document.getElementById('seatRows').value) || 5;
       const cols = parseInt(document.getElementById('seatCols').value) || 6;
@@ -2428,19 +2428,37 @@
           const currentStudentId = seatingMap[seatKey] || "";
           
           const isX = (currentStudentId === "X");
-          const bgClass = isX ? "bg-gray-300 border-gray-400 opacity-60" : "bg-white border-gray-200";
+          const isEmpty = (currentStudentId === "");
+          
+          // ✨ 增強對比度的樣式邏輯
+          let wrapperClass = "";
+          let selectClass = "";
+          
+          if (isX) {
+            // ❌ 走道：灰色虛線框、半透明，視覺上往後退
+            wrapperClass = "bg-gray-200/50 border-2 border-dashed border-gray-400 opacity-50";
+            selectClass = "bg-transparent text-gray-500 border-none font-normal";
+          } else if (isEmpty) {
+            // 🪑 空位：純白背景、灰色實線框
+            wrapperClass = "bg-white border-2 border-gray-300 shadow-sm hover:border-blue-300";
+            selectClass = "bg-gray-50 text-gray-400 border border-gray-200";
+          } else {
+            // 👨‍🎓 已排學生：微藍色背景、加粗藍框、陰影加深，視覺上往前凸出
+            wrapperClass = "bg-blue-50 border-2 border-blue-400 shadow-md ring-2 ring-blue-100 ring-offset-1";
+            selectClass = "bg-white text-blue-900 border border-blue-200 shadow-sm";
+          }
 
           gridHTML += `
-            <div class="${bgClass} p-2 sm:p-3 rounded-xl border shadow-sm flex flex-col justify-between text-center transition-all">
+            <div class="${wrapperClass} p-2 sm:p-3 rounded-xl flex flex-col justify-between text-center transition-all duration-200">
               <span class="text-[10px] text-gray-500 font-mono mb-1">${r+1}-${c+1}</span>
-              <select style="text-align-last: center;" onchange="updateSeat('${seatKey}', this.value)" class="w-full border rounded-lg p-1 sm:p-1.5 text-xs font-bold text-gray-800 bg-gray-50 outline-none interactive-control text-center">
-                <option value="">-- 空 --</option>
-                <option value="X" ${isX ? 'selected' : ''}>❌ (走道/不排)</option>
+              <select style="text-align-last: center;" onchange="updateSeat('${seatKey}', this.value)" class="w-full rounded-lg p-1 sm:p-1.5 text-xs font-bold outline-none interactive-control text-center ${selectClass} transition-colors">
+                <option value="" class="text-gray-500">-- 空 --</option>
+                <option value="X" ${isX ? 'selected' : ''} class="text-gray-500">❌ (走道/不排)</option>
                 ${students.map(s => {
                   const isCurrent = (s.id === currentStudentId);
                   const isSeatedElsewhere = assignedStudentIds.includes(s.id) && !isCurrent;
                   const labelSuffix = isSeatedElsewhere ? ' (已排)' : '';
-                  return `<option value="${s.id}" ${isCurrent ? 'selected' : ''}>${s.seatNo} ${s.name}${labelSuffix}</option>`;
+                  return `<option value="${s.id}" ${isCurrent ? 'selected' : ''} class="text-gray-800">${s.seatNo} ${s.name}${labelSuffix}</option>`;
                 }).join('')}
               </select>
             </div>
